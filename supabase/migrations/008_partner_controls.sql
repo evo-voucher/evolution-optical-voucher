@@ -91,7 +91,7 @@ revoke all on function public.get_my_partner_claim_access() from public, anon;
 grant execute on function public.get_my_partner_claim_access() to authenticated;
 
 drop function if exists public.partner_set_staff_access(boolean);
-create function public.partner_set_staff_access(p_enabled boolean)
+create function public.partner_set_staff_access(enabled boolean)
 returns jsonb
 language plpgsql
 security definer
@@ -115,14 +115,14 @@ begin
   end if;
 
   update public.partners
-  set staff_access_enabled=coalesce(p_enabled,false),updated_at=now()
+  set staff_access_enabled=coalesce(enabled,false),updated_at=now()
   where id=v_partner;
 
   insert into public.admin_audit_log(actor_user_id,action_type,entity_type,entity_id,partner_id,after_data)
   values ((select auth.uid()),'partner_staff_access_changed','partner',v_partner::text,v_partner,
-    jsonb_build_object('staff_access_enabled',coalesce(p_enabled,false)));
+    jsonb_build_object('staff_access_enabled',coalesce(enabled,false)));
 
-  return jsonb_build_object('success',true,'partner_id',v_partner,'staff_access_enabled',coalesce(p_enabled,false));
+  return jsonb_build_object('success',true,'partner_id',v_partner,'staff_access_enabled',coalesce(enabled,false));
 end;
 $$;
 revoke all on function public.partner_set_staff_access(boolean) from public, anon;
