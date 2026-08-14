@@ -41,6 +41,10 @@ begin
     raise exception 'Active Partner not found';
   end if;
 
+  -- Serialize with issuance/retirement before checking Version status.
+  -- This uses the same Version advisory-lock domain as migration 026/retirement.
+  perform pg_advisory_xact_lock(hashtextextended(p_version_id::text,2601));
+
   select vv.template_id into v_template_id
   from public.voucher_versions vv
   join public.voucher_templates vt on vt.id=vv.template_id
@@ -119,6 +123,56 @@ $$;
 revoke all on function public.admin_engine_allocate(uuid,uuid,integer,uuid) from public, anon;
 grant execute on function public.admin_engine_allocate(uuid,uuid,integer,uuid) to authenticated, service_role;
 
+create or replace function public.admin_engine_allocate_all(
+  p_version_id uuid,
+  p_quantity integer,
+  p_actor_user_id uuid default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_actor uuid;
+  v_partner record;
+  v_count integer := 0;
+begin
+  if p_version_id is null then raise exception 'Version is required'; end if;
+  if p_quantity is null or p_quantity < 1 then raise exception 'Quantity must be positive'; end if;
+
+  if public.is_voucher_admin() then
+    v_actor := (select auth.uid());
+  elsif public.is_trusted_service_role() then
+    v_actor := p_actor_user_id;
+  else
+    raise exception 'Admin access required';
+  end if;
+
+  if not exists(select 1 from public.admin_users a where a.user_id=v_actor and a.status='active') then
+    raise exception 'Active Admin actor required';
+  end if;
+
+  -- One database transaction: any failure rolls back every Partner allocation.
+  for v_partner in
+    select p.id from public.partners p where p.status='active' order by p.id
+  loop
+    perform public.admin_engine_allocate(v_partner.id,p_version_id,p_quantity,v_actor);
+    v_count := v_count+1;
+  end loop;
+
+  return jsonb_build_object(
+    'success',true,
+    'version_id',p_version_id,
+    'partners_allocated',v_count,
+    'quantity_each',p_quantity
+  );
+end;
+$$;
+
+revoke all on function public.admin_engine_allocate_all(uuid,integer,uuid) from public, anon;
+grant execute on function public.admin_engine_allocate_all(uuid,integer,uuid) to authenticated, service_role;
+
 create or replace function public.admin_engine_revoke_unissued(
   p_allocation_id uuid,
   p_quantity integer,
@@ -135,7 +189,7 @@ declare
   v_actor_name text;
   v_allocation public.partner_voucher_allocations%rowtype;
   v_issued bigint;
-  v_remaining integer;
+  v_remaining bigint;
   v_next_revoked integer;
 begin
   if p_allocation_id is null then raise exception 'Allocation is required'; end if;
@@ -234,7 +288,7 @@ begin
   where a.user_id=v_actor and a.status='active';
   if not found then raise exception 'Active Admin actor required'; end if;
 
-  -- Same Version serialization domain as issuance migration 026.
+  -- Same Version serialization domain as issuance migration 026 and allocation above.
   perform pg_advisory_xact_lock(hashtextextended(p_version_id::text,2601));
 
   select vv.status into v_status
