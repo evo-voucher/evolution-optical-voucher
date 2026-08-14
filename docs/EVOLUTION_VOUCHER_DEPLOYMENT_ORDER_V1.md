@@ -6,6 +6,7 @@ Status: reconstruction staging only. Do not apply to legacy production project `
 - Code and migration order: this repository.
 - Business transactions after deployment: target Voucher Supabase project.
 - XiaoE durable project conclusions: XiaoE AI Core `public.memories`.
+- Runtime deployment safety procedure: `docs/RUNTIME_DEPLOYMENT_PREFLIGHT_V1.md`.
 
 ## Migration order
 Apply migrations strictly by numeric filename order. Current staged chain:
@@ -79,67 +80,70 @@ Apply migrations strictly by numeric filename order. Current staged chain:
 ## Deployment gates
 Do not bind frontend URLs/keys until all of the following are true:
 1. Exact target Supabase project ID verified.
-2. Target confirmed blank/new and not legacy production.
-3. Migrations complete without error in numeric order.
-4. `supabase/tests/001_contract_smoke_checks.sql` passes.
-5. `supabase/tests/002_security_boundary_audit.sql` passes.
-6. `supabase/tests/003_partner_isolation_constraints.sql` passes.
-7. `supabase/tests/004_admin_mutation_contract.sql` passes.
-8. `supabase/tests/005_admin_control_directory_contract.sql` passes.
-9. `supabase/tests/006_partner_catalog_contract.sql` passes.
-10. `supabase/tests/007_atomic_engine_admin_contract.sql` passes.
-11. `supabase/tests/008_partner_issuance_contract.sql` passes.
-12. `supabase/tests/009_identity_realm_registry_contract.sql` passes.
-13. `supabase/tests/010_staff_operational_contract.sql` passes.
-14. `supabase/tests/011_public_voucher_contract.sql` passes.
-15. `supabase/tests/012_partner_quota_contract.sql` passes.
-16. `supabase/tests/013_reporting_status_precedence_contract.sql` passes.
-17. Test Admin identity exists and resolves as `admin` only.
-18. Two independent test Partners exist and cross-Partner reads/writes are rejected.
-19. Direct SQL/service-role attempts to pair a Voucher or Redemption with the wrong Partner fail at the declarative FK boundary.
-20. Partner browser/user context cannot use the service-role bypass.
-21. Admin Edge Function using service-role server context can call 033 mutations only after verifying the original Admin caller.
-22. Service-role calls to 033 without a valid active Admin actor_user_id are rejected.
-23. One disposable Auth UID cannot be activated concurrently in two different operational realms; exactly one transaction succeeds.
-24. After removal/deactivation from one realm, that UID can be activated in another realm.
-25. Historical removed Partner membership does not block later Partner re-onboarding, while only one `removed_at IS NULL` Partner membership may exist.
-26. Anonymous function inventory contains only `get_public_voucher(uuid)`.
-27. Staff browser uses `staff_operational_context()`, `verify_voucher()`, `redeem_voucher()`, `staff_today_summary()`, and `staff_recent_redemptions()`; it does not directly read sensitive Voucher/Redemption tables.
-28. Staff/manager context is bound to assigned active branch; all_branch_manager must explicitly choose an active branch.
-29. Staff Verify -> Redeem -> History works at allowed branch and fails at disallowed branch.
-30. Suspended/removed Staff cannot use Staff operational RPCs.
-31. Public Voucher lookup uses only `get_public_voucher(uuid)` with the random `public_token`; the browser never queries Voucher tables directly.
-32. Public Voucher response exposes no customer phone, Auth/user IDs, allocation IDs, or internal metadata.
-33. Random/missing public token fails closed and public lookup never mutates Voucher/Redemption state.
-34. Public branch list contains only active branches permitted for that Voucher.
-35. Partner catalog returns only Versions the current Partner can actually issue and hides exhausted/inactive/out-of-window entries.
-36. Partner issuance uses `issue_engine_voucher()` only; tenant is derived from Auth and the browser never supplies `partner_id`.
-37. Partner A cannot issue a Voucher Version allocated only to Partner B.
-38. Partner `voucher_limit=0` behaves as unlimited in Admin controls, Partner dashboard, and issuance.
-39. Positive Partner voucher limits cannot be exceeded even under concurrent issuance from different valid allocations/versions.
-40. Partner quota decisions use canonical Voucher row count, not `partners.vouchers_issued`.
-41. Concurrent double redemption does not create two completed uses for a single-use Voucher.
-42. Concurrent Voucher Engine issue attempts cannot exceed Allocation or Version supply.
-43. Concurrent Admin allocation increases for the same Partner+Version preserve every increment.
-44. Revoke-unissued racing with issuance cannot revoke already-issued capacity.
-45. Retire Version racing with issue cannot create a Voucher after the Version is inactive.
-46. Admin reversal restores usage while preserving the reversed redemption record.
-47. Admin and Partner Voucher summary buckets are mutually exclusive using revoked > expired > redeemed > active.
-48. Reporting totals reconcile to canonical `vouchers` + `redemptions`.
-49. Admin frontend contains no direct business-table read/mutation for control flows; it conforms to `docs/ADMIN_PORTAL_BACKEND_CONTRACT_V1.md` and uses 031 read models for directory data.
-50. Partner frontend does not directly read global Voucher Engine tables for its issuable catalog; it uses 032.
+2. Target confirmed blank/new and not legacy production or XiaoE AI Core.
+3. `docs/RUNTIME_DEPLOYMENT_PREFLIGHT_V1.md` target gate passes.
+4. Migrations complete without error in numeric order.
+5. `supabase/tests/001_contract_smoke_checks.sql` passes.
+6. `supabase/tests/002_security_boundary_audit.sql` passes.
+7. `supabase/tests/003_partner_isolation_constraints.sql` passes.
+8. `supabase/tests/004_admin_mutation_contract.sql` passes.
+9. `supabase/tests/005_admin_control_directory_contract.sql` passes.
+10. `supabase/tests/006_partner_catalog_contract.sql` passes.
+11. `supabase/tests/007_atomic_engine_admin_contract.sql` passes.
+12. `supabase/tests/008_partner_issuance_contract.sql` passes.
+13. `supabase/tests/009_identity_realm_registry_contract.sql` passes.
+14. `supabase/tests/010_staff_operational_contract.sql` passes.
+15. `supabase/tests/011_public_voucher_contract.sql` passes.
+16. `supabase/tests/012_partner_quota_contract.sql` passes.
+17. `supabase/tests/013_reporting_status_precedence_contract.sql` passes.
+18. `supabase/tests/014_cutover_readiness_inventory.sql` passes structural review.
+19. Test Admin identity exists and resolves as `admin` only.
+20. Two independent test Partners exist and cross-Partner reads/writes are rejected.
+21. Direct SQL/service-role attempts to pair a Voucher or Redemption with the wrong Partner fail at the declarative FK boundary.
+22. Partner browser/user context cannot use the service-role bypass.
+23. Admin Edge Function using service-role server context can call 033 mutations only after verifying the original Admin caller.
+24. Service-role calls to 033 without a valid active Admin actor_user_id are rejected.
+25. One disposable Auth UID cannot be activated concurrently in two different operational realms; exactly one transaction succeeds.
+26. After removal/deactivation from one realm, that UID can be activated in another realm.
+27. Historical removed Partner membership does not block later Partner re-onboarding, while only one `removed_at IS NULL` Partner membership may exist.
+28. Anonymous function inventory contains only `get_public_voucher(uuid)` as the intended business RPC exposure.
+29. Staff browser uses `staff_operational_context()`, `verify_voucher()`, `redeem_voucher()`, `staff_today_summary()`, and `staff_recent_redemptions()`; it does not directly read sensitive Voucher/Redemption tables.
+30. Staff/manager context is bound to assigned active branch; all_branch_manager must explicitly choose an active branch.
+31. Staff Verify -> Redeem -> History works at allowed branch and fails at disallowed branch.
+32. Suspended/removed Staff cannot use Staff operational RPCs.
+33. Public Voucher lookup uses only `get_public_voucher(uuid)` with the random `public_token`; the browser never queries Voucher tables directly.
+34. Public Voucher response exposes no customer phone, Auth/user IDs, allocation IDs, or internal metadata.
+35. Random/missing public token fails closed and public lookup never mutates Voucher/Redemption state.
+36. Public branch list contains only active branches permitted for that Voucher.
+37. Partner catalog returns only Versions the current Partner can actually issue and hides exhausted/inactive/out-of-window entries.
+38. Partner issuance uses `issue_engine_voucher()` only; tenant is derived from Auth and the browser never supplies `partner_id`.
+39. Partner A cannot issue a Voucher Version allocated only to Partner B.
+40. Partner `voucher_limit=0` behaves as unlimited in Admin controls, Partner dashboard, and issuance.
+41. Positive Partner voucher limits cannot be exceeded even under concurrent issuance from different valid allocations/versions.
+42. Partner quota decisions use canonical Voucher row count, not `partners.vouchers_issued`.
+43. Concurrent double redemption does not create two completed uses for a single-use Voucher.
+44. Concurrent Voucher Engine issue attempts cannot exceed Allocation or Version supply.
+45. Concurrent Admin allocation increases for the same Partner+Version preserve every increment.
+46. Revoke-unissued racing with issuance cannot revoke already-issued capacity.
+47. Retire Version racing with issue cannot create a Voucher after the Version is inactive.
+48. Admin reversal restores usage while preserving the reversed redemption record.
+49. Admin and Partner Voucher summary buckets are mutually exclusive using revoked > expired > redeemed > active.
+50. Reporting totals reconcile to canonical `vouchers` + `redemptions`.
+51. Admin frontend contains no direct business-table read/mutation for control flows; it conforms to `docs/ADMIN_PORTAL_BACKEND_CONTRACT_V1.md` and uses 031 read models for directory data.
+52. Partner frontend does not directly read global Voucher Engine tables for its issuable catalog; it uses 032.
 
 ## Cutover order
-1. New Supabase target verified.
+1. New Supabase target verified using `docs/RUNTIME_DEPLOYMENT_PREFLIGHT_V1.md`.
 2. Apply migrations.
 3. Seed branches.
 4. Create first Admin Auth user + `admin_users` row.
 5. Deploy required Edge Functions with authenticated JWT enforcement.
-6. Run smoke/security/isolation/admin-contract/partner-catalog/atomic-engine/partner-issuance/identity-realm/staff-operational/public-voucher/partner-quota/reporting-status/integration tests.
+6. Run all SQL inventory/contract tests through `014_cutover_readiness_inventory.sql`.
 7. Create disposable test Partner / Staff identities.
 8. Run end-to-end flow: Allocate -> Partner Catalog -> Issue -> Public -> Staff Verify -> Staff Redeem -> Report -> Reverse -> Report.
-9. Only then update frontend environment configuration to the new Supabase URL/publishable key.
-10. Keep legacy project untouched for rollback/reference until new environment is stable.
+9. Run concurrency and cross-tenant runtime proofs.
+10. Only then update frontend environment configuration to the new Supabase URL/publishable key and set `enabled:true`.
+11. Keep legacy project untouched for rollback/reference until new environment is stable.
 
 ## Known transitional compatibility fields
 - `partners.vouchers_issued` remains for old frontend compatibility only. It is not authoritative.
