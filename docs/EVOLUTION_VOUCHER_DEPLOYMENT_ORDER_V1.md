@@ -40,6 +40,7 @@ Apply migrations strictly by numeric filename order. Current staged chain:
 28. `028_function_execute_hardening.sql`
 29. `029_staff_direct_read_boundary.sql`
 30. `030_declarative_partner_consistency.sql`
+31. `031_admin_control_directory.sql`
 
 ## Dependency checkpoints
 - 002 requires core identity/business tables from 001.
@@ -61,6 +62,7 @@ Apply migrations strictly by numeric filename order. Current staged chain:
 - 028 removes PostgreSQL's default PUBLIC function EXECUTE exposure, preserves explicit authenticated/service_role grants, and re-allows anon only for `get_public_voucher(uuid)`.
 - 029 removes Staff direct SELECT paths to Voucher/Redemption/branch-mapping detail. Staff operational reads are served through scoped RPCs from 004/005/020; Admin and owning Partner direct read scopes remain.
 - 030 adds declarative composite foreign keys so Voucher allocation ownership, Redemption ownership, and Allocation Event tenant/version identity cannot cross Partner boundaries even under trusted server/service-role writes.
+- 031 adds Admin-only read models `admin_partner_directory()` and `admin_active_branches()` so Admin control UI can render Partner/branch management without restoring browser direct-table reads.
 
 ## Deployment gates
 Do not bind frontend URLs/keys until all of the following are true:
@@ -71,21 +73,22 @@ Do not bind frontend URLs/keys until all of the following are true:
 5. `supabase/tests/002_security_boundary_audit.sql` passes.
 6. `supabase/tests/003_partner_isolation_constraints.sql` passes.
 7. `supabase/tests/004_admin_mutation_contract.sql` passes.
-8. Test Admin identity exists and resolves as `admin` only.
-9. Two independent test Partners exist and cross-Partner reads/writes are rejected.
-10. Direct SQL/service-role attempts to pair a Voucher or Redemption with the wrong Partner fail at the declarative FK boundary.
-11. Partner browser/user context cannot use the service-role bypass.
-12. Admin Edge Function using service-role server context can allocate to a selected Partner after verifying the Admin caller.
-13. Anonymous function inventory contains only `get_public_voucher(uuid)`.
-14. Staff direct SELECT on `vouchers`, `redemptions`, and `voucher_branches` returns no sensitive operational rows outside RPCs.
-15. Staff Verify -> Redeem -> History works at allowed branch and fails at disallowed branch.
-16. Public voucher page returns only customer-facing fields via public token.
-17. Concurrent double redemption does not create two completed uses for a single-use Voucher.
-18. Concurrent Voucher Engine issue attempts cannot exceed Allocation or Version supply.
-19. Retire Version racing with issue cannot create a Voucher after the Version is inactive.
-20. Admin reversal restores usage while preserving the reversed redemption record.
-21. Reporting totals reconcile to canonical `vouchers` + `redemptions`.
-22. Admin frontend contains no direct business-table mutation; it conforms to `docs/ADMIN_PORTAL_BACKEND_CONTRACT_V1.md`.
+8. `supabase/tests/005_admin_control_directory_contract.sql` passes.
+9. Test Admin identity exists and resolves as `admin` only.
+10. Two independent test Partners exist and cross-Partner reads/writes are rejected.
+11. Direct SQL/service-role attempts to pair a Voucher or Redemption with the wrong Partner fail at the declarative FK boundary.
+12. Partner browser/user context cannot use the service-role bypass.
+13. Admin Edge Function using service-role server context can allocate to a selected Partner after verifying the Admin caller.
+14. Anonymous function inventory contains only `get_public_voucher(uuid)`.
+15. Staff direct SELECT on `vouchers`, `redemptions`, and `voucher_branches` returns no sensitive operational rows outside RPCs.
+16. Staff Verify -> Redeem -> History works at allowed branch and fails at disallowed branch.
+17. Public voucher page returns only customer-facing fields via public token.
+18. Concurrent double redemption does not create two completed uses for a single-use Voucher.
+19. Concurrent Voucher Engine issue attempts cannot exceed Allocation or Version supply.
+20. Retire Version racing with issue cannot create a Voucher after the Version is inactive.
+21. Admin reversal restores usage while preserving the reversed redemption record.
+22. Reporting totals reconcile to canonical `vouchers` + `redemptions`.
+23. Admin frontend contains no direct business-table read/mutation for control flows; it conforms to `docs/ADMIN_PORTAL_BACKEND_CONTRACT_V1.md` and uses 031 read models for directory data.
 
 ## Cutover order
 1. New Supabase target verified.
@@ -105,7 +108,8 @@ Do not bind frontend URLs/keys until all of the following are true:
 - Legacy RM60 entrypoint remains temporarily but routes to the Voucher Engine.
 - Legacy `customer_ic` parameter is accepted only by compatibility RPC and is ignored/not stored.
 - Historical Staff frontend direct-table history reads must be replaced by `staff_recent_redemptions()` before new-backend cutover.
-- Historical Admin direct mutations of Partner status and voucher limit must be replaced by the trusted Admin RPC/Edge Function contract before new-backend cutover.
+- Historical Admin direct mutations of Partner status and voucher limit must stay replaced by the trusted Admin RPC/Edge Function contract.
+- Admin Partner/branch control-directory reads must use `admin_partner_directory()` / `admin_active_branches()`, not direct browser table reads.
 
 ## Non-negotiable invariants
 - Partner tenants are isolated.
@@ -119,6 +123,6 @@ Do not bind frontend URLs/keys until all of the following are true:
 - Voucher Engine issuance lock order is Version serialization first, Allocation row lock second.
 - Function EXECUTE is default-deny; RPC exposure is explicit.
 - Staff sensitive reads use scoped RPCs, not broad direct table SELECT.
-- Admin browser mutations use authenticated RPC/Edge Function boundaries, never direct table writes.
+- Admin browser control reads use scoped Admin RPC read models; Admin browser mutations use authenticated RPC/Edge Function boundaries.
 - `service_role` is trusted server context only and must never appear in browser code.
 - Browser code never contains service_role credentials.
