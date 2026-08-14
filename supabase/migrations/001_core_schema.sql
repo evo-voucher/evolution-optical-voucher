@@ -11,11 +11,13 @@ create table if not exists public.partners (
   contact_person text,
   contact_phone text,
   voucher_limit integer not null default 0 check (voucher_limit >= 0),
+  vouchers_issued integer not null default 0 check (vouchers_issued >= 0),
   staff_limit integer not null default 0 check (staff_limit >= 0),
   staff_access_enabled boolean not null default false,
   status text not null default 'active' check (status in ('active','suspended','archived')),
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  check (voucher_limit = 0 or vouchers_issued <= voucher_limit)
 );
 
 create table if not exists public.branches (
