@@ -53,6 +53,27 @@ jobs:
       - name: Run signed GoTrue HTTP core flow E2E
         run: bash supabase/tests/http/001_signed_gotrue_core_flow_e2e.sh
 
+      - name: Serve local Edge Functions
+        run: |
+          set -euo pipefail
+          supabase functions serve > /tmp/evolution-edge-functions.log 2>&1 &
+          echo $! > /tmp/evolution-edge-functions.pid
+          for i in $(seq 1 30); do
+            code="$(curl -s -o /tmp/edge-ready.json -w '%{http_code}' \
+              -X POST http://127.0.0.1:54321/functions/v1/create-partner \
+              -H 'Content-Type: application/json' -d '{}' || true)"
+            if [[ "$code" == "401" ]]; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/evolution-edge-functions.log >&2 || true
+          echo 'Local Edge Functions did not become ready' >&2
+          exit 1
+
+      - name: Run Edge Function trusted-boundary E2E
+        run: bash supabase/tests/http/002_edge_function_boundary_e2e.sh
+
       - name: Show local migration state
         env:
           PGHOST: 127.0.0.1
@@ -63,6 +84,14 @@ jobs:
         run: |
           psql -v ON_ERROR_STOP=1 -c "select version,name from supabase_migrations.schema_migrations order by version;"
 
+      - name: Show Edge Function logs on failure
+        if: failure()
+        run: cat /tmp/evolution-edge-functions.log || true
+
       - name: Stop local Supabase
         if: always()
-        run: supabase stop --no-backup
+        run: |
+          if [[ -f /tmp/evolution-edge-functions.pid ]]; then
+            kill "$(cat /tmp/evolution-edge-functions.pid)" 2>/dev/null || true
+          fi
+          supabase stop --no-backup
