@@ -39,6 +39,7 @@ Apply migrations strictly by numeric filename order. Current staged chain:
 27. `027_trusted_server_tenant_boundary.sql`
 28. `028_function_execute_hardening.sql`
 29. `029_staff_direct_read_boundary.sql`
+30. `030_declarative_partner_consistency.sql`
 
 ## Dependency checkpoints
 - 002 requires core identity/business tables from 001.
@@ -59,6 +60,7 @@ Apply migrations strictly by numeric filename order. Current staged chain:
 - 027 resolves the trusted-server interaction with 019: Partner/browser requests remain tenant-bound, while verified `service_role` server requests may perform cross-Partner Admin operations after caller authorization in the Edge Function. It does not weaken data-consistency guards.
 - 028 removes PostgreSQL's default PUBLIC function EXECUTE exposure, preserves explicit authenticated/service_role grants, and re-allows anon only for `get_public_voucher(uuid)`.
 - 029 removes Staff direct SELECT paths to Voucher/Redemption/branch-mapping detail. Staff operational reads are served through scoped RPCs from 004/005/020; Admin and owning Partner direct read scopes remain.
+- 030 adds declarative composite foreign keys so Voucher allocation ownership, Redemption ownership, and Allocation Event tenant/version identity cannot cross Partner boundaries even under trusted server/service-role writes.
 
 ## Deployment gates
 Do not bind frontend URLs/keys until all of the following are true:
@@ -67,19 +69,21 @@ Do not bind frontend URLs/keys until all of the following are true:
 3. Migrations complete without error in numeric order.
 4. `supabase/tests/001_contract_smoke_checks.sql` passes.
 5. `supabase/tests/002_security_boundary_audit.sql` passes.
-6. Test Admin identity exists and resolves as `admin` only.
-7. Two independent test Partners exist and cross-Partner reads/writes are rejected.
-8. Partner browser/user context cannot use the service-role bypass.
-9. Admin Edge Function using service-role server context can allocate to a selected Partner after verifying the Admin caller.
-10. Anonymous function inventory contains only `get_public_voucher(uuid)`.
-11. Staff direct SELECT on `vouchers`, `redemptions`, and `voucher_branches` returns no sensitive operational rows outside RPCs.
-12. Staff Verify -> Redeem -> History works at allowed branch and fails at disallowed branch.
-13. Public voucher page returns only customer-facing fields via public token.
-14. Concurrent double redemption does not create two completed uses for a single-use Voucher.
-15. Concurrent Voucher Engine issue attempts cannot exceed Allocation or Version supply.
-16. Retire Version racing with issue cannot create a Voucher after the Version is inactive.
-17. Admin reversal restores usage while preserving the reversed redemption record.
-18. Reporting totals reconcile to canonical `vouchers` + `redemptions`.
+6. `supabase/tests/003_partner_isolation_constraints.sql` passes.
+7. Test Admin identity exists and resolves as `admin` only.
+8. Two independent test Partners exist and cross-Partner reads/writes are rejected.
+9. Direct SQL/service-role attempts to pair a Voucher or Redemption with the wrong Partner fail at the declarative FK boundary.
+10. Partner browser/user context cannot use the service-role bypass.
+11. Admin Edge Function using service-role server context can allocate to a selected Partner after verifying the Admin caller.
+12. Anonymous function inventory contains only `get_public_voucher(uuid)`.
+13. Staff direct SELECT on `vouchers`, `redemptions`, and `voucher_branches` returns no sensitive operational rows outside RPCs.
+14. Staff Verify -> Redeem -> History works at allowed branch and fails at disallowed branch.
+15. Public voucher page returns only customer-facing fields via public token.
+16. Concurrent double redemption does not create two completed uses for a single-use Voucher.
+17. Concurrent Voucher Engine issue attempts cannot exceed Allocation or Version supply.
+18. Retire Version racing with issue cannot create a Voucher after the Version is inactive.
+19. Admin reversal restores usage while preserving the reversed redemption record.
+20. Reporting totals reconcile to canonical `vouchers` + `redemptions`.
 
 ## Cutover order
 1. New Supabase target verified.
@@ -87,7 +91,7 @@ Do not bind frontend URLs/keys until all of the following are true:
 3. Seed branches.
 4. Create first Admin Auth user + `admin_users` row.
 5. Deploy required Edge Functions with authenticated JWT enforcement.
-6. Run smoke/security/integration tests.
+6. Run smoke/security/isolation/integration tests.
 7. Create disposable test Partner / Staff identities.
 8. Run end-to-end flow: Allocate -> Issue -> Public -> Verify -> Redeem -> Report -> Reverse -> Report.
 9. Only then update frontend environment configuration to the new Supabase URL/publishable key.
@@ -99,9 +103,11 @@ Do not bind frontend URLs/keys until all of the following are true:
 - Legacy RM60 entrypoint remains temporarily but routes to the Voucher Engine.
 - Legacy `customer_ic` parameter is accepted only by compatibility RPC and is ignored/not stored.
 - Historical Staff frontend direct-table history reads must be replaced by `staff_recent_redemptions()` before new-backend cutover.
+- Historical Admin direct mutations of Partner status and voucher limit must be replaced by the trusted Admin RPC/Edge Function contract before new-backend cutover.
 
 ## Non-negotiable invariants
 - Partner tenants are isolated.
+- Partner ownership is enforced both by authorization logic and declarative database constraints.
 - Admin is the only cross-Partner operational realm.
 - One live Auth identity belongs to exactly one operational realm.
 - Published Voucher Versions are immutable.
