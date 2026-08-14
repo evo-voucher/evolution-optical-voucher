@@ -40,7 +40,11 @@ select to_regprocedure('public.is_voucher_admin()') as is_voucher_admin,
        to_regprocedure('public.admin_engine_revoke_unissued(uuid,integer,text,uuid)') as admin_engine_revoke_unissued,
        to_regprocedure('public.admin_engine_retire_version(uuid,text,uuid)') as admin_engine_retire_version,
        to_regprocedure('public.admin_provision_partner(text,text,text,text,integer,integer,uuid,text,uuid)') as admin_provision_partner,
-       to_regprocedure('public.admin_provision_staff(uuid,text,uuid,text,text,uuid)') as admin_provision_staff;
+       to_regprocedure('public.admin_provision_staff(uuid,text,uuid,text,text,uuid)') as admin_provision_staff,
+       to_regprocedure('public.partner_provision_staff(uuid,text,text,uuid)') as partner_provision_staff,
+       to_regprocedure('public.partner_update_staff_profile(uuid,text,text,uuid)') as partner_update_staff_profile,
+       to_regprocedure('public.partner_record_staff_password_reset(uuid,uuid)') as partner_record_staff_password_reset,
+       to_regprocedure('public.admin_record_partner_password_reset(uuid)') as admin_record_partner_password_reset;
 
 -- 3) RLS must be enabled on tenant/private tables.
 select c.relname,
@@ -114,4 +118,6 @@ order by table_name, privilege_type;
 --   Public token lookup reveals no customer phone, auth IDs, allocation IDs or metadata.
 --   Admin/Partner summary buckets use mutually exclusive revoked > expired > redeemed > active precedence.
 --   Server identity provisioning stays behind 038 service_role-only atomic RPCs after caller JWT authorization.
+--   Partner Staff lifecycle mutations derive tenant from Partner Admin actor through 039 service-only RPCs.
+--   Partner Admin Auth password reset records its database audit through 040 authenticated Admin RPC.
 --   Issue -> Public -> Verify -> Redeem -> Report -> Reverse preserves audit/history.
