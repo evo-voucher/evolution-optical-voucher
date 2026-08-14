@@ -27,13 +27,11 @@ serve(async (req) => {
     const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (!url || !anon || !service) return json({ success: false, error: "Server configuration error" }, 500);
 
-    // Authentication/authorization must be evaluated in the original caller JWT
-    // context. The service client is reserved for trusted server-side mutations.
     const callerClient = createClient(url, anon, {
       global: { headers: { Authorization: `Bearer ${jwt}` } },
       auth: { persistSession: false },
     });
-    const admin = createClient(url, service, { auth: { persistSession: false } });
+    const server = createClient(url, service, { auth: { persistSession: false } });
 
     const { data: userData, error: userError } = await callerClient.auth.getUser(jwt);
     const caller = userData?.user;
@@ -66,66 +64,36 @@ serve(async (req) => {
       return json({ success: false, error: "Invalid limits" }, 400);
     }
 
-    const { data: existingPartner } = await admin.from("partners").select("id").eq("partner_code", partner_code).maybeSingle();
-    if (existingPartner) return json({ success: false, error: "Partner code already exists" }, 409);
-
-    const { data: createdUserData, error: createUserError } = await admin.auth.admin.createUser({
+    const { data: createdUserData, error: createUserError } = await server.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
     });
     const newUser = createdUserData?.user;
-    if (createUserError || !newUser) return json({ success: false, error: "Failed to create Partner login", details: createUserError?.message }, 400);
-
-    const { data: partner, error: partnerError } = await admin
-      .from("partners")
-      .insert({
-        partner_code,
-        partner_name,
-        contact_person,
-        contact_phone,
-        voucher_limit,
-        vouchers_issued: 0,
-        staff_limit,
-        staff_access_enabled: false,
-        status: "active",
-      })
-      .select()
-      .single();
-
-    if (partnerError || !partner) {
-      try { await admin.auth.admin.deleteUser(newUser.id); } catch (_) {}
-      return json({ success: false, error: "Failed to create Partner", details: partnerError?.message }, 500);
+    if (createUserError || !newUser) {
+      return json({ success: false, error: "Failed to create Partner login", details: createUserError?.message }, 400);
     }
 
-    const { error: linkError } = await admin.from("partner_users").insert({
-      user_id: newUser.id,
-      partner_id: partner.id,
-      role: "partner_admin",
-      status: "active",
-      staff_name: contact_person || partner_name,
-      login_email: email,
+    const { data: provisioned, error: provisionError } = await server.rpc("admin_provision_partner", {
+      p_partner_code: partner_code,
+      p_partner_name: partner_name,
+      p_contact_person: contact_person,
+      p_contact_phone: contact_phone,
+      p_voucher_limit: voucher_limit,
+      p_staff_limit: staff_limit,
+      p_new_user_id: newUser.id,
+      p_login_email: email,
+      p_actor_user_id: caller.id,
     });
 
-    if (linkError) {
-      try { await admin.from("partners").delete().eq("id", partner.id); } catch (_) {}
-      try { await admin.auth.admin.deleteUser(newUser.id); } catch (_) {}
-      return json({ success: false, error: "Failed to link Partner Admin", details: linkError.message }, 500);
+    if (provisionError || !provisioned?.success) {
+      try { await server.auth.admin.deleteUser(newUser.id); } catch (_) {}
+      const message = provisionError?.message || provisioned?.error || "Partner provisioning failed";
+      const status = /duplicate|unique|already exists/i.test(message) ? 409 : 500;
+      return json({ success: false, error: "Failed to provision Partner", details: message }, status);
     }
 
-    await admin.from("partner_claim_settings").insert({ partner_id: partner.id, all_branches: false, updated_by: caller.id });
-    await admin.from("admin_audit_log").insert({
-      actor_user_id: caller.id,
-      actor_name: adminRow.display_name || "Admin",
-      action_type: "partner_created",
-      entity_type: "partner",
-      entity_id: partner.id,
-      partner_id: partner.id,
-      after_data: { partner_code, partner_name, voucher_limit, staff_limit, status: "active" },
-      metadata: { login_email: email, secret_material_logged: false },
-    });
-
-    return json({ success: true, partner, user_id: newUser.id }, 201);
+    return json({ success: true, partner: provisioned.partner, user_id: newUser.id }, 201);
   } catch (e) {
     return json({ success: false, error: "Unexpected error", details: e instanceof Error ? e.message : String(e) }, 500);
   }
