@@ -23,7 +23,10 @@ select to_regprocedure('public.is_voucher_admin()') as is_voucher_admin,
        to_regprocedure('public.admin_dashboard_summary()') as admin_dashboard_summary,
        to_regprocedure('public.admin_partner_directory()') as admin_partner_directory,
        to_regprocedure('public.admin_active_branches()') as admin_active_branches,
-       to_regprocedure('public.partner_issuable_voucher_catalog()') as partner_issuable_voucher_catalog;
+       to_regprocedure('public.partner_issuable_voucher_catalog()') as partner_issuable_voucher_catalog,
+       to_regprocedure('public.admin_engine_allocate(uuid,uuid,integer,uuid)') as admin_engine_allocate,
+       to_regprocedure('public.admin_engine_revoke_unissued(uuid,integer,text,uuid)') as admin_engine_revoke_unissued,
+       to_regprocedure('public.admin_engine_retire_version(uuid,text,uuid)') as admin_engine_retire_version;
 
 -- 3) RLS must be enabled on tenant-owned tables.
 select c.relname,
@@ -84,5 +87,7 @@ order by table_name, privilege_type;
 --   Partner catalog shows only active, authorized, allocated Versions with remaining capacity.
 --   Staff sees only permitted branch/self history.
 --   Admin control directory is available only through Admin RPCs, not browser table reads.
+--   Concurrent Admin allocation increments are preserved by 033.
+--   Revoke/retire races cannot invalidate already-issued capacity or issue after retirement.
 --   Public token lookup reveals no customer phone, auth IDs, allocation IDs or metadata.
 --   Issue -> Public -> Verify -> Redeem -> Report -> Reverse preserves audit/history.
