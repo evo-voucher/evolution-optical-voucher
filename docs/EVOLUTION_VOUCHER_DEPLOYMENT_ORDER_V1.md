@@ -70,20 +70,22 @@ Do not bind frontend URLs/keys until all of the following are true:
 4. `supabase/tests/001_contract_smoke_checks.sql` passes.
 5. `supabase/tests/002_security_boundary_audit.sql` passes.
 6. `supabase/tests/003_partner_isolation_constraints.sql` passes.
-7. Test Admin identity exists and resolves as `admin` only.
-8. Two independent test Partners exist and cross-Partner reads/writes are rejected.
-9. Direct SQL/service-role attempts to pair a Voucher or Redemption with the wrong Partner fail at the declarative FK boundary.
-10. Partner browser/user context cannot use the service-role bypass.
-11. Admin Edge Function using service-role server context can allocate to a selected Partner after verifying the Admin caller.
-12. Anonymous function inventory contains only `get_public_voucher(uuid)`.
-13. Staff direct SELECT on `vouchers`, `redemptions`, and `voucher_branches` returns no sensitive operational rows outside RPCs.
-14. Staff Verify -> Redeem -> History works at allowed branch and fails at disallowed branch.
-15. Public voucher page returns only customer-facing fields via public token.
-16. Concurrent double redemption does not create two completed uses for a single-use Voucher.
-17. Concurrent Voucher Engine issue attempts cannot exceed Allocation or Version supply.
-18. Retire Version racing with issue cannot create a Voucher after the Version is inactive.
-19. Admin reversal restores usage while preserving the reversed redemption record.
-20. Reporting totals reconcile to canonical `vouchers` + `redemptions`.
+7. `supabase/tests/004_admin_mutation_contract.sql` passes.
+8. Test Admin identity exists and resolves as `admin` only.
+9. Two independent test Partners exist and cross-Partner reads/writes are rejected.
+10. Direct SQL/service-role attempts to pair a Voucher or Redemption with the wrong Partner fail at the declarative FK boundary.
+11. Partner browser/user context cannot use the service-role bypass.
+12. Admin Edge Function using service-role server context can allocate to a selected Partner after verifying the Admin caller.
+13. Anonymous function inventory contains only `get_public_voucher(uuid)`.
+14. Staff direct SELECT on `vouchers`, `redemptions`, and `voucher_branches` returns no sensitive operational rows outside RPCs.
+15. Staff Verify -> Redeem -> History works at allowed branch and fails at disallowed branch.
+16. Public voucher page returns only customer-facing fields via public token.
+17. Concurrent double redemption does not create two completed uses for a single-use Voucher.
+18. Concurrent Voucher Engine issue attempts cannot exceed Allocation or Version supply.
+19. Retire Version racing with issue cannot create a Voucher after the Version is inactive.
+20. Admin reversal restores usage while preserving the reversed redemption record.
+21. Reporting totals reconcile to canonical `vouchers` + `redemptions`.
+22. Admin frontend contains no direct business-table mutation; it conforms to `docs/ADMIN_PORTAL_BACKEND_CONTRACT_V1.md`.
 
 ## Cutover order
 1. New Supabase target verified.
@@ -91,7 +93,7 @@ Do not bind frontend URLs/keys until all of the following are true:
 3. Seed branches.
 4. Create first Admin Auth user + `admin_users` row.
 5. Deploy required Edge Functions with authenticated JWT enforcement.
-6. Run smoke/security/isolation/integration tests.
+6. Run smoke/security/isolation/admin-contract/integration tests.
 7. Create disposable test Partner / Staff identities.
 8. Run end-to-end flow: Allocate -> Issue -> Public -> Verify -> Redeem -> Report -> Reverse -> Report.
 9. Only then update frontend environment configuration to the new Supabase URL/publishable key.
@@ -117,5 +119,6 @@ Do not bind frontend URLs/keys until all of the following are true:
 - Voucher Engine issuance lock order is Version serialization first, Allocation row lock second.
 - Function EXECUTE is default-deny; RPC exposure is explicit.
 - Staff sensitive reads use scoped RPCs, not broad direct table SELECT.
+- Admin browser mutations use authenticated RPC/Edge Function boundaries, never direct table writes.
 - `service_role` is trusted server context only and must never appear in browser code.
 - Browser code never contains service_role credentials.
