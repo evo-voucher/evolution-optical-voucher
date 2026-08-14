@@ -6,7 +6,7 @@ select to_regprocedure('public.admin_dashboard_summary()') as admin_dashboard_su
 
 -- Both summary functions must document/use mutually exclusive canonical precedence.
 select p.proname,
-       position("v.status<>'revoked'" in pg_get_functiondef(p.oid))>0 as excludes_revoked_from_other_buckets,
+       position('v.status<>''revoked''' in replace(pg_get_functiondef(p.oid),' ',''))>0 as excludes_revoked_from_other_buckets,
        position('usage_count>=v.usage_limit' in replace(pg_get_functiondef(p.oid),' ',''))>0 as redeemed_uses_usage_count,
        p.prosecdef as security_definer,
        coalesce(array_to_string(p.proconfig,','),'') as proconfig
