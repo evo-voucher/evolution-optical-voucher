@@ -37,6 +37,7 @@ Apply migrations strictly by numeric filename order. Current staged chain:
 25. `025_authoritative_partner_quota.sql`
 26. `026_engine_lock_order_hardening.sql`
 27. `027_trusted_server_tenant_boundary.sql`
+28. `028_function_execute_hardening.sql`
 
 ## Dependency checkpoints
 - 002 requires core identity/business tables from 001.
@@ -55,6 +56,7 @@ Apply migrations strictly by numeric filename order. Current staged chain:
 - 025 overrides Admin Partner voucher-limit logic so authoritative issued count is derived from `vouchers`.
 - 026 deliberately overrides the 024 capacity guard to use Version advisory locking before Allocation row locking and re-check Version active status at the insert boundary.
 - 027 resolves the trusted-server interaction with 019: Partner/browser requests remain tenant-bound, while verified `service_role` server requests may perform cross-Partner Admin operations after caller authorization in the Edge Function. It does not weaken data-consistency guards.
+- 028 removes PostgreSQL's default PUBLIC function EXECUTE exposure, preserves explicit authenticated/service_role grants, and re-allows anon only for `get_public_voucher(uuid)`.
 
 ## Deployment gates
 Do not bind frontend URLs/keys until all of the following are true:
@@ -67,13 +69,14 @@ Do not bind frontend URLs/keys until all of the following are true:
 7. Two independent test Partners exist and cross-Partner reads/writes are rejected.
 8. Partner browser/user context cannot use the service-role bypass.
 9. Admin Edge Function using service-role server context can allocate to a selected Partner after verifying the Admin caller.
-10. Staff Verify -> Redeem -> History works at allowed branch and fails at disallowed branch.
-11. Public voucher page returns only customer-facing fields via public token.
-12. Concurrent double redemption does not create two completed uses for a single-use Voucher.
-13. Concurrent Voucher Engine issue attempts cannot exceed Allocation or Version supply.
-14. Retire Version racing with issue cannot create a Voucher after the Version is inactive.
-15. Admin reversal restores usage while preserving the reversed redemption record.
-16. Reporting totals reconcile to canonical `vouchers` + `redemptions`.
+10. Anonymous function inventory contains only `get_public_voucher(uuid)`.
+11. Staff Verify -> Redeem -> History works at allowed branch and fails at disallowed branch.
+12. Public voucher page returns only customer-facing fields via public token.
+13. Concurrent double redemption does not create two completed uses for a single-use Voucher.
+14. Concurrent Voucher Engine issue attempts cannot exceed Allocation or Version supply.
+15. Retire Version racing with issue cannot create a Voucher after the Version is inactive.
+16. Admin reversal restores usage while preserving the reversed redemption record.
+17. Reporting totals reconcile to canonical `vouchers` + `redemptions`.
 
 ## Cutover order
 1. New Supabase target verified.
@@ -102,5 +105,6 @@ Do not bind frontend URLs/keys until all of the following are true:
 - Redeem is atomic and server-controlled.
 - Reversal preserves history.
 - Voucher Engine issuance lock order is Version serialization first, Allocation row lock second.
+- Function EXECUTE is default-deny; RPC exposure is explicit.
 - `service_role` is trusted server context only and must never appear in browser code.
 - Browser code never contains service_role credentials.
