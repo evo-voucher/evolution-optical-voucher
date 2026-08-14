@@ -1,7 +1,7 @@
 -- Admin mutation contract audit v1
 -- Non-destructive checks for the reconstructed Voucher backend.
 
--- A. Canonical Admin RPCs must exist exactly once by signature.
+-- A. Canonical Admin mutation RPCs must exist exactly once by signature.
 with required(name,args) as (
   values
     ('admin_set_partner_status','p_partner_id uuid, p_status text'),
@@ -22,6 +22,7 @@ having count(p.oid)<>1
 order by r.name;
 
 -- Expected: zero rows.
+
 -- B. authenticated browser role must not have direct business-table mutations.
 select table_name,privilege_type
 from information_schema.role_table_grants
@@ -36,7 +37,8 @@ where grantee='authenticated'
   )
 order by table_name,privilege_type;
 
--- Expected: five rows, authenticated=true, anon=false.
+-- Expected: zero rows.
+
 -- C. RPC execute exposure must be authenticated-only.
 with required(name) as (
   values
@@ -56,6 +58,8 @@ join pg_namespace n on n.oid=p.pronamespace
 join required r on r.name=p.proname
 where n.nspname='public'
 order by p.proname;
+
+-- Expected: five rows, authenticated_execute=true and anon_execute=false.
 
 -- D. Voucher-limit RPC must be the authoritative post-025 implementation.
 -- Informational source check. Expected function body to reference public.vouchers.
