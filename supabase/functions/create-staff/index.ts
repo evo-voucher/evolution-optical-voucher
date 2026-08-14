@@ -23,22 +23,28 @@ serve(async (req) => {
     if (!jwt) return json({ success: false, error: "Unauthorized" }, 401);
 
     const url = Deno.env.get("SUPABASE_URL");
+    const anon = Deno.env.get("SUPABASE_ANON_KEY");
     const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!url || !service) return json({ success: false, error: "Server configuration error" }, 500);
+    if (!url || !anon || !service) return json({ success: false, error: "Server configuration error" }, 500);
 
-    const admin = createClient(url, service, { auth: { persistSession: false } });
-    const { data: userData, error: userError } = await admin.auth.getUser(jwt);
+    const callerClient = createClient(url, anon, {
+      global: { headers: { Authorization: `Bearer ${jwt}` } },
+      auth: { persistSession: false },
+    });
+    const server = createClient(url, service, { auth: { persistSession: false } });
+
+    const { data: userData, error: userError } = await callerClient.auth.getUser(jwt);
     const caller = userData?.user;
     if (userError || !caller) return json({ success: false, error: "Unauthorized" }, 401);
 
-    const { data: adminRow } = await admin
+    const { data: adminRow } = await callerClient
       .from("admin_users")
       .select("user_id,display_name,status")
       .eq("user_id", caller.id)
       .eq("status", "active")
       .maybeSingle();
 
-    const { data: manager } = await admin
+    const { data: manager } = await callerClient
       .from("staff_users")
       .select("id,user_id,branch_id,staff_name,role,status")
       .eq("user_id", caller.id)
@@ -69,7 +75,12 @@ serve(async (req) => {
         return json({ success: false, error: "Allowed roles: staff, manager" }, 400);
       }
       if (!requestedBranchId) return json({ success: false, error: "Please select a branch" }, 400);
-      const { data: branch } = await admin.from("branches").select("id,status").eq("id", requestedBranchId).eq("status", "active").maybeSingle();
+      const { data: branch } = await callerClient
+        .from("branches")
+        .select("id,status")
+        .eq("id", requestedBranchId)
+        .eq("status", "active")
+        .maybeSingle();
       if (!branch) return json({ success: false, error: "Invalid or inactive branch" }, 400);
       finalRole = requestedRole;
       finalBranchId = branch.id;
@@ -80,7 +91,7 @@ serve(async (req) => {
       finalBranchId = manager.branch_id;
     }
 
-    const { data: newUserData, error: createUserError } = await admin.auth.admin.createUser({
+    const { data: newUserData, error: createUserError } = await server.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
@@ -88,28 +99,25 @@ serve(async (req) => {
     const newUser = newUserData?.user;
     if (createUserError || !newUser) return json({ success: false, error: "Failed to create Staff login", details: createUserError?.message }, 400);
 
-    const { data: staffRow, error: staffError } = await admin
-      .from("staff_users")
-      .insert({ user_id: newUser.id, branch_id: finalBranchId, staff_name, role: finalRole, status: "active" })
-      .select("id,user_id,branch_id,staff_name,role,status")
-      .single();
-
-    if (staffError || !staffRow) {
-      try { await admin.auth.admin.deleteUser(newUser.id); } catch (_) {}
-      return json({ success: false, error: "Failed to create Staff profile", details: staffError?.message }, 500);
-    }
-
-    await admin.from("admin_audit_log").insert({
-      actor_user_id: caller.id,
-      actor_name: adminRow?.display_name || manager?.staff_name || "Manager",
-      action_type: "staff_account_created",
-      entity_type: "staff_users",
-      entity_id: staffRow.id,
-      after_data: { staff_name, branch_id: finalBranchId, role: finalRole, status: "active" },
-      metadata: { login_email: email, secret_material_logged: false },
+    const { data: provisioned, error: provisionError } = await server.rpc("admin_provision_staff", {
+      p_new_user_id: newUser.id,
+      p_staff_name: staff_name,
+      p_branch_id: finalBranchId,
+      p_role: finalRole,
+      p_login_email: email,
+      p_actor_user_id: caller.id,
     });
 
-    return json({ success: true, staff: staffRow }, 201);
+    if (provisionError || !provisioned?.success) {
+      try { await server.auth.admin.deleteUser(newUser.id); } catch (_) {}
+      return json({
+        success: false,
+        error: "Failed to provision Staff profile",
+        details: provisionError?.message || provisioned?.error || "Unknown provisioning error",
+      }, 500);
+    }
+
+    return json({ success: true, staff: provisioned.staff }, 201);
   } catch (e) {
     return json({ success: false, error: "Unexpected error", details: e instanceof Error ? e.message : String(e) }, 500);
   }
