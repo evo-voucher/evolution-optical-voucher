@@ -93,6 +93,7 @@ begin
 end;
 $$;
 revoke all on function public.claim_operational_identity_realm(uuid,text) from public, anon, authenticated;
+grant execute on function public.claim_operational_identity_realm(uuid,text) to service_role;
 
 create or replace function public.release_operational_identity_realm(
   p_user_id uuid,
@@ -107,6 +108,7 @@ as $$
   where r.user_id=p_user_id and r.realm=p_realm;
 $$;
 revoke all on function public.release_operational_identity_realm(uuid,text) from public, anon, authenticated;
+grant execute on function public.release_operational_identity_realm(uuid,text) to service_role;
 
 create or replace function public.guard_admin_identity_realm()
 returns trigger
