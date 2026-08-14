@@ -87,33 +87,37 @@ Do not bind frontend URLs/keys until all of the following are true:
 11. `supabase/tests/008_partner_issuance_contract.sql` passes.
 12. `supabase/tests/009_identity_realm_registry_contract.sql` passes.
 13. `supabase/tests/010_staff_operational_contract.sql` passes.
-14. Test Admin identity exists and resolves as `admin` only.
-15. Two independent test Partners exist and cross-Partner reads/writes are rejected.
-16. Direct SQL/service-role attempts to pair a Voucher or Redemption with the wrong Partner fail at the declarative FK boundary.
-17. Partner browser/user context cannot use the service-role bypass.
-18. Admin Edge Function using service-role server context can call 033 mutations only after verifying the original Admin caller.
-19. Service-role calls to 033 without a valid active Admin actor_user_id are rejected.
-20. One disposable Auth UID cannot be activated concurrently in two different operational realms; exactly one transaction succeeds.
-21. After removal/deactivation from one realm, that UID can be activated in another realm.
-22. Historical removed Partner membership does not block later Partner re-onboarding, while only one `removed_at IS NULL` Partner membership may exist.
-23. Anonymous function inventory contains only `get_public_voucher(uuid)`.
-24. Staff browser uses `staff_operational_context()`, `verify_voucher()`, `redeem_voucher()`, `staff_today_summary()`, and `staff_recent_redemptions()`; it does not directly read sensitive Voucher/Redemption tables.
-25. Staff/manager context is bound to assigned active branch; all_branch_manager must explicitly choose an active branch.
-26. Staff Verify -> Redeem -> History works at allowed branch and fails at disallowed branch.
-27. Suspended/removed Staff cannot use Staff operational RPCs.
-28. Public voucher page returns only customer-facing fields via public token.
-29. Partner catalog returns only Versions the current Partner can actually issue and hides exhausted/inactive/out-of-window entries.
-30. Partner issuance uses `issue_engine_voucher()` only; tenant is derived from Auth and the browser never supplies `partner_id`.
-31. Partner A cannot issue a Voucher Version allocated only to Partner B.
-32. Concurrent double redemption does not create two completed uses for a single-use Voucher.
-33. Concurrent Voucher Engine issue attempts cannot exceed Allocation or Version supply.
-34. Concurrent Admin allocation increases for the same Partner+Version preserve every increment.
-35. Revoke-unissued racing with issuance cannot revoke already-issued capacity.
-36. Retire Version racing with issue cannot create a Voucher after the Version is inactive.
-37. Admin reversal restores usage while preserving the reversed redemption record.
-38. Reporting totals reconcile to canonical `vouchers` + `redemptions`.
-39. Admin frontend contains no direct business-table read/mutation for control flows; it conforms to `docs/ADMIN_PORTAL_BACKEND_CONTRACT_V1.md` and uses 031 read models for directory data.
-40. Partner frontend does not directly read global Voucher Engine tables for its issuable catalog; it uses 032.
+14. `supabase/tests/011_public_voucher_contract.sql` passes.
+15. Test Admin identity exists and resolves as `admin` only.
+16. Two independent test Partners exist and cross-Partner reads/writes are rejected.
+17. Direct SQL/service-role attempts to pair a Voucher or Redemption with the wrong Partner fail at the declarative FK boundary.
+18. Partner browser/user context cannot use the service-role bypass.
+19. Admin Edge Function using service-role server context can call 033 mutations only after verifying the original Admin caller.
+20. Service-role calls to 033 without a valid active Admin actor_user_id are rejected.
+21. One disposable Auth UID cannot be activated concurrently in two different operational realms; exactly one transaction succeeds.
+22. After removal/deactivation from one realm, that UID can be activated in another realm.
+23. Historical removed Partner membership does not block later Partner re-onboarding, while only one `removed_at IS NULL` Partner membership may exist.
+24. Anonymous function inventory contains only `get_public_voucher(uuid)`.
+25. Staff browser uses `staff_operational_context()`, `verify_voucher()`, `redeem_voucher()`, `staff_today_summary()`, and `staff_recent_redemptions()`; it does not directly read sensitive Voucher/Redemption tables.
+26. Staff/manager context is bound to assigned active branch; all_branch_manager must explicitly choose an active branch.
+27. Staff Verify -> Redeem -> History works at allowed branch and fails at disallowed branch.
+28. Suspended/removed Staff cannot use Staff operational RPCs.
+29. Public Voucher lookup uses only `get_public_voucher(uuid)` with the random `public_token`; the browser never queries Voucher tables directly.
+30. Public Voucher response exposes no customer phone, Auth/user IDs, allocation IDs, or internal metadata.
+31. Random/missing public token fails closed and public lookup never mutates Voucher/Redemption state.
+32. Public branch list contains only active branches permitted for that Voucher.
+33. Partner catalog returns only Versions the current Partner can actually issue and hides exhausted/inactive/out-of-window entries.
+34. Partner issuance uses `issue_engine_voucher()` only; tenant is derived from Auth and the browser never supplies `partner_id`.
+35. Partner A cannot issue a Voucher Version allocated only to Partner B.
+36. Concurrent double redemption does not create two completed uses for a single-use Voucher.
+37. Concurrent Voucher Engine issue attempts cannot exceed Allocation or Version supply.
+38. Concurrent Admin allocation increases for the same Partner+Version preserve every increment.
+39. Revoke-unissued racing with issuance cannot revoke already-issued capacity.
+40. Retire Version racing with issue cannot create a Voucher after the Version is inactive.
+41. Admin reversal restores usage while preserving the reversed redemption record.
+42. Reporting totals reconcile to canonical `vouchers` + `redemptions`.
+43. Admin frontend contains no direct business-table read/mutation for control flows; it conforms to `docs/ADMIN_PORTAL_BACKEND_CONTRACT_V1.md` and uses 031 read models for directory data.
+44. Partner frontend does not directly read global Voucher Engine tables for its issuable catalog; it uses 032.
 
 ## Cutover order
 1. New Supabase target verified.
@@ -121,7 +125,7 @@ Do not bind frontend URLs/keys until all of the following are true:
 3. Seed branches.
 4. Create first Admin Auth user + `admin_users` row.
 5. Deploy required Edge Functions with authenticated JWT enforcement.
-6. Run smoke/security/isolation/admin-contract/partner-catalog/atomic-engine/partner-issuance/identity-realm/staff-operational/integration tests.
+6. Run smoke/security/isolation/admin-contract/partner-catalog/atomic-engine/partner-issuance/identity-realm/staff-operational/public-voucher/integration tests.
 7. Create disposable test Partner / Staff identities.
 8. Run end-to-end flow: Allocate -> Partner Catalog -> Issue -> Public -> Staff Verify -> Staff Redeem -> Report -> Reverse -> Report.
 9. Only then update frontend environment configuration to the new Supabase URL/publishable key.
@@ -139,6 +143,7 @@ Do not bind frontend URLs/keys until all of the following are true:
 - Partner Voucher issuance must call `issue_engine_voucher(version_id, customer_name, customer_phone)`; Partner identity is never accepted from the browser.
 - Voucher Engine Edge Function may read server-side Admin orchestration data, but allocation/revocation/retirement mutations must go through 033 atomic RPCs.
 - `partner_users` historical removed memberships are allowed after 034; the canonical live-membership uniqueness rule is the partial `uq_partner_users_live_user` index.
+- Customer share links use `voucher.html?v=<public_token>`; `public_token` is separate from the QR `voucher_code`.
 
 ## Non-negotiable invariants
 - Partner tenants are isolated.
@@ -147,6 +152,7 @@ Do not bind frontend URLs/keys until all of the following are true:
 - One live Auth identity belongs to exactly one operational realm, enforced by the 034 registry primary key plus realm-maintenance triggers.
 - Published Voucher Versions are immutable.
 - QR payload is `voucher_code`; public share token is separate.
+- Public customer lookup is read-only, token-scoped, minimum-field, and served only through `get_public_voucher(uuid)`.
 - Redeem is atomic and server-controlled.
 - Reversal preserves history.
 - Voucher Engine issuance lock order is Version serialization first, Allocation row lock second.
