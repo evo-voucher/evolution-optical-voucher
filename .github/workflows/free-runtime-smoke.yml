@@ -1,0 +1,65 @@
+name: Free Supabase Runtime Smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/**'
+      - '.github/workflows/free-runtime-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  runtime-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Start local Supabase
+        run: supabase start
+
+      - name: Rebuild local database from migrations
+        run: supabase db reset
+
+      - name: Run non-destructive SQL contracts
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: 54322
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: postgres
+        run: |
+          set -euo pipefail
+          for file in $(find supabase/tests -maxdepth 1 -type f -name '*.sql' | sort); do
+            echo "=== Running ${file} ==="
+            psql -v ON_ERROR_STOP=1 -f "$file"
+          done
+
+      - name: Show local migration state
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: 54322
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: postgres
+        run: |
+          psql -v ON_ERROR_STOP=1 -c "select version,name from supabase_migrations.schema_migrations order by version;"
+
+      - name: Stop local Supabase
+        if: always()
+        run: supabase stop --no-backup
