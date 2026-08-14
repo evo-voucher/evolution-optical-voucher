@@ -162,11 +162,9 @@ create index if not exists idx_redemptions_branch_time
 create index if not exists idx_redemptions_staff_time
   on public.redemptions(staff_user_id, redeemed_at desc);
 
--- Enforce only one completed redemption for a single-use voucher.
--- Multi-use vouchers will be enforced by the redeem RPC using row locking and usage_count.
-create unique index if not exists uq_redemptions_single_completed
-  on public.redemptions(voucher_id)
-  where status = 'completed';
+-- No blanket unique(voucher_id) constraint here because the core supports future multi-use vouchers.
+-- Single-use and multi-use concurrency are both enforced inside the redeem RPC by locking
+-- the voucher row and validating usage_count < usage_limit before inserting redemption.
 
 -- RLS is enabled immediately. Policies are defined in the next migration.
 alter table public.partners enable row level security;
