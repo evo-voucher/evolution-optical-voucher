@@ -53,13 +53,13 @@
     if(!session?.user) return false;
     const {data,error} = await db.rpc('current_operational_realm');
     if(error) throw error;
-    if(data !== 'admin'){
+    if(!data || data.authenticated !== true || data.realm !== 'admin'){
       await db.auth.signOut();
       throw new Error('This account is not an active Evolution Voucher Admin.');
     }
     $('loginState').classList.add('hidden');
     $('adminState').classList.remove('hidden');
-    $('sessionMeta').textContent = `Signed in as ${session.user.email || session.user.id} • realm: admin`;
+    $('sessionMeta').textContent = `Signed in as ${session.user.email || session.user.id} • realm: ${data.realm}`;
     return true;
   }
 
