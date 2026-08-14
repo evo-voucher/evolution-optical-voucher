@@ -36,7 +36,7 @@ function prepareWebRoot(){
   fs.mkdirSync(path.join(root,'assets','js'),{recursive:true});
   for(const name of ['admin.html','partner.html','staff.html','voucher.html']){
     let html=fs.readFileSync(name,'utf8');
-    html=html.replace(/const configured=cfg\.enabled===true&&[\s\S]*?;if\(!configured\)return;/,'const configured=cfg.enabled===true;if(!configured)return;');
+    html=html.replace(/const configured=cfg\.enabled===true&&[\s\S]*?;\s*if\(!configured\)return;/,'const configured=cfg.enabled===true;if(!configured)return;');
     if(!html.includes('const configured=cfg.enabled===true;if(!configured)return;')) throw new Error(`Unable to patch local test config guard in ${name}`);
     fs.writeFileSync(path.join(root,name),html);
   }
