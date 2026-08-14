@@ -105,7 +105,7 @@ STAFF_TOKEN="$(jq -r '.access_token' <<<"$STAFF_LOGIN")"
 [[ -n "$STAFF_TOKEN" && "$STAFF_TOKEN" != null ]] || { echo 'Created Staff cannot log in' >&2; exit 1; }
 STAFF_CONTEXT="$(rpc "$STAFF_TOKEN" staff_operational_context '{}')"
 [[ "$(jq -r '.success' <<<"$STAFF_CONTEXT")" == "true" ]] || { echo "Staff context failed: $STAFF_CONTEXT" >&2; exit 1; }
-[[ "$(jq -r '.branch.branch_code' <<<"$STAFF_CONTEXT")" == "MINES" ]] || { echo "Created Staff not bound to MINES: $STAFF_CONTEXT" >&2; exit 1; }
+[[ "$(jq -r '.branches[0].branch_code' <<<"$STAFF_CONTEXT")" == "MINES" ]] || { echo "Created Staff not bound to MINES: $STAFF_CONTEXT" >&2; exit 1; }
 
 # Seed one active Version directly as trusted test fixture; allocation itself MUST go through Edge -> atomic RPC.
 psql "$DB_URL" -v ON_ERROR_STOP=1 <<'SQL'
