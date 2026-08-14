@@ -1,5 +1,7 @@
 -- Voucher verification for Evolution Optical staff.
 -- Read-only verification. No voucher state is mutated here.
+-- Canonical database status remains active/redeemed/expired/revoked.
+-- The response maps active -> valid for compatibility with the validated Staff UI.
 
 drop function if exists public.verify_voucher(text,text);
 create function public.verify_voucher(
@@ -19,6 +21,7 @@ declare
   v_branch_name text;
   v_allowed boolean := false;
   v_expired boolean := false;
+  v_display_status text;
 begin
   if v_uid is null then
     return jsonb_build_object('success',false,'error','Authentication required');
@@ -84,6 +87,12 @@ begin
     ) into v_allowed;
   end if;
 
+  v_display_status := case
+    when v_voucher.status='active' and v_expired then 'expired'
+    when v_voucher.status='active' then 'valid'
+    else v_voucher.status
+  end;
+
   return jsonb_build_object(
     'success',true,
     'voucher_id',v_voucher.id,
@@ -92,7 +101,8 @@ begin
     'customer_phone',v_voucher.customer_phone,
     'voucher_type',v_voucher.voucher_type,
     'expiry_date',v_voucher.expiry_date,
-    'status',v_voucher.status,
+    'status',v_display_status,
+    'canonical_status',v_voucher.status,
     'usage_limit',v_voucher.usage_limit,
     'usage_count',v_voucher.usage_count,
     'remaining_uses',greatest(0,v_voucher.usage_limit-v_voucher.usage_count),
