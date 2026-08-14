@@ -49,7 +49,6 @@ serve(async (req) => {
       if (!partnerId || !versionId || !Number.isInteger(quantity) || quantity <= 0) {
         return json({ success: false, error: "Valid partner_id, version_id and positive quantity are required" }, 400);
       }
-
       const { data, error } = await admin.rpc("admin_engine_allocate", {
         p_partner_id: partnerId,
         p_version_id: versionId,
@@ -66,27 +65,13 @@ serve(async (req) => {
       if (!versionId || !Number.isInteger(quantity) || quantity <= 0) {
         return json({ success: false, error: "Valid version_id and positive quantity are required" }, 400);
       }
-
-      const { data: partners, error: partnersError } = await admin
-        .from("partners")
-        .select("id")
-        .eq("status", "active");
-      if (partnersError) return json({ success: false, error: "Unable to load active Partners", details: partnersError.message }, 500);
-
-      const results: unknown[] = [];
-      for (const p of partners || []) {
-        const { data, error } = await admin.rpc("admin_engine_allocate", {
-          p_partner_id: p.id,
-          p_version_id: versionId,
-          p_quantity: quantity,
-          p_actor_user_id: caller.id,
-        });
-        if (error) {
-          return json({ success: false, error: `Allocation failed for Partner ${p.id}: ${error.message}` }, 409);
-        }
-        results.push(data);
-      }
-      return json({ success: true, result: { partners_allocated: results.length, quantity_each: quantity, allocations: results } });
+      const { data, error } = await admin.rpc("admin_engine_allocate_all", {
+        p_version_id: versionId,
+        p_quantity: quantity,
+        p_actor_user_id: caller.id,
+      });
+      if (error) return json({ success: false, error: error.message }, 409);
+      return json({ success: true, result: data });
     }
 
     if (action === "revoke_unissued") {
@@ -96,7 +81,6 @@ serve(async (req) => {
       if (!allocationId || !Number.isInteger(quantity) || quantity <= 0) {
         return json({ success: false, error: "Valid allocation_id and positive quantity are required" }, 400);
       }
-
       const { data, error } = await admin.rpc("admin_engine_revoke_unissued", {
         p_allocation_id: allocationId,
         p_quantity: quantity,
@@ -111,7 +95,6 @@ serve(async (req) => {
       const versionId = typeof body.version_id === "string" ? body.version_id.trim() : "";
       const reason = typeof body.reason === "string" ? body.reason.trim() : null;
       if (!versionId) return json({ success: false, error: "version_id is required" }, 400);
-
       const { data, error } = await admin.rpc("admin_engine_retire_version", {
         p_version_id: versionId,
         p_reason: reason,
