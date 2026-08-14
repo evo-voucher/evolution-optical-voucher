@@ -77,6 +77,9 @@ jobs:
       - name: Run Partner Staff Edge lifecycle E2E
         run: bash supabase/tests/http/003_partner_staff_edge_lifecycle_e2e.sh
 
+      - name: Run Admin Edge controls E2E
+        run: bash supabase/tests/http/004_admin_edge_controls_e2e.sh
+
       - name: Show local migration state
         env:
           PGHOST: 127.0.0.1
