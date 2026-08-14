@@ -80,26 +80,29 @@ Do not bind frontend URLs/keys until all of the following are true:
 8. `supabase/tests/005_admin_control_directory_contract.sql` passes.
 9. `supabase/tests/006_partner_catalog_contract.sql` passes.
 10. `supabase/tests/007_atomic_engine_admin_contract.sql` passes.
-11. Test Admin identity exists and resolves as `admin` only.
-12. Two independent test Partners exist and cross-Partner reads/writes are rejected.
-13. Direct SQL/service-role attempts to pair a Voucher or Redemption with the wrong Partner fail at the declarative FK boundary.
-14. Partner browser/user context cannot use the service-role bypass.
-15. Admin Edge Function using service-role server context can call 033 mutations only after verifying the original Admin caller.
-16. Service-role calls to 033 without a valid active Admin actor_user_id are rejected.
-17. Anonymous function inventory contains only `get_public_voucher(uuid)`.
-18. Staff direct SELECT on `vouchers`, `redemptions`, and `voucher_branches` returns no sensitive operational rows outside RPCs.
-19. Staff Verify -> Redeem -> History works at allowed branch and fails at disallowed branch.
-20. Public voucher page returns only customer-facing fields via public token.
-21. Partner catalog returns only Versions the current Partner can actually issue and hides exhausted/inactive/out-of-window entries.
-22. Concurrent double redemption does not create two completed uses for a single-use Voucher.
-23. Concurrent Voucher Engine issue attempts cannot exceed Allocation or Version supply.
-24. Concurrent Admin allocation increases for the same Partner+Version preserve every increment.
-25. Revoke-unissued racing with issuance cannot revoke already-issued capacity.
-26. Retire Version racing with issue cannot create a Voucher after the Version is inactive.
-27. Admin reversal restores usage while preserving the reversed redemption record.
-28. Reporting totals reconcile to canonical `vouchers` + `redemptions`.
-29. Admin frontend contains no direct business-table read/mutation for control flows; it conforms to `docs/ADMIN_PORTAL_BACKEND_CONTRACT_V1.md` and uses 031 read models for directory data.
-30. Partner frontend does not directly read global Voucher Engine tables for its issuable catalog; it uses 032.
+11. `supabase/tests/008_partner_issuance_contract.sql` passes.
+12. Test Admin identity exists and resolves as `admin` only.
+13. Two independent test Partners exist and cross-Partner reads/writes are rejected.
+14. Direct SQL/service-role attempts to pair a Voucher or Redemption with the wrong Partner fail at the declarative FK boundary.
+15. Partner browser/user context cannot use the service-role bypass.
+16. Admin Edge Function using service-role server context can call 033 mutations only after verifying the original Admin caller.
+17. Service-role calls to 033 without a valid active Admin actor_user_id are rejected.
+18. Anonymous function inventory contains only `get_public_voucher(uuid)`.
+19. Staff direct SELECT on `vouchers`, `redemptions`, and `voucher_branches` returns no sensitive operational rows outside RPCs.
+20. Staff Verify -> Redeem -> History works at allowed branch and fails at disallowed branch.
+21. Public voucher page returns only customer-facing fields via public token.
+22. Partner catalog returns only Versions the current Partner can actually issue and hides exhausted/inactive/out-of-window entries.
+23. Partner issuance uses `issue_engine_voucher()` only; tenant is derived from Auth and the browser never supplies `partner_id`.
+24. Partner A cannot issue a Voucher Version allocated only to Partner B.
+25. Concurrent double redemption does not create two completed uses for a single-use Voucher.
+26. Concurrent Voucher Engine issue attempts cannot exceed Allocation or Version supply.
+27. Concurrent Admin allocation increases for the same Partner+Version preserve every increment.
+28. Revoke-unissued racing with issuance cannot revoke already-issued capacity.
+29. Retire Version racing with issue cannot create a Voucher after the Version is inactive.
+30. Admin reversal restores usage while preserving the reversed redemption record.
+31. Reporting totals reconcile to canonical `vouchers` + `redemptions`.
+32. Admin frontend contains no direct business-table read/mutation for control flows; it conforms to `docs/ADMIN_PORTAL_BACKEND_CONTRACT_V1.md` and uses 031 read models for directory data.
+33. Partner frontend does not directly read global Voucher Engine tables for its issuable catalog; it uses 032.
 
 ## Cutover order
 1. New Supabase target verified.
@@ -107,9 +110,9 @@ Do not bind frontend URLs/keys until all of the following are true:
 3. Seed branches.
 4. Create first Admin Auth user + `admin_users` row.
 5. Deploy required Edge Functions with authenticated JWT enforcement.
-6. Run smoke/security/isolation/admin-contract/partner-catalog/atomic-engine/integration tests.
+6. Run smoke/security/isolation/admin-contract/partner-catalog/atomic-engine/partner-issuance/integration tests.
 7. Create disposable test Partner / Staff identities.
-8. Run end-to-end flow: Allocate -> Issue -> Public -> Verify -> Redeem -> Report -> Reverse -> Report.
+8. Run end-to-end flow: Allocate -> Partner Catalog -> Issue -> Public -> Verify -> Redeem -> Report -> Reverse -> Report.
 9. Only then update frontend environment configuration to the new Supabase URL/publishable key.
 10. Keep legacy project untouched for rollback/reference until new environment is stable.
 
@@ -122,6 +125,7 @@ Do not bind frontend URLs/keys until all of the following are true:
 - Historical Admin direct mutations of Partner status and voucher limit must stay replaced by the trusted Admin RPC/Edge Function contract.
 - Admin Partner/branch control-directory reads must use `admin_partner_directory()` / `admin_active_branches()`, not direct browser table reads.
 - Partner issuable Voucher discovery must use `partner_issuable_voucher_catalog()`, not direct browser reads of Voucher Engine tables.
+- Partner Voucher issuance must call `issue_engine_voucher(version_id, customer_name, customer_phone)`; Partner identity is never accepted from the browser.
 - Voucher Engine Edge Function may read server-side Admin orchestration data, but allocation/revocation/retirement mutations must go through 033 atomic RPCs.
 
 ## Non-negotiable invariants
@@ -139,5 +143,6 @@ Do not bind frontend URLs/keys until all of the following are true:
 - Staff sensitive reads use scoped RPCs, not broad direct table SELECT.
 - Admin browser control reads use scoped Admin RPC read models; Admin browser mutations use authenticated RPC/Edge Function boundaries.
 - Partner browser sees an issuance catalog only through tenant-derived RPC scope; it never receives a global Voucher Engine catalog.
+- Partner issuance never accepts browser-supplied tenant identity; tenant comes from Auth membership.
 - `service_role` is trusted server context only and must never appear in browser code.
 - Browser code never contains service_role credentials.
