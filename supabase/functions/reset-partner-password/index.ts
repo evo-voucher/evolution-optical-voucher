@@ -23,20 +23,27 @@ serve(async (req) => {
     if (!jwt) return json({ success: false, error: "Unauthorized" }, 401);
 
     const url = Deno.env.get("SUPABASE_URL");
+    const anon = Deno.env.get("SUPABASE_ANON_KEY");
     const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!url || !service) return json({ success: false, error: "Server configuration error" }, 500);
+    if (!url || !anon || !service) return json({ success: false, error: "Server configuration error" }, 500);
 
-    const admin = createClient(url, service, { auth: { persistSession: false } });
-    const { data: callerData, error: callerError } = await admin.auth.getUser(jwt);
+    const callerClient = createClient(url, anon, {
+      global: { headers: { Authorization: `Bearer ${jwt}` } },
+      auth: { persistSession: false },
+    });
+    const server = createClient(url, service, { auth: { persistSession: false } });
+
+    const { data: callerData, error: callerError } = await callerClient.auth.getUser(jwt);
     const caller = callerData?.user;
     if (callerError || !caller) return json({ success: false, error: "Unauthorized" }, 401);
 
-    const { data: adminRow } = await admin
+    const { data: adminRow, error: adminError } = await callerClient
       .from("admin_users")
       .select("user_id,display_name,status")
       .eq("user_id", caller.id)
       .eq("status", "active")
       .maybeSingle();
+    if (adminError) return json({ success: false, error: "Admin authorization check failed" }, 500);
     if (!adminRow) return json({ success: false, error: "Admin access required" }, 403);
 
     const body = await req.json();
@@ -45,23 +52,23 @@ serve(async (req) => {
     if (!partnerId) return json({ success: false, error: "partner_id is required" }, 400);
     if (newPassword.length < 6) return json({ success: false, error: "Password must be at least 6 characters" }, 400);
 
-    const { data: partner } = await admin
+    const { data: partner, error: partnerError } = await callerClient
       .from("partners")
       .select("id,partner_code,partner_name,status")
       .eq("id", partnerId)
       .maybeSingle();
-    if (!partner) return json({ success: false, error: "Partner not found" }, 404);
+    if (partnerError || !partner) return json({ success: false, error: "Partner not found" }, 404);
 
-    const { data: partnerAdmin } = await admin
+    const { data: partnerAdmin, error: partnerAdminError } = await callerClient
       .from("partner_users")
       .select("id,user_id,staff_name,login_email,status,removed_at")
       .eq("partner_id", partner.id)
       .eq("role", "partner_admin")
       .is("removed_at", null)
       .maybeSingle();
-    if (!partnerAdmin) return json({ success: false, error: "Partner Admin account not found" }, 404);
+    if (partnerAdminError || !partnerAdmin) return json({ success: false, error: "Partner Admin account not found" }, 404);
 
-    const { data: updated, error: updateError } = await admin.auth.admin.updateUserById(
+    const { data: updated, error: updateError } = await server.auth.admin.updateUserById(
       partnerAdmin.user_id,
       { password: newPassword },
     );
@@ -69,18 +76,18 @@ serve(async (req) => {
       return json({ success: false, error: "Unable to reset Partner password", details: updateError?.message }, 500);
     }
 
-    try { await admin.auth.admin.signOut(partnerAdmin.user_id, "global"); } catch (_) {}
+    try { await server.auth.admin.signOut(partnerAdmin.user_id, "global"); } catch (_) {}
 
-    await admin.from("admin_audit_log").insert({
-      actor_user_id: caller.id,
-      actor_name: adminRow.display_name || "Admin",
-      action_type: "partner_password_reset",
-      entity_type: "partner_user",
-      entity_id: partnerAdmin.id,
-      partner_id: partner.id,
-      after_data: { partner_code: partner.partner_code, login_email: partnerAdmin.login_email },
-      metadata: { secret_material_logged: false, sessions_signed_out: true },
+    const { data: auditResult, error: auditError } = await callerClient.rpc("admin_record_partner_password_reset", {
+      p_partner_id: partner.id,
     });
+    if (auditError || !auditResult?.success) {
+      return json({
+        success: false,
+        error: "Password changed but audit recording failed",
+        details: auditError?.message || auditResult?.error,
+      }, 500);
+    }
 
     return json({
       success: true,
