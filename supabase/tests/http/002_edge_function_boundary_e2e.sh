@@ -12,6 +12,7 @@ rand_suffix="$(date +%s)-$RANDOM"
 password='EvoEdgeTest!123456'
 ADMIN_EMAIL="edge-admin-$rand_suffix@example.test"
 PARTNER_EMAIL="edge-partner-$rand_suffix@example.test"
+STAFF_EMAIL="edge-staff-$rand_suffix@example.test"
 PARTNER_CODE="EDGE_$RANDOM"
 
 signup() {
@@ -28,6 +29,15 @@ login() {
     -H "apikey: $ANON_KEY" \
     -H 'Content-Type: application/json' \
     -d "{\"email\":\"$email\",\"password\":\"$password\"}"
+}
+
+rpc() {
+  local token="$1" function_name="$2" body="$3"
+  curl -fsS "$API_URL/rest/v1/rpc/$function_name" \
+    -H "apikey: $ANON_KEY" \
+    -H "Authorization: Bearer $token" \
+    -H 'Content-Type: application/json' \
+    -d "$body"
 }
 
 edge_post() {
@@ -68,7 +78,6 @@ PARTNER_ID="$(jq -r '.partner.id' <<<"$CREATE_BODY")"
 PARTNER_UID="$(jq -r '.user_id' <<<"$CREATE_BODY")"
 [[ -n "$PARTNER_ID" && "$PARTNER_ID" != null && -n "$PARTNER_UID" && "$PARTNER_UID" != null ]] || exit 1
 
-# The Edge function must have created both Auth identity and operational linkage.
 DB_LINK_COUNT="$(psql "$DB_URL" -Atqc "select count(*) from public.partner_users where user_id='$PARTNER_UID'::uuid and partner_id='$PARTNER_ID'::uuid and role='partner_admin' and status='active' and removed_at is null")"
 [[ "$DB_LINK_COUNT" == "1" ]] || { echo 'create-partner did not create canonical Partner Admin linkage' >&2; exit 1; }
 
@@ -80,6 +89,23 @@ PARTNER_TOKEN="$(jq -r '.access_token' <<<"$PARTNER_LOGIN")"
 DENY_RAW="$(edge_post voucher-engine "$PARTNER_TOKEN" '{"action":"allocate_all","version_id":"00000000-0000-0000-0000-000000000000","quantity":1}')"
 DENY_STATUS="$(tail -n1 <<<"$DENY_RAW")"
 [[ "$DENY_STATUS" == "403" ]] || { echo "Partner unexpectedly crossed Admin Edge boundary: $DENY_RAW" >&2; exit 1; }
+
+# Evolution Staff provisioning must also cross only the server-only atomic RPC boundary.
+MINES_ID="$(psql "$DB_URL" -Atqc "select id from public.branches where branch_code='MINES' and status='active'")"
+[[ -n "$MINES_ID" ]] || { echo 'MINES branch missing' >&2; exit 1; }
+STAFF_RAW="$(edge_post create-staff "$ADMIN_TOKEN" "{\"staff_name\":\"Edge Mines Staff\",\"email\":\"$STAFF_EMAIL\",\"password\":\"$password\",\"branch_id\":\"$MINES_ID\",\"role\":\"staff\"}")"
+STAFF_STATUS="$(tail -n1 <<<"$STAFF_RAW")"
+STAFF_BODY="$(sed '$d' <<<"$STAFF_RAW")"
+[[ "$STAFF_STATUS" == "201" ]] || { echo "create-staff failed ($STAFF_STATUS): $STAFF_BODY" >&2; exit 1; }
+[[ "$(jq -r '.success' <<<"$STAFF_BODY")" == "true" ]] || { echo "$STAFF_BODY" >&2; exit 1; }
+STAFF_UID="$(jq -r '.staff.user_id' <<<"$STAFF_BODY")"
+[[ -n "$STAFF_UID" && "$STAFF_UID" != null ]] || { echo 'Staff Auth linkage missing' >&2; exit 1; }
+STAFF_LOGIN="$(login "$STAFF_EMAIL")"
+STAFF_TOKEN="$(jq -r '.access_token' <<<"$STAFF_LOGIN")"
+[[ -n "$STAFF_TOKEN" && "$STAFF_TOKEN" != null ]] || { echo 'Created Staff cannot log in' >&2; exit 1; }
+STAFF_CONTEXT="$(rpc "$STAFF_TOKEN" staff_operational_context '{}')"
+[[ "$(jq -r '.success' <<<"$STAFF_CONTEXT")" == "true" ]] || { echo "Staff context failed: $STAFF_CONTEXT" >&2; exit 1; }
+[[ "$(jq -r '.branch.branch_code' <<<"$STAFF_CONTEXT")" == "MINES" ]] || { echo "Created Staff not bound to MINES: $STAFF_CONTEXT" >&2; exit 1; }
 
 # Seed one active Version directly as trusted test fixture; allocation itself MUST go through Edge -> atomic RPC.
 psql "$DB_URL" -v ON_ERROR_STOP=1 <<'SQL'
