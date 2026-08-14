@@ -21,7 +21,10 @@ select to_regprocedure('public.is_voucher_admin()') as is_voucher_admin,
        to_regprocedure('public.release_operational_identity_realm(uuid,text)') as release_operational_identity_realm,
        to_regprocedure('public.get_public_voucher(uuid)') as get_public_voucher,
        to_regprocedure('public.verify_voucher(text,text)') as verify_voucher,
-       to_regprocedure('public.redeem_voucher(text,text,text)') as redeem_voucher,
+       to_regprocedure('public.redeem_voucher(text,text,text,text)') as redeem_voucher,
+       to_regprocedure('public.staff_operational_context()') as staff_operational_context,
+       to_regprocedure('public.staff_recent_redemptions(integer)') as staff_recent_redemptions,
+       to_regprocedure('public.staff_today_summary()') as staff_today_summary,
        to_regprocedure('public.get_my_partner_claim_access()') as get_my_partner_claim_access,
        to_regprocedure('public.admin_dashboard_summary()') as admin_dashboard_summary,
        to_regprocedure('public.admin_partner_directory()') as admin_partner_directory,
@@ -92,7 +95,8 @@ order by table_name, privilege_type;
 --   Partner A cannot read Partner B voucher/allocation/redemption rows.
 --   Partner B cannot read Partner A rows.
 --   Partner catalog shows only active, authorized, allocated Versions with remaining capacity.
---   Staff sees only permitted branch/self history.
+--   Staff context exposes only assigned branch, except all_branch_manager which receives active branch choices.
+--   Staff verify/redeem/history remain RPC-only and branch-scoped.
 --   Admin control directory is available only through Admin RPCs, not browser table reads.
 --   Concurrent Admin allocation increments are preserved by 033.
 --   allocate_all is all-or-nothing inside one database transaction.
