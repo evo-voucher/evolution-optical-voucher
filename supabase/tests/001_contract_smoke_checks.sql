@@ -22,7 +22,8 @@ select to_regprocedure('public.is_voucher_admin()') as is_voucher_admin,
        to_regprocedure('public.get_my_partner_claim_access()') as get_my_partner_claim_access,
        to_regprocedure('public.admin_dashboard_summary()') as admin_dashboard_summary,
        to_regprocedure('public.admin_partner_directory()') as admin_partner_directory,
-       to_regprocedure('public.admin_active_branches()') as admin_active_branches;
+       to_regprocedure('public.admin_active_branches()') as admin_active_branches,
+       to_regprocedure('public.partner_issuable_voucher_catalog()') as partner_issuable_voucher_catalog;
 
 -- 3) RLS must be enabled on tenant-owned tables.
 select c.relname,
@@ -80,6 +81,7 @@ order by table_name, privilege_type;
 -- Required E2E assertions:
 --   Partner A cannot read Partner B voucher/allocation/redemption rows.
 --   Partner B cannot read Partner A rows.
+--   Partner catalog shows only active, authorized, allocated Versions with remaining capacity.
 --   Staff sees only permitted branch/self history.
 --   Admin control directory is available only through Admin RPCs, not browser table reads.
 --   Public token lookup reveals no customer phone, auth IDs, allocation IDs or metadata.
