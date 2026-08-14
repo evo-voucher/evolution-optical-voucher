@@ -11,19 +11,22 @@ from pg_constraint c
 where c.conrelid='public.operational_identity_realms'::regclass
   and c.contype='p';
 
--- Internal claim/release helpers must not be browser executable.
+-- Internal claim/release helpers must not be browser executable, but trusted
+-- service-role identity provisioning must be able to maintain the registry.
 select p.proname,
        p.prosecdef as security_definer,
        coalesce(array_to_string(p.proconfig,','),'') as proconfig,
        has_function_privilege('anon',p.oid,'EXECUTE') as anon_execute,
-       has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated_execute
+       has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated_execute,
+       has_function_privilege('service_role',p.oid,'EXECUTE') as service_role_execute
 from pg_proc p
 join pg_namespace n on n.oid=p.pronamespace
 where n.nspname='public'
   and p.proname in ('claim_operational_identity_realm','release_operational_identity_realm')
 order by p.proname;
 
--- Expected: SECURITY DEFINER=true, search_path=public, anon=false, authenticated=false.
+-- Expected: SECURITY DEFINER=true, search_path=public,
+-- anon=false, authenticated=false, service_role=true.
 
 -- The obsolete full UNIQUE(user_id) constraint on partner_users must be gone.
 select c.conname,pg_get_constraintdef(c.oid) as unexpected_full_unique
