@@ -9,84 +9,90 @@
 <script src="assets/js/backend-config.js"></script>
 <style>
 :root{--bg:#050716;--card:#0b1335;--ink:#f7f8ff;--muted:#bcc7e3;--line:rgba(115,135,210,.34);--soft:#101b44;--ok:#65e6b5;--err:#ff92a5}
-*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:18px;background:linear-gradient(160deg,#050716,#08102b 52%,#040816);color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.card{width:min(560px,100%);padding:28px;border-radius:24px;background:linear-gradient(155deg,#171746,#0b1b42 58%,#06132f);border:1px solid rgba(122,119,255,.55);box-shadow:0 20px 60px rgba(0,0,0,.42)}h1{margin:0 0 8px;font:500 30px Georgia,serif;letter-spacing:1.5px}p{color:var(--muted);line-height:1.6}.field{margin-top:14px}label{display:block;margin-bottom:6px;font-size:12px;font-weight:800;color:#d9e3ff}input{width:100%;min-height:48px;padding:11px 13px;border:1px solid rgba(100,128,210,.55);border-radius:15px;outline:none;background:linear-gradient(180deg,#101942,#07132f);color:#fff}button{width:100%;margin-top:15px;min-height:50px;border:1px solid rgba(122,119,255,.7);border-radius:14px;background:linear-gradient(180deg,#3549a8,#182b73 58%,#0d1c4c);color:#fff;font-weight:900;cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}.status,.msg{margin-top:16px;padding:12px 14px;border-radius:14px;background:var(--soft);border:1px solid var(--line);font-weight:700}.msg.ok{color:var(--ok)}.msg.err{color:var(--err)}.small{font-size:12px;color:#91a2c4}.hidden{display:none!important}.row{display:flex;gap:10px}.row button{flex:1}.meta{margin-top:12px;font-size:11px;color:#8fa1c8;word-break:break-word}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;padding:18px;background:linear-gradient(160deg,#050716,#08102b 52%,#040816);color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.shell{width:min(980px,100%);margin:auto}.card{padding:22px;border-radius:22px;background:linear-gradient(155deg,#171746,#0b1b42 58%,#06132f);border:1px solid rgba(122,119,255,.55);box-shadow:0 20px 60px rgba(0,0,0,.28);margin-bottom:14px}h1{margin:0 0 8px;font:500 30px Georgia,serif;letter-spacing:1.5px}h2{margin:0 0 12px;font-size:19px}p{color:var(--muted);line-height:1.55}.field{margin-top:14px}label{display:block;margin-bottom:6px;font-size:12px;font-weight:800;color:#d9e3ff}input{width:100%;min-height:48px;padding:11px 13px;border:1px solid rgba(100,128,210,.55);border-radius:15px;outline:none;background:linear-gradient(180deg,#101942,#07132f);color:#fff}button{min-height:46px;border:1px solid rgba(122,119,255,.7);border-radius:14px;background:linear-gradient(180deg,#3549a8,#182b73 58%,#0d1c4c);color:#fff;font-weight:900;cursor:pointer;padding:10px 14px}button:disabled{opacity:.55;cursor:not-allowed}.wide{width:100%;margin-top:15px}.status,.msg{margin-top:14px;padding:12px 14px;border-radius:14px;background:var(--soft);border:1px solid var(--line);font-weight:700}.msg.ok{color:var(--ok)}.msg.err{color:var(--err)}.small{font-size:12px;color:#91a2c4}.hidden{display:none!important}.toprow{display:flex;gap:12px;align-items:center}.toprow>div{flex:1}.meta{font-size:11px;color:#8fa1c8;word-break:break-word}.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.stat{padding:14px;border-radius:16px;background:#0e1a42;border:1px solid var(--line)}.stat span{display:block;color:#99a9ce;font-size:11px}.stat b{display:block;font-size:28px;margin-top:4px}.tablewrap{overflow:auto}.list{width:100%;border-collapse:collapse;font-size:12px}.list th,.list td{text-align:left;padding:10px 8px;border-bottom:1px solid rgba(115,135,210,.22);white-space:nowrap}.list th{color:#9fb1d9;font-size:10px;text-transform:uppercase}.empty{color:#91a2c4;font-size:12px;padding:8px 0}@media(max-width:680px){.stats{grid-template-columns:1fr 1fr}.toprow{align-items:flex-start;flex-direction:column}.toprow button{width:100%}}
 </style>
 </head>
 <body>
-<main class="card">
-  <h1>EVOLUTION OPTICAL</h1>
-  <p>Admin Voucher Portal</p>
+<main class="shell">
+<section class="card">
+  <div class="toprow"><div><h1>EVOLUTION OPTICAL</h1><p>Admin Voucher Portal</p></div><button id="logoutBtn" class="hidden">Sign Out</button></div>
 
   <section id="closedState">
     <div class="status">New backend not configured. Admin access remains disabled for safety.</div>
-    <p class="small">This page is fail-closed. It contains no legacy Supabase URL or key and will not create a database client until the verified reconstructed backend is explicitly enabled.</p>
+    <p class="small">Fail-closed mode is active. No legacy Supabase URL or key is present and no database client is created until the verified reconstructed backend is explicitly enabled.</p>
   </section>
 
   <section id="loginState" class="hidden">
     <div class="field"><label>Email</label><input id="email" type="email" autocomplete="username"></div>
     <div class="field"><label>Password</label><input id="password" type="password" autocomplete="current-password"></div>
-    <button id="loginBtn">Sign In</button>
-    <div id="loginMsg"></div>
+    <button id="loginBtn" class="wide">Sign In</button><div id="loginMsg"></div>
   </section>
 
   <section id="adminState" class="hidden">
     <div class="msg ok">Admin identity verified.</div>
-    <p class="small">Authentication and operational-realm verification are active. Business dashboard modules remain staged until their RPC contracts are wired and tested.</p>
-    <div class="row"><button id="logoutBtn">Sign Out</button></div>
     <div id="sessionMeta" class="meta"></div>
   </section>
+</section>
+
+<section id="dashboardState" class="hidden">
+  <section class="card"><h2>Authoritative Summary</h2><div id="stats" class="stats"></div><div id="dashboardMsg"></div></section>
+  <section class="card"><h2>Recent Vouchers</h2><div id="voucherReport" class="tablewrap"></div></section>
+  <section class="card"><h2>Recent Redemptions</h2><div id="redemptionReport" class="tablewrap"></div></section>
+</section>
 </main>
 <script>
 (() => {
-  const cfg = window.EVOLUTION_VOUCHER_BACKEND || {};
-  const $ = id => document.getElementById(id);
-  const configured = cfg.enabled === true && /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(cfg.supabaseUrl || '') && typeof cfg.publishableKey === 'string' && cfg.publishableKey.length > 20 && typeof cfg.projectId === 'string' && cfg.projectId.length > 5;
+  const cfg=window.EVOLUTION_VOUCHER_BACKEND||{}, $=id=>document.getElementById(id);
+  const configured=cfg.enabled===true&&/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(cfg.supabaseUrl||'')&&typeof cfg.publishableKey==='string'&&cfg.publishableKey.length>20&&typeof cfg.projectId==='string'&&cfg.projectId.length>5;
+  if(!configured)return;
 
-  if (!configured) return;
+  $('closedState').classList.add('hidden');$('loginState').classList.remove('hidden');
+  const db=window.supabase.createClient(cfg.supabaseUrl,cfg.publishableKey);
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const msg=(node,text,ok=false)=>node.innerHTML=text?`<div class="msg ${ok?'ok':'err'}">${esc(text)}</div>`:'';
 
-  $('closedState').classList.add('hidden');
-  $('loginState').classList.remove('hidden');
-  const db = window.supabase.createClient(cfg.supabaseUrl, cfg.publishableKey);
-
-  function showMsg(text, ok=false){$('loginMsg').innerHTML = text ? `<div class="msg ${ok?'ok':'err'}">${String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</div>` : '';}
+  function renderStats(s){
+    const fields=[['Partners',s.partners_total],['Active Partners',s.partners_active],['Vouchers',s.vouchers_total],['Active Vouchers',s.vouchers_active],['Redeemed Vouchers',s.vouchers_redeemed],['Expired Vouchers',s.vouchers_expired],['Completed Redemptions',s.redemptions_completed],['Reversed',s.redemptions_reversed],['Redeemed Today',s.redemptions_today]];
+    $('stats').innerHTML=fields.map(([k,v])=>`<div class="stat"><span>${esc(k)}</span><b>${Number(v||0).toLocaleString()}</b></div>`).join('');
+  }
+  function renderVoucherReport(rows){
+    if(!rows?.length){$('voucherReport').innerHTML='<div class="empty">No voucher records.</div>';return;}
+    $('voucherReport').innerHTML=`<table class="list"><thead><tr><th>Voucher</th><th>Partner</th><th>Customer</th><th>Status</th><th>Issued</th><th>Redeemed</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.voucher_code)}</td><td>${esc(r.partner_name)}</td><td>${esc(r.customer_name)}</td><td>${esc(r.voucher_status)}</td><td>${esc(new Date(r.issued_at).toLocaleString())}</td><td>${esc(r.last_redeemed_at?new Date(r.last_redeemed_at).toLocaleString():'—')}</td></tr>`).join('')}</tbody></table>`;
+  }
+  function renderRedemptionReport(rows){
+    if(!rows?.length){$('redemptionReport').innerHTML='<div class="empty">No redemption records.</div>';return;}
+    $('redemptionReport').innerHTML=`<table class="list"><thead><tr><th>Voucher</th><th>Partner</th><th>Branch</th><th>Staff</th><th>Status</th><th>Redeemed</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.voucher_code)}</td><td>${esc(r.partner_name)}</td><td>${esc(r.branch_name)}</td><td>${esc(r.staff_name)}</td><td>${esc(r.redemption_status)}</td><td>${esc(new Date(r.redeemed_at).toLocaleString())}</td></tr>`).join('')}</tbody></table>`;
+  }
+  async function loadReadOnlyDashboard(){
+    msg($('dashboardMsg'),'');
+    const [s,v,r]=await Promise.all([
+      db.rpc('admin_dashboard_summary'),
+      db.rpc('admin_voucher_report',{p_partner_id:null,p_limit:100}),
+      db.rpc('admin_redemption_report',{p_partner_id:null,p_limit:100})
+    ]);
+    const firstError=s.error||v.error||r.error;
+    if(firstError)throw firstError;
+    renderStats(s.data||{});renderVoucherReport(v.data||[]);renderRedemptionReport(r.data||[]);
+  }
   async function verifyAdmin(session){
-    if(!session?.user) return false;
-    const {data,error} = await db.rpc('current_operational_realm');
-    if(error) throw error;
-    if(!data || data.authenticated !== true || data.realm !== 'admin'){
-      await db.auth.signOut();
-      throw new Error('This account is not an active Evolution Voucher Admin.');
+    if(!session?.user)return false;
+    const {data,error}=await db.rpc('current_operational_realm');
+    if(error)throw error;
+    if(!data||data.authenticated!==true||data.realm!=='admin'){
+      await db.auth.signOut();throw new Error('This account is not an active Evolution Voucher Admin.');
     }
-    $('loginState').classList.add('hidden');
-    $('adminState').classList.remove('hidden');
-    $('sessionMeta').textContent = `Signed in as ${session.user.email || session.user.id} • realm: ${data.realm}`;
+    $('loginState').classList.add('hidden');$('adminState').classList.remove('hidden');$('dashboardState').classList.remove('hidden');$('logoutBtn').classList.remove('hidden');
+    $('sessionMeta').textContent=`Signed in as ${session.user.email||session.user.id} • realm: ${data.realm}`;
+    try{await loadReadOnlyDashboard();}catch(e){msg($('dashboardMsg'),e.message||'Dashboard load failed.');}
     return true;
   }
-
-  $('loginBtn').addEventListener('click', async () => {
-    const email=$('email').value.trim().toLowerCase(), password=$('password').value;
-    if(!email || !password){showMsg('Enter email and password.');return;}
-    $('loginBtn').disabled=true; showMsg('');
-    try{
-      const {data,error}=await db.auth.signInWithPassword({email,password});
-      if(error) throw error;
-      await verifyAdmin(data.session);
-    }catch(e){showMsg(e.message || 'Sign in failed.');}
-    finally{$('loginBtn').disabled=false;}
+  $('loginBtn').addEventListener('click',async()=>{
+    const email=$('email').value.trim().toLowerCase(),password=$('password').value;if(!email||!password){msg($('loginMsg'),'Enter email and password.');return;}
+    $('loginBtn').disabled=true;msg($('loginMsg'),'');
+    try{const {data,error}=await db.auth.signInWithPassword({email,password});if(error)throw error;await verifyAdmin(data.session);}catch(e){msg($('loginMsg'),e.message||'Sign in failed.');}finally{$('loginBtn').disabled=false;}
   });
-
-  $('logoutBtn').addEventListener('click', async () => {
-    await db.auth.signOut();
-    $('adminState').classList.add('hidden');
-    $('loginState').classList.remove('hidden');
-    $('password').value='';
-  });
-
-  db.auth.getSession().then(async ({data}) => {
-    if(data?.session){
-      try{await verifyAdmin(data.session);}catch(e){showMsg(e.message || 'Session verification failed.');}
-    }
-  });
+  $('logoutBtn').addEventListener('click',async()=>{await db.auth.signOut();$('adminState').classList.add('hidden');$('dashboardState').classList.add('hidden');$('logoutBtn').classList.add('hidden');$('loginState').classList.remove('hidden');$('password').value='';});
+  db.auth.getSession().then(async({data})=>{if(data?.session){try{await verifyAdmin(data.session);}catch(e){msg($('loginMsg'),e.message||'Session verification failed.');}}});
 })();
 </script>
 </body>
