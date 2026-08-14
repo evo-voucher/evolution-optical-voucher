@@ -18,7 +18,7 @@ begin
     'partner_name',p.partner_name,
     'voucher_limit',p.voucher_limit,
     'vouchers_issued',p.vouchers_issued,
-    'remaining',case when p.voucher_limit>0 then greatest(0,p.voucher_limit-p.vouchers_issued) else null end,
+    'remaining',greatest(0,p.voucher_limit-p.vouchers_issued),
     'partner_status',p.status,
     'role',pu.role,
     'staff_name',pu.staff_name,
