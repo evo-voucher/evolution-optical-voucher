@@ -23,20 +23,29 @@ serve(async (req) => {
     if (!jwt) return json({ success: false, error: "Unauthorized" }, 401);
 
     const url = Deno.env.get("SUPABASE_URL");
+    const anon = Deno.env.get("SUPABASE_ANON_KEY");
     const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!url || !service) return json({ success: false, error: "Server configuration error" }, 500);
+    if (!url || !anon || !service) return json({ success: false, error: "Server configuration error" }, 500);
 
+    // Authentication/authorization must be evaluated in the original caller JWT
+    // context. The service client is reserved for trusted server-side mutations.
+    const callerClient = createClient(url, anon, {
+      global: { headers: { Authorization: `Bearer ${jwt}` } },
+      auth: { persistSession: false },
+    });
     const admin = createClient(url, service, { auth: { persistSession: false } });
-    const { data: userData, error: userError } = await admin.auth.getUser(jwt);
+
+    const { data: userData, error: userError } = await callerClient.auth.getUser(jwt);
     const caller = userData?.user;
     if (userError || !caller) return json({ success: false, error: "Unauthorized" }, 401);
 
-    const { data: adminRow } = await admin
+    const { data: adminRow, error: adminLookupError } = await callerClient
       .from("admin_users")
       .select("user_id,display_name,status")
       .eq("user_id", caller.id)
       .eq("status", "active")
       .maybeSingle();
+    if (adminLookupError) return json({ success: false, error: "Admin authorization check failed" }, 500);
     if (!adminRow) return json({ success: false, error: "Admin access required" }, 403);
 
     const body = await req.json();
