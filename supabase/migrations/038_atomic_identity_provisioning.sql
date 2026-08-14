@@ -97,6 +97,9 @@ $$;
 revoke all on function public.admin_provision_partner(text,text,text,text,integer,integer,uuid,text,uuid) from public, anon, authenticated;
 grant execute on function public.admin_provision_partner(text,text,text,text,integer,integer,uuid,text,uuid) to service_role;
 
+-- Kept under the historical name for frontend compatibility. The server RPC
+-- accepts an active Voucher Admin, all-branch manager, or branch manager actor,
+-- and re-enforces the exact role/branch rules before writing.
 create or replace function public.admin_provision_staff(
   p_new_user_id uuid,
   p_staff_name text,
@@ -112,19 +115,38 @@ set search_path = public
 as $$
 declare
   v_actor_name text;
+  v_is_admin boolean := false;
+  v_manager public.staff_users%rowtype;
+  v_requested_role text := lower(trim(coalesce(p_role,'')));
   v_staff public.staff_users%rowtype;
 begin
   if not public.is_trusted_service_role() then
     raise exception 'Trusted server context required';
   end if;
-  if p_actor_user_id is null or not exists (
+  if p_actor_user_id is null then
+    raise exception 'Actor user is required';
+  end if;
+
+  select exists(
     select 1 from public.admin_users a
     where a.user_id=p_actor_user_id and a.status='active'
-  ) then
-    raise exception 'Active Admin actor required';
+  ) into v_is_admin;
+
+  if v_is_admin then
+    select coalesce(nullif(trim(a.display_name),''),'Admin') into v_actor_name
+    from public.admin_users a where a.user_id=p_actor_user_id and a.status='active';
+  else
+    select * into v_manager
+    from public.staff_users su
+    where su.user_id=p_actor_user_id
+      and su.status='active'
+      and su.role in ('manager','all_branch_manager')
+    limit 1;
+    if not found then
+      raise exception 'Active Admin or Manager actor required';
+    end if;
+    v_actor_name:=v_manager.staff_name;
   end if;
-  select coalesce(nullif(trim(a.display_name),''),'Admin') into v_actor_name
-  from public.admin_users a where a.user_id=p_actor_user_id and a.status='active';
 
   if p_new_user_id is null or not exists(select 1 from auth.users u where u.id=p_new_user_id) then
     raise exception 'Valid Auth user is required';
@@ -132,15 +154,24 @@ begin
   if nullif(trim(coalesce(p_staff_name,'')),'') is null then
     raise exception 'Staff name is required';
   end if;
-  if lower(trim(coalesce(p_role,''))) not in ('staff','manager') then
+  if v_requested_role not in ('staff','manager') then
     raise exception 'Allowed roles: staff, manager';
   end if;
   if not exists(select 1 from public.branches b where b.id=p_branch_id and b.status='active') then
     raise exception 'Active branch is required';
   end if;
 
+  if not v_is_admin and v_manager.role='manager' then
+    if v_requested_role<>'staff' then
+      raise exception 'Branch Manager can only create Staff accounts';
+    end if;
+    if v_manager.branch_id is null or p_branch_id is distinct from v_manager.branch_id then
+      raise exception 'Branch Manager can only create Staff at assigned branch';
+    end if;
+  end if;
+
   insert into public.staff_users(user_id,branch_id,staff_name,role,status)
-  values(p_new_user_id,p_branch_id,trim(p_staff_name),lower(trim(p_role)),'active')
+  values(p_new_user_id,p_branch_id,trim(p_staff_name),v_requested_role,'active')
   returning * into v_staff;
 
   insert into public.admin_audit_log(
@@ -161,4 +192,4 @@ grant execute on function public.admin_provision_staff(uuid,text,uuid,text,text,
 comment on function public.admin_provision_partner(text,text,text,text,integer,integer,uuid,text,uuid) is
 'Server-only atomic Partner provisioning after Edge has authenticated an active Admin and created the Auth user. Owns Partner, Partner Admin membership, default claim settings and audit as one transaction.';
 comment on function public.admin_provision_staff(uuid,text,uuid,text,text,uuid) is
-'Server-only atomic Evolution Staff provisioning after Edge has authenticated an active Admin and created the Auth user.';
+'Server-only atomic Evolution Staff provisioning. Revalidates active Admin/Manager actor and branch/role authority inside the database before writing.';
