@@ -3,8 +3,13 @@
 -- to trigger/RLS guards. These constraints are identity-independent and also apply
 -- to trusted service_role server writes.
 
--- Referenced composite keys. The leading id columns are already primary keys; these
--- additional UNIQUE constraints make the tenant identity part of the FK contract.
+-- Referenced composite keys. PostgreSQL requires a UNIQUE/PK matching each
+-- referenced FK column set exactly; the primary key on id alone is not sufficient
+-- for foreign keys that reference (id, partner_id).
+alter table public.partner_voucher_allocations
+  add constraint partner_voucher_allocations_id_partner_uk
+  unique (id, partner_id);
+
 alter table public.partner_voucher_allocations
   add constraint partner_voucher_allocations_id_partner_version_uk
   unique (id, partner_id, version_id);
