@@ -80,6 +80,12 @@ jobs:
       - name: Run Admin Edge controls E2E
         run: bash supabase/tests/http/004_admin_edge_controls_e2e.sh
 
+      - name: Install browser test driver
+        run: npm install --no-save puppeteer-core@24
+
+      - name: Run browser portal core E2E
+        run: node supabase/tests/browser/001_portal_core_e2e.mjs
+
       - name: Show local migration state
         env:
           PGHOST: 127.0.0.1
