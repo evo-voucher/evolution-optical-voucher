@@ -35,6 +35,7 @@ Apply migrations strictly by numeric filename order. Current staged chain:
 23. `023_reversal_authorization_v2.sql`
 24. `024_engine_concurrency_hardening.sql`
 25. `025_authoritative_partner_quota.sql`
+26. `026_engine_lock_order_hardening.sql`
 
 ## Dependency checkpoints
 - 002 requires core identity/business tables from 001.
@@ -49,8 +50,9 @@ Apply migrations strictly by numeric filename order. Current staged chain:
 - 021 requires all three live identity realms: admin_users, partner_users, staff_users.
 - 022 overrides the Partner claim response from 008 without changing its source of truth.
 - 023 deliberately overrides the reversal and voucher immutability functions created in 007/012.
-- 024 installs final insert-time capacity protection after engine tables and issuance RPCs exist.
+- 024 installs insert-time capacity protection after engine tables and issuance RPCs exist.
 - 025 overrides Admin Partner voucher-limit logic so authoritative issued count is derived from `vouchers`.
+- 026 deliberately overrides the 024 capacity guard to use Version advisory locking before Allocation row locking and re-check Version active status at the insert boundary. This removes the known Version/Allocation lock-order cycle while preserving race-safe supply enforcement.
 
 ## Deployment gates
 Do not bind frontend URLs/keys until all of the following are true:
@@ -64,8 +66,9 @@ Do not bind frontend URLs/keys until all of the following are true:
 8. Public voucher page returns only customer-facing fields via public token.
 9. Concurrent double redemption does not create two completed uses for a single-use Voucher.
 10. Concurrent Voucher Engine issue attempts cannot exceed Allocation or Version supply.
-11. Admin reversal restores usage while preserving the reversed redemption record.
-12. Reporting totals reconcile to canonical `vouchers` + `redemptions`.
+11. Retire Version racing with issue cannot create a Voucher after the Version is inactive.
+12. Admin reversal restores usage while preserving the reversed redemption record.
+13. Reporting totals reconcile to canonical `vouchers` + `redemptions`.
 
 ## Cutover order
 1. New Supabase target verified.
@@ -93,4 +96,5 @@ Do not bind frontend URLs/keys until all of the following are true:
 - QR payload is `voucher_code`; public share token is separate.
 - Redeem is atomic and server-controlled.
 - Reversal preserves history.
+- Voucher Engine issuance lock order is Version serialization first, Allocation row lock second.
 - Browser code never contains service_role credentials.
