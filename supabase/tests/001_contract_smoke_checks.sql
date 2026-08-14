@@ -12,14 +12,17 @@ select to_regclass('public.partners') as partners,
        to_regclass('public.voucher_versions') as voucher_versions,
        to_regclass('public.partner_voucher_allocations') as partner_voucher_allocations;
 
--- 2) Required security / routing functions.
+-- 2) Required security / routing / control functions.
 select to_regprocedure('public.is_voucher_admin()') as is_voucher_admin,
        to_regprocedure('public.current_partner_id()') as current_partner_id,
        to_regprocedure('public.current_operational_realm()') as current_operational_realm,
        to_regprocedure('public.get_public_voucher(uuid)') as get_public_voucher,
        to_regprocedure('public.verify_voucher(text,text)') as verify_voucher,
        to_regprocedure('public.redeem_voucher(text,text,text)') as redeem_voucher,
-       to_regprocedure('public.get_my_partner_claim_access()') as get_my_partner_claim_access;
+       to_regprocedure('public.get_my_partner_claim_access()') as get_my_partner_claim_access,
+       to_regprocedure('public.admin_dashboard_summary()') as admin_dashboard_summary,
+       to_regprocedure('public.admin_partner_directory()') as admin_partner_directory,
+       to_regprocedure('public.admin_active_branches()') as admin_active_branches;
 
 -- 3) RLS must be enabled on tenant-owned tables.
 select c.relname,
@@ -78,5 +81,6 @@ order by table_name, privilege_type;
 --   Partner A cannot read Partner B voucher/allocation/redemption rows.
 --   Partner B cannot read Partner A rows.
 --   Staff sees only permitted branch/self history.
+--   Admin control directory is available only through Admin RPCs, not browser table reads.
 --   Public token lookup reveals no customer phone, auth IDs, allocation IDs or metadata.
 --   Issue -> Public -> Verify -> Redeem -> Report -> Reverse preserves audit/history.
