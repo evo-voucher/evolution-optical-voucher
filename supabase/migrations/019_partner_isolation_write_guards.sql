@@ -106,7 +106,7 @@ create or replace function public.guard_partner_user_tenant()
 returns trigger
 language plpgsql
 set search_path = public
-as $$;
+as $$
 begin
   if public.is_voucher_admin() then
     return new;
