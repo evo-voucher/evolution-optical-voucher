@@ -1,1 +1,148 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07152f"><title>Evolution Optical • Staff Portal</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:linear-gradient(160deg,#050716,#08102b 52%,#040816);color:#f7f8ff;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.card{width:min(560px,calc(100% - 36px));padding:28px;border-radius:24px;background:linear-gradient(155deg,#171746,#0b1b42 58%,#06132f);border:1px solid rgba(122,119,255,.55);box-shadow:0 20px 60px rgba(0,0,0,.42)}h1{margin:0 0 8px;font:500 30px Georgia,serif;letter-spacing:1.5px}p{color:#bcc7e3;line-height:1.6}.status{margin-top:18px;padding:12px 14px;border-radius:14px;background:#101b44;border:1px solid rgba(115,135,210,.34);font-weight:700}.small{font-size:12px;color:#91a2c4}</style></head><body><main class="card"><h1>EVOLUTION OPTICAL</h1><p>Staff Voucher Portal</p><div class="status">New backend not configured. Staff access is temporarily disabled for safety.</div><p class="small">This page intentionally makes no direct Voucher/Redemption table request. Staff access will return through verify, redeem and scoped reporting RPCs after the new backend passes deployment gates.</p></main></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07152f">
+<title>Evolution Optical • Staff Portal</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/backend-config.js"></script>
+<style>
+:root{--ink:#f7f8ff;--muted:#bcc7e3;--line:rgba(115,135,210,.34);--ok:#65e6b5;--err:#ff92a5;--warn:#ffd78f}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;padding:18px;background:linear-gradient(160deg,#050716,#08102b 52%,#040816);color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.shell{width:min(900px,100%);margin:auto}.card{padding:22px;border-radius:22px;background:linear-gradient(155deg,#171746,#0b1b42 58%,#06132f);border:1px solid rgba(122,119,255,.55);box-shadow:0 20px 60px rgba(0,0,0,.28);margin-bottom:14px}h1{margin:0 0 8px;font:500 30px Georgia,serif;letter-spacing:1.5px}h2{margin:0 0 12px;font-size:19px}p{color:var(--muted);line-height:1.55}.field{margin-top:12px}label{display:block;margin-bottom:6px;font-size:12px;font-weight:800;color:#d9e3ff}input,select,textarea{width:100%;min-height:46px;padding:10px 12px;border:1px solid rgba(100,128,210,.55);border-radius:14px;outline:none;background:linear-gradient(180deg,#101942,#07132f);color:#fff}textarea{min-height:76px;resize:vertical}button{min-height:46px;border:1px solid rgba(122,119,255,.7);border-radius:14px;background:linear-gradient(180deg,#3549a8,#182b73 58%,#0d1c4c);color:#fff;font-weight:900;cursor:pointer;padding:10px 14px}button:disabled{opacity:.5;cursor:not-allowed}.wide{width:100%;margin-top:14px}.status,.msg{margin-top:14px;padding:12px 14px;border-radius:14px;background:#101b44;border:1px solid var(--line);font-weight:700}.ok{color:var(--ok)}.err{color:var(--err)}.warn{color:var(--warn)}.small,.meta{font-size:12px;color:#91a2c4}.hidden{display:none!important}.toprow{display:flex;gap:12px;align-items:center}.toprow>div{flex:1}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.voucher{margin-top:14px;padding:15px;border:1px solid var(--line);border-radius:16px;background:#0e1a42}.voucher b{display:block;font-size:18px}.voucher span{display:block;margin-top:5px;color:#a9b8d9;font-size:12px}.actions{display:flex;gap:10px;margin-top:12px}.actions button{flex:1}.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.stat{padding:14px;border-radius:16px;background:#0e1a42;border:1px solid var(--line)}.stat span{display:block;color:#99a9ce;font-size:11px}.stat b{display:block;font-size:24px;margin-top:4px}.tablewrap{overflow:auto}.list{width:100%;border-collapse:collapse;font-size:12px}.list th,.list td{text-align:left;padding:10px 8px;border-bottom:1px solid rgba(115,135,210,.22);white-space:nowrap}.list th{color:#9fb1d9;font-size:10px;text-transform:uppercase}.empty{color:#91a2c4;font-size:12px;padding:8px 0}@media(max-width:680px){.grid,.stats{grid-template-columns:1fr}.toprow{flex-direction:column;align-items:flex-start}.toprow button{width:100%}.actions{flex-direction:column}}
+</style>
+</head>
+<body>
+<main class="shell">
+<section class="card">
+  <div class="toprow"><div><h1>EVOLUTION OPTICAL</h1><p>Staff Voucher Portal</p></div><button id="logoutBtn" class="hidden">Sign Out</button></div>
+  <section id="closedState"><div class="status">New backend not configured. Staff access remains disabled for safety.</div><p class="small">Fail-closed mode is active. This page creates no Supabase client until the verified reconstructed backend is explicitly enabled.</p></section>
+  <section id="loginState" class="hidden"><div class="field"><label>Email</label><input id="email" type="email" autocomplete="username"></div><div class="field"><label>Password</label><input id="password" type="password" autocomplete="current-password"></div><button id="loginBtn" class="wide">Sign In</button><div id="loginMsg"></div></section>
+  <section id="staffState" class="hidden"><div class="msg ok">Staff identity verified.</div><div id="sessionMeta" class="meta"></div></section>
+</section>
+
+<section id="operationState" class="hidden">
+  <section class="card">
+    <h2>Today</h2>
+    <div id="todayStats" class="stats"></div>
+    <div id="contextMsg"></div>
+  </section>
+
+  <section class="card">
+    <h2>Verify Voucher</h2>
+    <div id="branchField" class="field hidden"><label>Redemption Branch</label><select id="branchCode"></select></div>
+    <div class="field"><label>Voucher Code</label><input id="voucherCode" type="text" inputmode="text" autocapitalize="characters" placeholder="EO-YYYYMMDD-XXXXXXXX"></div>
+    <button id="verifyBtn" class="wide">Verify Voucher</button>
+    <div id="verifyMsg"></div>
+    <div id="verifiedVoucher"></div>
+  </section>
+
+  <section id="redeemCard" class="card hidden">
+    <h2>Redeem</h2>
+    <div class="field"><label>Notes (optional)</label><textarea id="notes" maxlength="500" placeholder="Optional note"></textarea></div>
+    <div class="actions"><button id="redeemBtn">Confirm Redeem</button><button id="cancelRedeemBtn">Cancel</button></div>
+    <p class="small">Staff redemption cannot be undone here. Any approved reversal is an Admin action and preserves the original redemption history.</p>
+    <div id="redeemMsg"></div>
+  </section>
+
+  <section class="card">
+    <h2>Recent Redemption History</h2>
+    <div id="history" class="tablewrap"></div>
+  </section>
+</section>
+</main>
+<script>
+(() => {
+  const cfg=window.EVOLUTION_VOUCHER_BACKEND||{}, $=id=>document.getElementById(id);
+  const configured=cfg.enabled===true&&/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(cfg.supabaseUrl||'')&&typeof cfg.publishableKey==='string'&&cfg.publishableKey.length>20&&typeof cfg.projectId==='string'&&cfg.projectId.length>5;
+  if(!configured)return;
+  $('closedState').classList.add('hidden');$('loginState').classList.remove('hidden');
+  const db=window.supabase.createClient(cfg.supabaseUrl,cfg.publishableKey);
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const show=(node,text,type='err')=>node.innerHTML=text?`<div class="msg ${type}">${esc(text)}</div>`:'';
+  let staffContext=null, verified=null;
+
+  function selectedBranchCode(){return staffContext?.branch_selection_required?$('branchCode').value:(staffContext?.branches?.[0]?.branch_code||null);}
+  function renderContext(c){
+    staffContext=c;
+    const branches=Array.isArray(c.branches)?c.branches:[];
+    if(c.branch_selection_required){
+      $('branchField').classList.remove('hidden');
+      $('branchCode').innerHTML='<option value="">Select branch</option>'+branches.map(b=>`<option value="${esc(b.branch_code)}">${esc(b.branch_name)} (${esc(b.branch_code)})</option>`).join('');
+    }else{
+      $('branchField').classList.add('hidden');
+    }
+  }
+  function renderToday(d){
+    const rows=[['Staff',d.staff_name],['Role',d.role],['Redeemed Today',d.today_redeemed]];
+    $('todayStats').innerHTML=rows.map(([k,v])=>`<div class="stat"><span>${esc(k)}</span><b>${typeof v==='number'?Number(v).toLocaleString():esc(v??'—')}</b></div>`).join('');
+  }
+  function renderHistory(rows){
+    if(!rows?.length){$('history').innerHTML='<div class="empty">No redemption history in your permitted scope.</div>';return;}
+    $('history').innerHTML=`<table class="list"><thead><tr><th>Voucher</th><th>Customer</th><th>Partner</th><th>Branch</th><th>Staff</th><th>Status</th><th>Redeemed</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.voucher_code)}</td><td>${esc(r.customer_name)}</td><td>${esc(r.partner_name)}</td><td>${esc(r.branch_name)}</td><td>${esc(r.staff_name)}</td><td>${esc(r.redemption_status)}</td><td>${esc(r.redeemed_at?new Date(r.redeemed_at).toLocaleString():'—')}</td></tr>`).join('')}</tbody></table>`;
+  }
+  function renderVerified(v){
+    const state=v.can_redeem?'ok':(v.status==='expired'||v.status==='redeemed'||v.status==='revoked'?'err':'warn');
+    $('verifiedVoucher').innerHTML=`<div class="voucher"><b>${esc(v.voucher_code)} • ${esc(v.status)}</b><span>Customer: ${esc(v.customer_name)}</span><span>Type: ${esc(v.voucher_type)}</span><span>Expiry: ${esc(v.expiry_date)}</span><span>Branch: ${esc(v.branch_name)} • ${v.branch_allowed?'allowed':'not allowed'}</span><span>Uses: ${esc(v.usage_count)} / ${esc(v.usage_limit)} • remaining ${esc(v.remaining_uses)}</span><div class="msg ${state}">${v.can_redeem?'Voucher is eligible for redemption.':'Voucher cannot be redeemed in the current Staff/branch context.'}</div></div>`;
+    $('redeemCard').classList.toggle('hidden',!v.can_redeem);
+  }
+  async function loadOperations(){
+    show($('contextMsg'),'');
+    const [c,t,h]=await Promise.all([
+      db.rpc('staff_operational_context'),
+      db.rpc('staff_today_summary'),
+      db.rpc('staff_recent_redemptions',{p_limit:20})
+    ]);
+    const e=c.error||t.error||h.error;if(e)throw e;
+    renderContext(c.data||{});renderToday(t.data||{});renderHistory(h.data||[]);
+  }
+  async function verifyStaff(session){
+    if(!session?.user)return false;
+    const {data,error}=await db.rpc('current_operational_realm');if(error)throw error;
+    if(!data||data.authenticated!==true||data.realm!=='staff'){
+      await db.auth.signOut();throw new Error('This account is not an active Evolution Staff account.');
+    }
+    $('loginState').classList.add('hidden');$('staffState').classList.remove('hidden');$('operationState').classList.remove('hidden');$('logoutBtn').classList.remove('hidden');
+    $('sessionMeta').textContent=`Signed in as ${session.user.email||session.user.id} • role: ${data.role||'—'} • branch_id: ${data.branch_id||'—'}`;
+    try{await loadOperations();}catch(e){show($('contextMsg'),e.message||'Staff context load failed.');}
+    return true;
+  }
+
+  $('verifyBtn').addEventListener('click',async()=>{
+    const code=$('voucherCode').value.trim().toUpperCase(), branch=selectedBranchCode();
+    verified=null;$('verifiedVoucher').innerHTML='';$('redeemCard').classList.add('hidden');show($('verifyMsg'),'');show($('redeemMsg'),'');
+    if(!code){show($('verifyMsg'),'Enter a Voucher code.');return;}
+    if(staffContext?.branch_selection_required&&!branch){show($('verifyMsg'),'Select the redemption branch first.');return;}
+    $('verifyBtn').disabled=true;
+    try{
+      const {data,error}=await db.rpc('verify_voucher',{p_voucher_code:code,p_branch_code:branch});if(error)throw error;
+      if(!data?.success){show($('verifyMsg'),data?.error||'Voucher verification failed.');return;}
+      verified=data;renderVerified(data);
+    }catch(e){show($('verifyMsg'),e.message||'Voucher verification failed.');}
+    finally{$('verifyBtn').disabled=false;}
+  });
+
+  $('redeemBtn').addEventListener('click',async()=>{
+    if(!verified?.can_redeem){show($('redeemMsg'),'Verify an eligible Voucher first.');return;}
+    const branch=selectedBranchCode();
+    if(staffContext?.branch_selection_required&&!branch){show($('redeemMsg'),'Select the redemption branch first.');return;}
+    $('redeemBtn').disabled=true;show($('redeemMsg'),'');
+    try{
+      const {data,error}=await db.rpc('redeem_voucher',{p_voucher_code:verified.voucher_code,p_notes:$('notes').value.trim()||null,p_branch_code:branch,p_redeem_method:'manual_code'});if(error)throw error;
+      if(!data?.success){show($('redeemMsg'),data?.error||'Redemption failed.');return;}
+      show($('redeemMsg'),`Redeemed ${data.voucher_code} at ${data.branch_name}.`,'ok');
+      verified=null;$('redeemCard').classList.add('hidden');$('verifiedVoucher').innerHTML='';$('notes').value='';
+      await loadOperations();
+    }catch(e){show($('redeemMsg'),e.message||'Redemption failed.');}
+    finally{$('redeemBtn').disabled=false;}
+  });
+
+  $('cancelRedeemBtn').addEventListener('click',()=>{verified=null;$('redeemCard').classList.add('hidden');$('verifiedVoucher').innerHTML='';$('notes').value='';show($('redeemMsg'),'');});
+  $('branchCode').addEventListener('change',()=>{verified=null;$('verifiedVoucher').innerHTML='';$('redeemCard').classList.add('hidden');show($('verifyMsg'),'');});
+  $('loginBtn').addEventListener('click',async()=>{const email=$('email').value.trim().toLowerCase(),password=$('password').value;if(!email||!password){show($('loginMsg'),'Enter email and password.');return;}$('loginBtn').disabled=true;show($('loginMsg'),'');try{const {data,error}=await db.auth.signInWithPassword({email,password});if(error)throw error;await verifyStaff(data.session);}catch(e){show($('loginMsg'),e.message||'Sign in failed.');}finally{$('loginBtn').disabled=false;}});
+  $('logoutBtn').addEventListener('click',async()=>{await db.auth.signOut();staffContext=null;verified=null;$('staffState').classList.add('hidden');$('operationState').classList.add('hidden');$('logoutBtn').classList.add('hidden');$('loginState').classList.remove('hidden');$('password').value='';});
+  db.auth.getSession().then(async({data})=>{if(data?.session){try{await verifyStaff(data.session);}catch(e){show($('loginMsg'),e.message||'Session verification failed.');}}});
+})();
+</script>
+</body>
+</html>
