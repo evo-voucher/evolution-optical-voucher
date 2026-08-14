@@ -182,7 +182,7 @@ if [[ $ISSUE_B_STATUS -eq 0 ]]; then
   exit 1
 fi
 
-PUBLIC_RESULT="$(public_rpc get_public_voucher "{\"p_public_token\":\"$PUBLIC_TOKEN\"}")"
+PUBLIC_RESULT="$(public_rpc get_public_voucher "{\"p_token\":\"$PUBLIC_TOKEN\"}")"
 [[ "$(jq -r '.success' <<<"$PUBLIC_RESULT")" == "true" ]] || { echo "Public lookup failed: $PUBLIC_RESULT" >&2; exit 1; }
 [[ "$(jq -r '.voucher_code' <<<"$PUBLIC_RESULT")" == "$VOUCHER_CODE" ]] || { echo 'Public lookup returned wrong voucher' >&2; exit 1; }
 [[ "$(jq -r 'has("customer_phone")' <<<"$PUBLIC_RESULT")" == "false" ]] || { echo 'Public RPC leaked customer_phone' >&2; exit 1; }
