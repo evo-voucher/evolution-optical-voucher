@@ -6,6 +6,7 @@
 select to_regclass('public.partners') as partners,
        to_regclass('public.partner_users') as partner_users,
        to_regclass('public.staff_users') as staff_users,
+       to_regclass('public.operational_identity_realms') as operational_identity_realms,
        to_regclass('public.vouchers') as vouchers,
        to_regclass('public.redemptions') as redemptions,
        to_regclass('public.voucher_templates') as voucher_templates,
@@ -16,6 +17,8 @@ select to_regclass('public.partners') as partners,
 select to_regprocedure('public.is_voucher_admin()') as is_voucher_admin,
        to_regprocedure('public.current_partner_id()') as current_partner_id,
        to_regprocedure('public.current_operational_realm()') as current_operational_realm,
+       to_regprocedure('public.claim_operational_identity_realm(uuid,text)') as claim_operational_identity_realm,
+       to_regprocedure('public.release_operational_identity_realm(uuid,text)') as release_operational_identity_realm,
        to_regprocedure('public.get_public_voucher(uuid)') as get_public_voucher,
        to_regprocedure('public.verify_voucher(text,text)') as verify_voucher,
        to_regprocedure('public.redeem_voucher(text,text,text)') as redeem_voucher,
@@ -29,14 +32,15 @@ select to_regprocedure('public.is_voucher_admin()') as is_voucher_admin,
        to_regprocedure('public.admin_engine_revoke_unissued(uuid,integer,text,uuid)') as admin_engine_revoke_unissued,
        to_regprocedure('public.admin_engine_retire_version(uuid,text,uuid)') as admin_engine_retire_version;
 
--- 3) RLS must be enabled on tenant-owned tables.
+-- 3) RLS must be enabled on tenant/private tables.
 select c.relname,
        c.relrowsecurity as rls_enabled
 from pg_class c
 join pg_namespace n on n.oid=c.relnamespace
 where n.nspname='public'
   and c.relname in (
-    'partners','partner_users','partner_claim_settings','partner_claim_branches',
+    'partners','partner_users','staff_users','operational_identity_realms',
+    'partner_claim_settings','partner_claim_branches',
     'vouchers','redemptions','partner_voucher_access','partner_voucher_allocations',
     'voucher_allocation_events'
   )
@@ -66,14 +70,14 @@ where not tgisinternal
 order by tgname;
 
 -- 6) Public exposure rule: anon should only need explicit public RPC execution;
--- tenant tables must not have direct anon table privileges.
+-- tenant/private tables must not have direct anon table privileges.
 select table_name, privilege_type
 from information_schema.table_privileges
 where table_schema='public'
   and grantee='anon'
   and table_name in (
-    'partners','partner_users','staff_users','vouchers','redemptions',
-    'partner_voucher_allocations','voucher_allocation_events'
+    'partners','partner_users','staff_users','operational_identity_realms',
+    'vouchers','redemptions','partner_voucher_allocations','voucher_allocation_events'
   )
 order by table_name, privilege_type;
 
@@ -83,6 +87,8 @@ order by table_name, privilege_type;
 -- The authenticated-context behavioral checks (Admin vs Partner A vs Partner B vs Staff)
 -- must be executed with real test Auth users after the new target is bound.
 -- Required E2E assertions:
+--   One Auth UID cannot be concurrently activated in two operational realms.
+--   Removed historical Partner membership does not block later re-onboarding.
 --   Partner A cannot read Partner B voucher/allocation/redemption rows.
 --   Partner B cannot read Partner A rows.
 --   Partner catalog shows only active, authorized, allocated Versions with remaining capacity.
