@@ -22,14 +22,19 @@ select to_regprocedure('public.is_voucher_admin()') as is_voucher_admin,
        to_regprocedure('public.get_public_voucher(uuid)') as get_public_voucher,
        to_regprocedure('public.verify_voucher(text,text)') as verify_voucher,
        to_regprocedure('public.redeem_voucher(text,text,text,text)') as redeem_voucher,
+       to_regprocedure('public.reverse_redemption(uuid,text)') as reverse_redemption,
        to_regprocedure('public.staff_operational_context()') as staff_operational_context,
        to_regprocedure('public.staff_recent_redemptions(integer)') as staff_recent_redemptions,
        to_regprocedure('public.staff_today_summary()') as staff_today_summary,
        to_regprocedure('public.get_my_partner_claim_access()') as get_my_partner_claim_access,
+       to_regprocedure('public.get_my_partner_dashboard()') as get_my_partner_dashboard,
+       to_regprocedure('public.partner_voucher_summary()') as partner_voucher_summary,
        to_regprocedure('public.admin_dashboard_summary()') as admin_dashboard_summary,
        to_regprocedure('public.admin_partner_directory()') as admin_partner_directory,
        to_regprocedure('public.admin_active_branches()') as admin_active_branches,
+       to_regprocedure('public.admin_set_partner_voucher_limit(uuid,integer)') as admin_set_partner_voucher_limit,
        to_regprocedure('public.partner_issuable_voucher_catalog()') as partner_issuable_voucher_catalog,
+       to_regprocedure('public.guard_partner_global_voucher_quota()') as guard_partner_global_voucher_quota,
        to_regprocedure('public.admin_engine_allocate(uuid,uuid,integer,uuid)') as admin_engine_allocate,
        to_regprocedure('public.admin_engine_allocate_all(uuid,integer,uuid)') as admin_engine_allocate_all,
        to_regprocedure('public.admin_engine_revoke_unissued(uuid,integer,text,uuid)') as admin_engine_revoke_unissued,
@@ -61,14 +66,16 @@ where not tgisinternal
   )
 order by tgname;
 
--- 5) Partner consistency guards must exist.
+-- 5) Voucher/Partner consistency and quota guards must exist.
 select tgname,
        tgrelid::regclass as table_name
 from pg_trigger
 where not tgisinternal
   and tgname in (
     'vouchers_guard_partner_consistency',
-    'redemptions_guard_partner_consistency'
+    'redemptions_guard_partner_consistency',
+    'vouchers_guard_global_partner_quota',
+    'vouchers_guard_engine_capacity'
   )
 order by tgname;
 
@@ -95,6 +102,7 @@ order by table_name, privilege_type;
 --   Partner A cannot read Partner B voucher/allocation/redemption rows.
 --   Partner B cannot read Partner A rows.
 --   Partner catalog shows only active, authorized, allocated Versions with remaining capacity.
+--   Partner voucher_limit=0 behaves as unlimited; positive limits are race-safe Partner-wide ceilings.
 --   Staff context exposes only assigned branch, except all_branch_manager which receives active branch choices.
 --   Staff verify/redeem/history remain RPC-only and branch-scoped.
 --   Admin control directory is available only through Admin RPCs, not browser table reads.
@@ -102,4 +110,5 @@ order by table_name, privilege_type;
 --   allocate_all is all-or-nothing inside one database transaction.
 --   Revoke/retire races cannot invalidate already-issued capacity or issue after retirement.
 --   Public token lookup reveals no customer phone, auth IDs, allocation IDs or metadata.
+--   Admin/Partner summary buckets use mutually exclusive revoked > expired > redeemed > active precedence.
 --   Issue -> Public -> Verify -> Redeem -> Report -> Reverse preserves audit/history.
