@@ -1,5 +1,6 @@
 -- Controlled partner voucher issuance.
 -- Preserves the proven Partner -> Voucher -> Branch flow without customer IC.
+-- Legacy partner.voucher_limit semantics: 0 means no quota, not unlimited.
 
 drop function if exists public.issue_partner_voucher(text,text,text,date);
 create function public.issue_partner_voucher(
@@ -65,7 +66,7 @@ begin
     raise exception 'Staff access is disabled by Partner Admin';
   end if;
 
-  if v_partner.voucher_limit > 0 and v_partner.vouchers_issued >= v_partner.voucher_limit then
+  if v_partner.vouchers_issued >= v_partner.voucher_limit then
     raise exception 'Voucher issuance limit reached';
   end if;
 
@@ -161,7 +162,7 @@ begin
     'voucher_type',trim(p_voucher_type),
     'expiry_date',p_expiry_date,
     'all_branches',v_all_branches,
-    'remaining',case when v_partner.voucher_limit > 0 then greatest(0,v_partner.voucher_limit-v_partner.vouchers_issued-1) else null end
+    'remaining',greatest(0,v_partner.voucher_limit-v_partner.vouchers_issued-1)
   );
 end;
 $$;
