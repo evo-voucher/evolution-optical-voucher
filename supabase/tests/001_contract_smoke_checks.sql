@@ -38,7 +38,9 @@ select to_regprocedure('public.is_voucher_admin()') as is_voucher_admin,
        to_regprocedure('public.admin_engine_allocate(uuid,uuid,integer,uuid)') as admin_engine_allocate,
        to_regprocedure('public.admin_engine_allocate_all(uuid,integer,uuid)') as admin_engine_allocate_all,
        to_regprocedure('public.admin_engine_revoke_unissued(uuid,integer,text,uuid)') as admin_engine_revoke_unissued,
-       to_regprocedure('public.admin_engine_retire_version(uuid,text,uuid)') as admin_engine_retire_version;
+       to_regprocedure('public.admin_engine_retire_version(uuid,text,uuid)') as admin_engine_retire_version,
+       to_regprocedure('public.admin_provision_partner(text,text,text,text,integer,integer,uuid,text,uuid)') as admin_provision_partner,
+       to_regprocedure('public.admin_provision_staff(uuid,text,uuid,text,text,uuid)') as admin_provision_staff;
 
 -- 3) RLS must be enabled on tenant/private tables.
 select c.relname,
@@ -111,4 +113,5 @@ order by table_name, privilege_type;
 --   Revoke/retire races cannot invalidate already-issued capacity or issue after retirement.
 --   Public token lookup reveals no customer phone, auth IDs, allocation IDs or metadata.
 --   Admin/Partner summary buckets use mutually exclusive revoked > expired > redeemed > active precedence.
+--   Server identity provisioning stays behind 038 service_role-only atomic RPCs after caller JWT authorization.
 --   Issue -> Public -> Verify -> Redeem -> Report -> Reverse preserves audit/history.
