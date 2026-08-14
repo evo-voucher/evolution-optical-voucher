@@ -1,5 +1,6 @@
 -- Public voucher lookup for customer share links.
 -- Exposes only the minimum customer-facing fields. No phone, user IDs or internal metadata.
+-- Canonical DB status active is exposed as valid for the validated customer page.
 
 drop function if exists public.get_public_voucher(uuid);
 create function public.get_public_voucher(p_token uuid)
@@ -22,9 +23,12 @@ begin
     'status',case
       when v.status='redeemed' then 'redeemed'
       when v.status='revoked' then 'revoked'
+      when v.status='expired' then 'expired'
       when v.expiry_date < (now() at time zone 'Asia/Kuala_Lumpur')::date then 'expired'
+      when v.status='active' then 'valid'
       else v.status
     end,
+    'canonical_status',v.status,
     'issued_at',v.issued_at,
     'all_branches',v.all_branches,
     'branches',coalesce(
