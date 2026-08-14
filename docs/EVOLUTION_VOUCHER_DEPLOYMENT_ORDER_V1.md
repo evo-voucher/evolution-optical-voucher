@@ -41,6 +41,7 @@ Apply migrations strictly by numeric filename order. Current staged chain:
 29. `029_staff_direct_read_boundary.sql`
 30. `030_declarative_partner_consistency.sql`
 31. `031_admin_control_directory.sql`
+32. `032_partner_issuable_catalog.sql`
 
 ## Dependency checkpoints
 - 002 requires core identity/business tables from 001.
@@ -63,6 +64,7 @@ Apply migrations strictly by numeric filename order. Current staged chain:
 - 029 removes Staff direct SELECT paths to Voucher/Redemption/branch-mapping detail. Staff operational reads are served through scoped RPCs from 004/005/020; Admin and owning Partner direct read scopes remain.
 - 030 adds declarative composite foreign keys so Voucher allocation ownership, Redemption ownership, and Allocation Event tenant/version identity cannot cross Partner boundaries even under trusted server/service-role writes.
 - 031 adds Admin-only read models `admin_partner_directory()` and `admin_active_branches()` so Admin control UI can render Partner/branch management without restoring browser direct-table reads.
+- 032 adds `partner_issuable_voucher_catalog()` so Partner UI can discover only active, authorized, currently allocated Voucher Versions with remaining allocation/supply, without direct reads of global Voucher Engine tables.
 
 ## Deployment gates
 Do not bind frontend URLs/keys until all of the following are true:
@@ -74,21 +76,24 @@ Do not bind frontend URLs/keys until all of the following are true:
 6. `supabase/tests/003_partner_isolation_constraints.sql` passes.
 7. `supabase/tests/004_admin_mutation_contract.sql` passes.
 8. `supabase/tests/005_admin_control_directory_contract.sql` passes.
-9. Test Admin identity exists and resolves as `admin` only.
-10. Two independent test Partners exist and cross-Partner reads/writes are rejected.
-11. Direct SQL/service-role attempts to pair a Voucher or Redemption with the wrong Partner fail at the declarative FK boundary.
-12. Partner browser/user context cannot use the service-role bypass.
-13. Admin Edge Function using service-role server context can allocate to a selected Partner after verifying the Admin caller.
-14. Anonymous function inventory contains only `get_public_voucher(uuid)`.
-15. Staff direct SELECT on `vouchers`, `redemptions`, and `voucher_branches` returns no sensitive operational rows outside RPCs.
-16. Staff Verify -> Redeem -> History works at allowed branch and fails at disallowed branch.
-17. Public voucher page returns only customer-facing fields via public token.
-18. Concurrent double redemption does not create two completed uses for a single-use Voucher.
-19. Concurrent Voucher Engine issue attempts cannot exceed Allocation or Version supply.
-20. Retire Version racing with issue cannot create a Voucher after the Version is inactive.
-21. Admin reversal restores usage while preserving the reversed redemption record.
-22. Reporting totals reconcile to canonical `vouchers` + `redemptions`.
-23. Admin frontend contains no direct business-table read/mutation for control flows; it conforms to `docs/ADMIN_PORTAL_BACKEND_CONTRACT_V1.md` and uses 031 read models for directory data.
+9. `supabase/tests/006_partner_catalog_contract.sql` passes.
+10. Test Admin identity exists and resolves as `admin` only.
+11. Two independent test Partners exist and cross-Partner reads/writes are rejected.
+12. Direct SQL/service-role attempts to pair a Voucher or Redemption with the wrong Partner fail at the declarative FK boundary.
+13. Partner browser/user context cannot use the service-role bypass.
+14. Admin Edge Function using service-role server context can allocate to a selected Partner after verifying the Admin caller.
+15. Anonymous function inventory contains only `get_public_voucher(uuid)`.
+16. Staff direct SELECT on `vouchers`, `redemptions`, and `voucher_branches` returns no sensitive operational rows outside RPCs.
+17. Staff Verify -> Redeem -> History works at allowed branch and fails at disallowed branch.
+18. Public voucher page returns only customer-facing fields via public token.
+19. Partner catalog returns only Versions the current Partner can actually issue and hides exhausted/inactive/out-of-window entries.
+20. Concurrent double redemption does not create two completed uses for a single-use Voucher.
+21. Concurrent Voucher Engine issue attempts cannot exceed Allocation or Version supply.
+22. Retire Version racing with issue cannot create a Voucher after the Version is inactive.
+23. Admin reversal restores usage while preserving the reversed redemption record.
+24. Reporting totals reconcile to canonical `vouchers` + `redemptions`.
+25. Admin frontend contains no direct business-table read/mutation for control flows; it conforms to `docs/ADMIN_PORTAL_BACKEND_CONTRACT_V1.md` and uses 031 read models for directory data.
+26. Partner frontend does not directly read global Voucher Engine tables for its issuable catalog; it uses 032.
 
 ## Cutover order
 1. New Supabase target verified.
@@ -96,7 +101,7 @@ Do not bind frontend URLs/keys until all of the following are true:
 3. Seed branches.
 4. Create first Admin Auth user + `admin_users` row.
 5. Deploy required Edge Functions with authenticated JWT enforcement.
-6. Run smoke/security/isolation/admin-contract/integration tests.
+6. Run smoke/security/isolation/admin-contract/partner-catalog/integration tests.
 7. Create disposable test Partner / Staff identities.
 8. Run end-to-end flow: Allocate -> Issue -> Public -> Verify -> Redeem -> Report -> Reverse -> Report.
 9. Only then update frontend environment configuration to the new Supabase URL/publishable key.
@@ -110,6 +115,7 @@ Do not bind frontend URLs/keys until all of the following are true:
 - Historical Staff frontend direct-table history reads must be replaced by `staff_recent_redemptions()` before new-backend cutover.
 - Historical Admin direct mutations of Partner status and voucher limit must stay replaced by the trusted Admin RPC/Edge Function contract.
 - Admin Partner/branch control-directory reads must use `admin_partner_directory()` / `admin_active_branches()`, not direct browser table reads.
+- Partner issuable Voucher discovery must use `partner_issuable_voucher_catalog()`, not direct browser reads of Voucher Engine tables.
 
 ## Non-negotiable invariants
 - Partner tenants are isolated.
@@ -124,5 +130,6 @@ Do not bind frontend URLs/keys until all of the following are true:
 - Function EXECUTE is default-deny; RPC exposure is explicit.
 - Staff sensitive reads use scoped RPCs, not broad direct table SELECT.
 - Admin browser control reads use scoped Admin RPC read models; Admin browser mutations use authenticated RPC/Edge Function boundaries.
+- Partner browser sees an issuance catalog only through tenant-derived RPC scope; it never receives a global Voucher Engine catalog.
 - `service_role` is trusted server context only and must never appear in browser code.
 - Browser code never contains service_role credentials.
