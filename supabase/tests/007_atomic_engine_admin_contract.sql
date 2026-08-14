@@ -4,6 +4,7 @@
 with required_functions(signature) as (
   values
     ('admin_engine_allocate(uuid,uuid,integer,uuid)'),
+    ('admin_engine_allocate_all(uuid,integer,uuid)'),
     ('admin_engine_revoke_unissued(uuid,integer,text,uuid)'),
     ('admin_engine_retire_version(uuid,text,uuid)')
 )
@@ -24,6 +25,7 @@ join pg_namespace n on n.oid=p.pronamespace
 where n.nspname='public'
   and p.proname in (
     'admin_engine_allocate',
+    'admin_engine_allocate_all',
     'admin_engine_revoke_unissued',
     'admin_engine_retire_version'
   )
@@ -45,9 +47,16 @@ where n.nspname='public'
   and p.proname in ('admin_engine_allocate','admin_engine_revoke_unissued','admin_engine_retire_version')
 order by p.proname;
 
+-- allocate_all must delegate to the atomic single-Partner function inside one DB transaction.
+select position('admin_engine_allocate' in pg_get_functiondef(p.oid))>0 as allocate_all_delegates_atomically
+from pg_proc p
+join pg_namespace n on n.oid=p.pronamespace
+where n.nspname='public' and p.proname='admin_engine_allocate_all';
+
 -- Behavioral runtime checks with real Admin Auth context are still required:
 -- A) concurrent allocation increments for same Partner+Version must both be preserved;
--- B) revoke racing with issuance must never revoke already-issued capacity;
--- C) retire racing with issuance must not permit issuance after Version becomes inactive;
--- D) non-Admin authenticated caller must be rejected;
--- E) service_role call without a valid active Admin actor_user_id must be rejected.
+-- B) allocate_all failure must roll back the entire multi-Partner operation;
+-- C) revoke racing with issuance must never revoke already-issued capacity;
+-- D) retire racing with allocation/issuance must not leave active allocation or permit issuance after retirement;
+-- E) non-Admin authenticated caller must be rejected;
+-- F) service_role call without a valid active Admin actor_user_id must be rejected.
