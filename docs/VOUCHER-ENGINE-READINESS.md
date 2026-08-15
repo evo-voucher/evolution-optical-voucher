@@ -26,6 +26,8 @@ The disposable local Supabase CI baseline has verified the following core invari
 - Admin Voucher Engine UI can create classifications/templates, publish immutable Versions, configure validity/presentation/Version scope, and allocate stock with Allocation scope.
 - Admin navigation to Voucher Engine, Evolution Staff, and Partner password tools is browser-tested.
 - The repository has passed clean local recovery from migrations and runtime assets without hidden manual database repair.
+- Hosted cutover preflight is executed by CI, not merely stored as a script.
+- Clean recovery preserves both runtime assets and hosted-cutover safety assets, including the cutover runbook and preflight contract.
 
 ## Key runtime evidence
 
@@ -39,20 +41,21 @@ The disposable local Supabase CI baseline has verified the following core invari
 - Partner Staff tenant / branch non-broadening E2E: `supabase/tests/027_partner_staff_tenant_branch_non_broadening_e2e.sql`
 - Recovery manifest contract: `supabase/tests/runtime/002_recovery_manifest_contract.sh`
 - Hosted cutover preflight contract: `supabase/tests/runtime/003_hosted_cutover_preflight_contract.sh`
+- Hosted cutover runbook: `docs/HOSTED-CUTOVER-RUNBOOK.md`
 
-Latest verified local workflow evidence:
+Latest verified full local workflow evidence:
 
-- Run `31880492960`
-- Job `95002270064`
-- Head `a7935d77fb646b64fa6eaf38637948e58bb6e1be`
+- Run `31883788838`
+- Job `95009948898`
+- Head `eaae937436f60e1c0f7e3541784355ac7618e103`
 - Conclusion: success
 
-Clean-rebuild recovery evidence:
+Key milestones within the same verified baseline:
 
-- Run `31879716239`
-- Job `95000488980`
-- Head `e1b24d5078ad97bd41e7cf70848363c45d66a866`
-- Conclusion: success
+- Clean-rebuild recovery verified in Run `31879716239`, Job `95000488980`, Head `e1b24d5078ad97bd41e7cf70848363c45d66a866`.
+- Three-layer branch-scope architecture verified in Run `31880492960`, Job `95002270064`, Head `a7935d77fb646b64fa6eaf38637948e58bb6e1be`.
+- Hosted preflight actual CI execution verified in Run `31883329270`, Job `95008834856`, Head `0723cf581faec383340452b424d64a1279c28ef5`.
+- Recovery preservation of hosted-cutover safety assets verified in Run `31883788838`, Job `95009948898`, Head `eaae937436f60e1c0f7e3541784355ac7618e103`.
 
 ## Approved customer share intro
 
@@ -83,6 +86,8 @@ Before commercial hosted use, all of the following must be explicitly verified a
 9. Verify RLS / RPC behavior using signed real hosted sessions, not only SQL service-role checks.
 10. Verify rollback / recovery procedure before switching any public entry point.
 
+The authoritative hosted launch sequence is maintained in `docs/HOSTED-CUTOVER-RUNBOOK.md` and its safety assumptions are enforced by `supabase/tests/runtime/003_hosted_cutover_preflight_contract.sh`.
+
 Until those hosted checks pass, the authoritative state remains:
 
 - `hosted_cutover_verified = false`
@@ -99,6 +104,7 @@ Until those hosted checks pass, the authoritative state remains:
 - Browser code does not receive service-role credentials.
 - High-impact mutations go through narrow Admin or trusted Edge/RPC boundaries.
 - Frontend presentation must not be able to widen authorization or redemption scope.
+- Recovery must restore both execution assets and the hosted-cutover safety boundary.
 
 ## Remaining work before hosted launch
 
