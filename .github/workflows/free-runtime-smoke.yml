@@ -8,6 +8,9 @@ on:
       - 'supabase/**'
       - '*.html'
       - 'assets/js/**'
+      - 'recovery/**'
+      - 'docs/SYSTEM-INITIALIZATION-BACKUP.md'
+      - 'docs/VOUCHER-ENGINE-READINESS.md'
       - '.github/workflows/free-runtime-smoke.yml'
 
 permissions:
@@ -21,6 +24,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Validate recovery manifest contract
+        run: bash supabase/tests/runtime/002_recovery_manifest_contract.sh
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
