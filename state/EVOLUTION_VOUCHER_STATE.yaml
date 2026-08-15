@@ -1,0 +1,77 @@
+version: "1.0"
+project_key: "evolution_voucher"
+status: "VERIFIED"
+state_date: "2026-08-16"
+
+truth_role: >
+  Machine-readable current-state snapshot for XiaoE. Read this first for project status,
+  then reverify GitHub / runtime / Supabase before any high-impact action.
+
+repository:
+  full_name: "evo-voucher/evolution-optical-voucher"
+  branch: "main"
+
+runtime:
+  frontend_url: "https://evo-voucher.github.io/evolution-optical-voucher/"
+  environment: "production"
+  production_supabase_project: "hukihbcyyqhanaqrizvm"
+  xiaoe_ai_core_project: "uuqiwyqxllqsuboogbxh"
+  boundary_rule: "Voucher runtime must never be redirected to XiaoE AI Core."
+
+cutover:
+  cutover_state: "VERIFIED"
+  hosted_cutover_verified: true
+  latest_verified_runtime_commit: "24b42530822d9d079bb3abb3841dbd497e2b07bc"
+  latest_verified_runtime_smoke: 127
+  latest_verified_pages_deploy: 271
+  latest_verified_public_smoke: 2
+
+business_baseline:
+  vouchers: 43
+  redemptions: 8
+  baseline_verified_after_browser_smoke: true
+  note: "Historical TEST-MINES-001 / redemption predates this cutover and is not current smoke residue."
+
+browser_uat:
+  admin_login: "PASS"
+  partner_login: "PASS"
+  staff_login: "PASS"
+  staff_qr_scan: "PASS"
+  staff_branch_restriction: "PASS"
+  staff_allowed_branch_verify: "PASS"
+  public_voucher_rendering: "PASS"
+  deliberate_redeem_performed: false
+
+frontend_security:
+  browser_key_type: "sb_publishable_"
+  service_role_allowed_in_browser: false
+  secrets_allowed_in_public_repo: false
+
+intentional_hosted_drifts:
+  - component: "manage-partner-staff"
+    status: "INTENTIONAL_HOSTED_COMPATIBILITY"
+    rule: "Do not replace production implementation merely to match canonical GitHub source."
+  - component: "reset-partner-password"
+    status: "INTENTIONAL_HOSTED_COMPATIBILITY"
+    rule: "Do not replace production implementation merely to match canonical GitHub source."
+  - component: "admin-set-partner-staff-limit"
+    status: "INTENTIONAL_HOSTED_COMPATIBILITY"
+    rule: "Do not replace production implementation merely to match canonical GitHub source."
+  - component: "voucher-engine"
+    status: "MATCHES_GITHUB_CURRENT_AT_CUTOVER_AUDIT"
+
+startup_contract:
+  - "Read this file first for the current project snapshot."
+  - "Reverify repository, branch, Supabase project and live evidence before high-impact changes."
+  - "If this file conflicts with current verified runtime evidence, runtime evidence wins and this file must be updated."
+  - "Do not infer production drift is a bug until the intentional drift registry/state is checked."
+
+safe_change_default:
+  ui_only: "Keep backend/auth/RPC contracts unchanged; use scoped frontend/browser verification."
+  backend_or_auth: "Reclassify risk and verify trusted boundaries before changing."
+  migration_or_rls: "Require impact map, recovery plan and full relevant regression."
+
+source_documents:
+  readiness: "docs/VOUCHER-ENGINE-READINESS.md"
+  cutover_runbook: "docs/HOSTED-CUTOVER-RUNBOOK.md"
+  brain_standard: "docs/XIAOE_BRAIN_STANDARD_V1.yaml"
