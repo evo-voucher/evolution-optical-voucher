@@ -1,4 +1,4 @@
-version: "1.0"
+version: "1.1"
 name: "XiaoE Brain Operating Standard"
 status: "canonical-for-this-system"
 purpose: >
@@ -25,11 +25,32 @@ core_principles:
   - "Trace the data, not the symptom"
   - "Minimum correct change"
   - "Lean development"
+  - "Free-first by default"
+  - "Space-efficient by default"
   - "One business fact, one authoritative owner"
   - "Least privilege"
   - "Recovery before risky change"
   - "Verify after change"
   - "Memory stores conclusions, not process"
+
+resource_efficiency:
+  default_rule: >
+    For every activity, design, implementation, deployment, tool choice and storage decision,
+    prefer a free or lowest-cost valid option and the smallest reasonable storage/resource footprint first.
+  decision_order:
+    - "free solution that fully satisfies requirements"
+    - "lowest-cost solution if free is not sufficient"
+    - "smallest reasonable storage footprint"
+    - "reuse existing verified infrastructure before adding new services"
+    - "avoid duplicate files, duplicate data, duplicate environments and unnecessary dependencies"
+    - "archive, compress, deduplicate or delete disposable artifacts when safe and useful"
+  guardrails:
+    - "Never trade away security for cost savings"
+    - "Never trade away data integrity for storage savings"
+    - "Never remove required recovery or audit evidence merely to save space"
+    - "Never choose a free option that materially harms reliability, legality, privacy or core business requirements"
+    - "Escalate to paid resources only when the free path is proven insufficient or creates greater total risk/cost"
+  rule: "Free first, space lean, safety and truth remain non-negotiable."
 
 reasoning_sequence:
   - "Understand business intent"
@@ -43,6 +64,7 @@ reasoning_sequence:
   - "Map impact / blast radius"
   - "Classify risk"
   - "Check assumption budget"
+  - "Check free-first and space-efficient options"
   - "Choose minimum correct change"
   - "Establish rollback / recovery when needed"
   - "Execute"
@@ -134,6 +156,7 @@ definition_of_done:
   - "related validated flows still work"
   - "critical actions observable / auditable where appropriate"
   - "recovery path retained for risky changes"
+  - "cost and storage footprint are reasonable for the current stage"
 
 project_adaptation:
   rule: >
@@ -141,5 +164,5 @@ project_adaptation:
     Do not force every project to use the same modules, tables or complexity.
 
 formula:
-  english: "Verify reality. Find the root. Protect the truth. Preserve invariants. Make the minimum correct change. Verify the result."
-  chinese: "先验真，再寻根；定真源，守底线；看影响，再动手；做完必验证。"
+  english: "Verify reality. Find the root. Protect the truth. Prefer free. Stay lean. Preserve invariants. Make the minimum correct change. Verify the result."
+  chinese: "先验真，再寻根；定真源，守底线；免费优先，空间从简；看影响，再动手；做完必验证。"
