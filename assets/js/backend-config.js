@@ -1,11 +1,10 @@
 // Evolution Voucher frontend backend configuration.
-// FAIL-CLOSED by default. Do not insert legacy Supabase credentials here.
-// Populate only after the NEW reconstructed Supabase target has passed deployment gates.
+// Production browser clients use the Supabase publishable key only.
 window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
-  enabled: false,
-  environment: 'reconstruction',
-  projectId: '',
-  supabaseUrl: '',
-  publishableKey: '',
+  enabled: true,
+  environment: 'production',
+  projectId: 'hukihbcyyqhanaqrizvm',
+  supabaseUrl: 'https://hukihbcyyqhanaqrizvm.supabase.co',
+  publishableKey: 'sb_publishable_kpPFeGYpedq2auo01Zo50A_aiSjdeVh',
   siteBase: 'https://evo-voucher.github.io/evolution-optical-voucher/'
 });
