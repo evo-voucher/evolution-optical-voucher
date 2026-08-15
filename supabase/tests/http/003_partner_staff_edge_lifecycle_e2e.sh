@@ -58,6 +58,15 @@ PARTNER_ID="$(psql "$DB_URL" -Atqc "select partner_id from public.partner_users 
 CALLER_PARTNER_ID="$(psql "$DB_URL" -Atqc "select partner_id from public.partner_users where user_id='$(jq -r '.user.id' <<<"$PARTNER_LOGIN")'::uuid")"
 [[ "$PARTNER_ID" == "$CALLER_PARTNER_ID" ]] || { echo 'Partner Staff crossed tenant boundary' >&2; exit 1; }
 
+# Partner Staff may issue/read within its Partner tenant, but must never manage Partner Staff accounts.
+STAFF_LOGIN="$(login "$STAFF_EMAIL" "$password")"
+STAFF_TOKEN="$(jq -r '.access_token' <<<"$STAFF_LOGIN")"
+[[ -n "$STAFF_TOKEN" && "$STAFF_TOKEN" != null ]] || { echo 'Partner Staff login failed' >&2; exit 1; }
+DENIED_MANAGE="$(edge_post manage-partner-staff "$STAFF_TOKEN" "{\"action\":\"rename\",\"staff_id\":\"$STAFF_ID\",\"staff_name\":\"Should Not Apply\"}")"
+[[ "$(tail -n1 <<<"$DENIED_MANAGE")" == "403" ]] || { echo "Partner Staff unexpectedly reached Staff management boundary: $DENIED_MANAGE" >&2; exit 1; }
+UNCHANGED_NAME="$(psql "$DB_URL" -Atqc "select staff_name from public.partner_users where id='${STAFF_ID}'::uuid")"
+[[ "$UNCHANGED_NAME" == "Partner Staff One" ]] || { echo 'Denied Partner Staff management attempt mutated canonical data' >&2; exit 1; }
+
 RENAME="$(edge_post manage-partner-staff "$PARTNER_TOKEN" "{\"action\":\"rename\",\"staff_id\":\"$STAFF_ID\",\"staff_name\":\"Renamed Partner Staff\"}")"
 [[ "$(tail -n1 <<<"$RENAME")" == "200" ]] || { echo "$RENAME" >&2; exit 1; }
 [[ "$(jq -r '.staff.staff_name' <<<"$(sed '$d' <<<"$RENAME")")" == "Renamed Partner Staff" ]] || exit 1
@@ -85,4 +94,4 @@ REMOVED_AT="$(jq -r '.staff.removed_at' <<<"$(sed '$d' <<<"$REMOVE")")"
 REALM_COUNT="$(psql "$DB_URL" -Atqc "select count(*) from public.operational_identity_realms where user_id='${STAFF_UID}'::uuid")"
 [[ "$REALM_COUNT" == "0" ]] || { echo 'Removed Partner Staff still owns operational realm' >&2; exit 1; }
 
-echo 'Partner Staff Edge lifecycle E2E passed.'
+echo 'Partner Staff Edge lifecycle E2E passed, including Partner Staff management denial.'
