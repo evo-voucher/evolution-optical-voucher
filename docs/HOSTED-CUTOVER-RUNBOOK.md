@@ -1,6 +1,6 @@
 # Evolution Optical Voucher — Hosted Cutover Runbook
 
-Status: CUTOVER IN PROGRESS
+Status: VERIFIED
 
 This runbook is the authoritative production route for Evolution Voucher.
 
@@ -20,7 +20,6 @@ The earlier clean-third-project plan is retired. The approved route is **existin
 - Preserve live production data and verify counts before and after high-impact changes.
 - Hosted compatibility drift is allowed only when intentional, documented, and bounded by the environment adapter.
 - Do not overwrite hosted semantics merely to make production source text match canonical source text.
-- `hosted_cutover_verified` remains false until deployed browser verification closes.
 
 ## State machine
 
@@ -39,46 +38,46 @@ Frontend may be enabled only with the exact approved production target:
 XiaoE AI Core and secret/service-role material remain forbidden.
 
 ### VERIFIED
-May be declared only after CI, Pages, deployed browser smoke, and post-smoke production baseline all pass.
+Declared after CI, Pages, deployed browser smoke, QR Scan/branch-aware Verify, and post-smoke production baseline all passed on 2026-08-16.
+
+Current flags:
+
+- `cutover_state = VERIFIED`
+- `hosted_cutover_verified = true`
 
 ## Phase 1 — Production compatibility proof
 
-Required evidence:
+Completed evidence:
 
-1. Latest canonical CI fully green.
-2. Production Admin / Partner / Staff Auth-context reads pass.
-3. Real Staff Voucher verify succeeds without unintended writes.
-4. Edge Function drift is classified as either identical or intentional hosted compatibility.
-5. Security hardening does not change business baseline.
+1. Canonical CI green.
+2. Production Admin / Partner / Staff Auth-context reads passed.
+3. Real Staff Voucher verify succeeded without unintended writes.
+4. Edge Function drift was classified as either identical or intentional hosted compatibility.
+5. Security hardening preserved the business baseline.
 6. Recovery / rollback path is explicit.
 
-Current verified baseline before frontend cutover: 43 Vouchers / 8 Redemptions.
+Verified baseline before and after frontend cutover: 43 Vouchers / 8 Redemptions.
 
 ## Phase 2 — Frontend activation
 
-Enable only the browser-safe production configuration. Use the modern Supabase publishable key. Never use service-role credentials.
+The production frontend uses only the browser-safe modern Supabase publishable key. No service-role credential is present in browser configuration.
 
-Activation commit must trigger:
-
-- Hosted Cutover Preflight
-- Free Supabase Runtime Smoke
-- GitHub Pages deployment
-- backup/recovery workflow where configured
+Activation and later QR-scanner commits triggered and passed the relevant production checks, including Hosted Cutover Preflight, Free Supabase Runtime Smoke, GitHub Pages deployment, Public Smoke, and backup/recovery workflow.
 
 ## Phase 3 — Deployed verification
 
-After Pages deploys, verify against the public site:
+Completed against the public production site:
 
-1. Main launcher loads.
-2. Admin page shows Sign In; First-Time Setup remains unavailable when bootstrap is closed.
-3. Admin login resolves to Admin realm.
-4. Partner login resolves to the correct tenant and dashboard.
-5. Staff login resolves to the correct branch/role context.
-6. Staff can verify a real valid Voucher at an allowed branch.
-7. Public Voucher page loads the frozen issued snapshot.
-8. Voucher Engine / Admin navigation loads correctly.
-9. No browser request contains service-role credentials.
-10. Production business counts remain unchanged unless a deliberate smoke mutation was made and fully cleaned up.
+1. Main launcher and deployed Pages surface load.
+2. Admin login resolves to Admin realm and authoritative dashboard data.
+3. Partner login resolves to the correct tenant and Partner summary.
+4. Staff login resolves to the correct branch/role context.
+5. Staff can verify a real valid Voucher at an allowed branch.
+6. Staff QR Scan parses a real Voucher and still enforces branch restrictions.
+7. Public Voucher page renders production Voucher details and Redeemable Branches.
+8. Production browser configuration contains only the publishable credential class.
+9. Production counts remained 43 Vouchers / 8 Redemptions because browser smoke did not redeem or otherwise mutate business data.
+10. Historical `TEST-MINES-001` data was confirmed to predate this cutover and is not current smoke residue.
 
 ## Production smoke chain
 
@@ -90,7 +89,7 @@ Write smoke must have a cleanup/recovery plan and must not be confused with read
 
 ## Rollback rule
 
-If Preflight, Runtime Smoke, Pages deployment, or deployed browser verification fails after activation:
+If a later deployment or deployed browser verification fails:
 
 1. Restore `assets/js/backend-config.js` to fail-closed first if the failure can expose users to a broken path.
 2. Preserve logs and evidence.
@@ -101,14 +100,16 @@ If Preflight, Runtime Smoke, Pages deployment, or deployed browser verification 
 
 ## Definition of done
 
-Set `hosted_cutover_verified = true` only when the same production frontend lineage has:
+The production frontend lineage has now satisfied:
 
 - production-mode Preflight green;
 - full Runtime Smoke green;
 - Pages deployment green;
+- Public Smoke green;
 - deployed Admin / Partner / Staff / Public Voucher browser verification green;
+- Staff QR Scan and allowed-branch Verify green;
 - production baseline/recovery check green.
 
-Until then:
+Therefore:
 
-`hosted_cutover_verified = false`
+`hosted_cutover_verified = true`
