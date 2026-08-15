@@ -27,26 +27,21 @@ serve(async (req) => {
     const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (!url || !anon || !service) return json({ success: false, error: "Server configuration error" }, 500);
 
-    // Caller authorization is evaluated with the original signed JWT. The
-    // service client is used only after that check for trusted Admin mutations.
     const callerClient = createClient(url, anon, {
       global: { headers: { Authorization: `Bearer ${jwt}` } },
       auth: { persistSession: false },
     });
-    const admin = createClient(url, service, { auth: { persistSession: false } });
+    const server = createClient(url, service, { auth: { persistSession: false } });
 
     const { data: userData, error: userError } = await callerClient.auth.getUser(jwt);
     const caller = userData?.user;
     if (userError || !caller) return json({ success: false, error: "Unauthorized" }, 401);
 
-    const { data: adminRow, error: adminLookupError } = await callerClient
-      .from("admin_users")
-      .select("user_id,status")
-      .eq("user_id", caller.id)
-      .eq("status", "active")
-      .maybeSingle();
-    if (adminLookupError) return json({ success: false, error: "Admin authorization check failed" }, 500);
-    if (!adminRow) return json({ success: false, error: "Admin access required" }, 403);
+    const { data: realm, error: realmError } = await callerClient.rpc("current_operational_realm");
+    if (realmError) return json({ success: false, error: "Admin authorization check failed" }, 500);
+    if (!realm || realm.authenticated !== true || realm.realm !== "admin") {
+      return json({ success: false, error: "Admin access required" }, 403);
+    }
 
     const body = await req.json();
     const action = typeof body.action === "string" ? body.action.trim().toLowerCase() : "";
@@ -58,7 +53,7 @@ serve(async (req) => {
       if (!partnerId || !versionId || !Number.isInteger(quantity) || quantity <= 0) {
         return json({ success: false, error: "Valid partner_id, version_id and positive quantity are required" }, 400);
       }
-      const { data, error } = await admin.rpc("admin_engine_allocate", {
+      const { data, error } = await server.rpc("admin_engine_allocate", {
         p_partner_id: partnerId,
         p_version_id: versionId,
         p_quantity: quantity,
@@ -74,7 +69,7 @@ serve(async (req) => {
       if (!versionId || !Number.isInteger(quantity) || quantity <= 0) {
         return json({ success: false, error: "Valid version_id and positive quantity are required" }, 400);
       }
-      const { data, error } = await admin.rpc("admin_engine_allocate_all", {
+      const { data, error } = await server.rpc("admin_engine_allocate_all", {
         p_version_id: versionId,
         p_quantity: quantity,
         p_actor_user_id: caller.id,
@@ -90,7 +85,7 @@ serve(async (req) => {
       if (!allocationId || !Number.isInteger(quantity) || quantity <= 0) {
         return json({ success: false, error: "Valid allocation_id and positive quantity are required" }, 400);
       }
-      const { data, error } = await admin.rpc("admin_engine_revoke_unissued", {
+      const { data, error } = await server.rpc("admin_engine_revoke_unissued", {
         p_allocation_id: allocationId,
         p_quantity: quantity,
         p_reason: reason,
@@ -104,7 +99,7 @@ serve(async (req) => {
       const versionId = typeof body.version_id === "string" ? body.version_id.trim() : "";
       const reason = typeof body.reason === "string" ? body.reason.trim() : null;
       if (!versionId) return json({ success: false, error: "version_id is required" }, 400);
-      const { data, error } = await admin.rpc("admin_engine_retire_version", {
+      const { data, error } = await server.rpc("admin_engine_retire_version", {
         p_version_id: versionId,
         p_reason: reason,
         p_actor_user_id: caller.id,
