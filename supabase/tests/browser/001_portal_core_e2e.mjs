@@ -30,6 +30,9 @@ function sqlLiteral(v){return `'${String(v).replaceAll("'","''")}'`;}
 function runSql(sql){
   execFileSync('psql',[DB_URL,'-v','ON_ERROR_STOP=1'],{input:sql,stdio:['pipe','inherit','inherit']});
 }
+function queryScalar(sql){
+  return execFileSync('psql',[DB_URL,'-Atqc',sql],{encoding:'utf8'}).trim();
+}
 
 function prepareWebRoot(){
   const root=fs.mkdtempSync(path.join(os.tmpdir(),'evo-browser-'));
@@ -121,9 +124,16 @@ try{
   await partnerPage.click('#issueBtn');
   await partnerPage.waitForSelector('#issueResult .resultLink',{visible:true,timeout:15000});
   const issueText=await partnerPage.$eval('#issueResult',el=>el.textContent||'');
-  const voucherCode=issueText.match(/Code:\s*([A-Z0-9-]+)/)?.[1];
   const publicUrl=await partnerPage.$eval('#issueResult .resultLink',el=>el.href);
-  if(!voucherCode||!publicUrl) throw new Error(`Partner browser issuance did not return voucher code/public URL: ${issueText}`);
+  if(!publicUrl) throw new Error(`Partner browser issuance did not return public URL: ${issueText}`);
+
+  const publicToken=new URL(publicUrl).searchParams.get('v')||'';
+  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(publicToken)) {
+    throw new Error(`Partner browser returned invalid public token: ${publicToken}`);
+  }
+  const voucherCode=queryScalar(`select voucher_code from public.vouchers where public_token=${sqlLiteral(publicToken)}::uuid`);
+  if(!voucherCode) throw new Error('Canonical voucher row was not found for issued public token');
+  if(!issueText.includes(voucherCode)) throw new Error(`Partner UI did not render canonical voucher code ${voucherCode}: ${issueText}`);
 
   const publicPage=await browser.newPage();
   await publicPage.goto(publicUrl,{waitUntil:'networkidle0'});
@@ -131,7 +141,7 @@ try{
   const beforeStatus=await publicPage.$eval('#voucherStatus',el=>el.textContent||'');
   if(!beforeStatus.includes('Valid')) throw new Error(`Public voucher was not valid before redemption: ${beforeStatus}`);
   const shownCode=await publicPage.$eval('#voucherCode',el=>el.textContent||'');
-  if(shownCode!==voucherCode) throw new Error('Public voucher code mismatch');
+  if(shownCode!==voucherCode) throw new Error(`Public voucher code mismatch. Expected ${voucherCode}, got ${shownCode}`);
 
   const staffPage=await browser.newPage();
   await loginPage(staffPage,'staff.html',staffEmail,'#operationState:not(.hidden)');
