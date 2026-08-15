@@ -11,7 +11,9 @@
     "frontend_root": "./",
     "runtime_tests": "supabase/tests/",
     "ci_workflows": ".github/workflows/",
-    "recovery_document": "docs/SYSTEM-INITIALIZATION-BACKUP.md"
+    "recovery_document": "docs/SYSTEM-INITIALIZATION-BACKUP.md",
+    "hosted_cutover_runbook": "docs/HOSTED-CUTOVER-RUNBOOK.md",
+    "hosted_cutover_preflight_contract": "supabase/tests/runtime/003_hosted_cutover_preflight_contract.sh"
   },
   "required_security_invariants": [
     "frontend_fail_closed_until_explicit_target_config",
@@ -20,7 +22,9 @@
     "rls_and_narrow_rpc_boundaries_preserved",
     "issued_voucher_snapshots_immutable",
     "legacy_production_not_modified_during_recovery",
-    "xiaoe_ai_core_never_receives_voucher_migrations"
+    "xiaoe_ai_core_never_receives_voucher_migrations",
+    "hosted_cutover_requires_named_target_and_preflight",
+    "hosted_cutover_declaration_requires_real_production_e2e"
   ],
   "recovery_acceptance": {
     "migrations_apply": true,
@@ -32,6 +36,7 @@
     "browser_e2e_pass": true,
     "migration_state_pass": true,
     "clean_teardown_pass": true,
+    "hosted_cutover_preflight_contract_pass": true,
     "hosted_target_smoke_required_for_production_cutover": true
   },
   "cutover_flags": {
