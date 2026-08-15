@@ -81,7 +81,7 @@ try{
   const wa=new URL(href);
   if(wa.hostname!=='wa.me') throw new Error(`Unexpected WhatsApp host: ${wa.hostname}`);
   const message=wa.searchParams.get('text')||'';
-  const required=['Hi 👋','A little gift for you 🎁✨','Here is your Evolution Optical Voucher.','Happy Birthday! 🎂','The Mines','L3-56, Level 3, The Mines Shopping Mall, Seri Kembangan','012-4732881','Voucher: http://127.0.0.1:4177/voucher.html?v='];
+  const required=['Hi 👋','A little gift for you 🎁✨','Here is your Evolution Optical Voucher.','Happy Birthday! 🎂','The Mines','L3-56, The Mines Shopping Mall, Level 3, Seri Kembangan','012-4732881','Voucher: http://127.0.0.1:4177/voucher.html?v='];
   for(const text of required){if(!message.includes(text)) throw new Error(`WhatsApp share missing ${text}: ${message}`);}
   if(message.includes('Bahau')||message.includes('06-4540984')) throw new Error(`WhatsApp share leaked non-snapshotted BAHAU branch: ${message}`);
   console.log('Partner WhatsApp share browser E2E passed.');
