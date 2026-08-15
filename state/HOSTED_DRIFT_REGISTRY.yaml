@@ -1,0 +1,100 @@
+version: "1.0"
+project_key: "evolution_voucher"
+status: "ACTIVE"
+state_date: "2026-08-16"
+
+purpose: >
+  Authoritative registry for intentional differences between canonical GitHub source and the hosted
+  Evolution Voucher production runtime. Read this before deciding that source/runtime drift is a bug.
+
+truth_rule: >
+  Current verified runtime evidence wins over this registry if they conflict. If production behavior
+  changes intentionally, update this registry after verification.
+
+production_target:
+  supabase_project: "hukihbcyyqhanaqrizvm"
+  repository: "evo-voucher/evolution-optical-voucher"
+  branch: "main"
+
+policy:
+  - "Do not redeploy canonical source merely to eliminate text differences."
+  - "Classify drift before changing production."
+  - "Compatibility may translate hosted semantics but must not broaden authorization."
+  - "Canonical Core remains authoritative for canonical environments."
+  - "Hosted compatibility remains scoped to verified hosted production only."
+  - "Any new paid tool/service/action requires Eric explicit approval before execution."
+
+entries:
+  - component: "supabase/functions/manage-partner-staff/index.ts"
+    runtime_name: "manage-partner-staff"
+    classification: "INTENTIONAL_HOSTED_COMPATIBILITY"
+    owner_layer: "Hosted Compatibility / Environment Adapter"
+    known_difference: >
+      Hosted production retains legacy staff lifecycle/status semantics, including hosted-compatible
+      inactive behavior, while canonical source uses canonical lifecycle vocabulary such as removed.
+    keep_until: >
+      Hosted identity/lifecycle semantics are formally migrated or production is rebuilt onto the
+      canonical contract with verified equivalent behavior.
+    change_rule: >
+      Do not overwrite the production implementation solely to match canonical GitHub source.
+      Any convergence must preserve Partner tenant boundaries, Staff lifecycle behavior and browser flow.
+    verification_required:
+      - "Partner Staff Edge lifecycle E2E"
+      - "tenant and branch non-broadening checks"
+      - "Partner/Staff browser regression"
+
+  - component: "supabase/functions/reset-partner-password/index.ts"
+    runtime_name: "reset-partner-password"
+    classification: "INTENTIONAL_HOSTED_COMPATIBILITY"
+    owner_layer: "Hosted Compatibility / Admin Identity Adapter"
+    known_difference: >
+      Hosted production resolves Admin authority through the existing hosted identity lineage rather
+      than assuming the canonical physical Admin identity model.
+    keep_until: >
+      Production Admin identity ownership is intentionally converged to the canonical identity contract.
+    change_rule: >
+      Do not redeploy canonical source merely to remove drift. Preserve hosted Admin authorization and
+      password-reset audit behavior.
+    verification_required:
+      - "Admin Edge controls E2E"
+      - "Admin authorization positive/negative checks"
+      - "password reset audit contract"
+
+  - component: "supabase/functions/admin-set-partner-staff-limit/index.ts"
+    runtime_name: "admin-set-partner-staff-limit"
+    classification: "INTENTIONAL_HOSTED_COMPATIBILITY"
+    owner_layer: "Hosted Compatibility / Admin Identity Adapter"
+    known_difference: >
+      Hosted production keeps compatibility with the current hosted Admin identity and Partner control
+      semantics instead of assuming canonical physical identity tables.
+    keep_until: >
+      Hosted Admin identity and Partner control boundaries are explicitly migrated and fully regression-tested.
+    change_rule: >
+      Do not replace production implementation solely for source parity. Preserve least privilege and
+      the authoritative Partner staff-limit contract.
+    verification_required:
+      - "Admin Edge controls E2E"
+      - "Partner staff-limit contract"
+      - "Admin realm verification"
+
+  - component: "supabase/functions/voucher-engine/index.ts"
+    runtime_name: "voucher-engine"
+    classification: "MATCHES_GITHUB_CURRENT_AT_LAST_AUDIT"
+    owner_layer: "Voucher Engine"
+    known_difference: "None classified at the verified cutover audit."
+    change_rule: >
+      If future source/runtime drift appears, re-audit before deployment; do not assume either side is stale.
+    verification_required:
+      - "Voucher Engine trusted-boundary E2E"
+      - "affected issue/verify/redeem contracts"
+
+review_triggers:
+  - "An Edge Function is about to be deployed to production."
+  - "GitHub source differs from deployed production source."
+  - "A migration changes identity, lifecycle or hosted compatibility semantics."
+  - "A CI failure suggests canonical and hosted behavior diverge unexpectedly."
+  - "A patch starts undoing another compatibility patch."
+
+closeout_rule: >
+  When a drift is intentionally removed, first prove canonical and hosted behavior converge, then mark
+  the entry RESOLVED with evidence. Do not delete historical registry entries merely to make the file cleaner.
