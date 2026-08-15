@@ -31,7 +31,8 @@ if manifest['secrets_included'] is not False:
 sources = manifest['sources']
 for key in (
     'database_migrations', 'edge_functions', 'supabase_local_config',
-    'frontend_root', 'runtime_tests', 'ci_workflows', 'recovery_document'
+    'frontend_root', 'runtime_tests', 'ci_workflows', 'recovery_document',
+    'hosted_cutover_runbook', 'hosted_cutover_preflight_contract'
 ):
     value = sources.get(key)
     if not value:
@@ -57,6 +58,8 @@ required_invariants = {
     'issued_voucher_snapshots_immutable',
     'legacy_production_not_modified_during_recovery',
     'xiaoe_ai_core_never_receives_voucher_migrations',
+    'hosted_cutover_requires_named_target_and_preflight',
+    'hosted_cutover_declaration_requires_real_production_e2e',
 }
 actual_invariants = set(manifest['required_security_invariants'])
 missing_invariants = sorted(required_invariants - actual_invariants)
@@ -68,7 +71,8 @@ required_acceptance = {
     'migrations_apply', 'sql_contracts_pass', 'gotrue_core_flow_pass',
     'edge_trusted_boundary_pass', 'partner_staff_lifecycle_pass',
     'admin_controls_pass', 'browser_e2e_pass', 'migration_state_pass',
-    'clean_teardown_pass', 'hosted_target_smoke_required_for_production_cutover'
+    'clean_teardown_pass', 'hosted_cutover_preflight_contract_pass',
+    'hosted_target_smoke_required_for_production_cutover'
 }
 for key in required_acceptance:
     if acceptance.get(key) is not True:
@@ -80,5 +84,5 @@ if flags.get('hosted_cutover_verified') is not False:
 if flags.get('legacy_production_touched') is not False:
     raise SystemExit('Recovery manifest must preserve legacy production untouched flag')
 
-print(f'Recovery manifest contract OK: {len(migrations)} migrations, {len(function_entries)} Edge Function directories')
+print(f'Recovery manifest contract OK: {len(migrations)} migrations, {len(function_entries)} Edge Function directories, hosted cutover controls preserved')
 PY
