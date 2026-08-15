@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "name": "Evolution Voucher System Initialization Backup",
+  "backup_type": "clean_system_initialization",
+  "live_business_data_included": false,
+  "secrets_included": false,
+  "sources": {
+    "database_migrations": "supabase/migrations/",
+    "edge_functions": "supabase/functions/",
+    "supabase_local_config": "supabase/config.toml",
+    "frontend_root": "./",
+    "runtime_tests": "supabase/tests/",
+    "ci_workflows": ".github/workflows/",
+    "recovery_document": "docs/SYSTEM-INITIALIZATION-BACKUP.md"
+  },
+  "required_security_invariants": [
+    "frontend_fail_closed_until_explicit_target_config",
+    "service_role_server_only",
+    "tenant_identity_auth_derived",
+    "rls_and_narrow_rpc_boundaries_preserved",
+    "issued_voucher_snapshots_immutable",
+    "legacy_production_not_modified_during_recovery",
+    "xiaoe_ai_core_never_receives_voucher_migrations"
+  ],
+  "recovery_acceptance": {
+    "migrations_apply": true,
+    "sql_contracts_pass": true,
+    "gotrue_core_flow_pass": true,
+    "edge_trusted_boundary_pass": true,
+    "partner_staff_lifecycle_pass": true,
+    "admin_controls_pass": true,
+    "browser_e2e_pass": true,
+    "migration_state_pass": true,
+    "clean_teardown_pass": true,
+    "hosted_target_smoke_required_for_production_cutover": true
+  },
+  "cutover_flags": {
+    "hosted_cutover_verified": false,
+    "legacy_production_touched": false
+  }
+}
