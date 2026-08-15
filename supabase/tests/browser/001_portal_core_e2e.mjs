@@ -8,9 +8,11 @@ const API_URL='http://127.0.0.1:54321';
 const DB_URL='postgresql://postgres:postgres@127.0.0.1:54322/postgres';
 const WEB_URL='http://127.0.0.1:4173';
 const password='EvoBrowser!123456';
+const partnerStaffPassword='PartnerStaff!123456';
 const suffix=`${Date.now()}-${Math.floor(Math.random()*100000)}`;
 const adminEmail=`browser-admin-${suffix}@example.test`;
 const partnerEmail=`browser-partner-${suffix}@example.test`;
+const partnerStaffEmail=`browser-partner-staff-${suffix}@example.test`;
 const staffEmail=`browser-staff-${suffix}@example.test`;
 const partnerCode=`BROWSER_${String(Date.now()).slice(-8)}_${Math.floor(Math.random()*1000)}`;
 const templateCode=`BROWSER_TEMPLATE_${String(Date.now()).slice(-8)}_${Math.floor(Math.random()*1000)}`;
@@ -117,6 +119,16 @@ try{
 
   const partnerPage=await browser.newPage();
   await loginPage(partnerPage,'partner.html',partnerEmail,'#dashboardState:not(.hidden)');
+  await partnerPage.waitForSelector('#staffManagementCard:not(.hidden)',{visible:true,timeout:15000});
+  await partnerPage.type('#staffName','Browser Partner Staff');
+  await partnerPage.type('#staffEmail',partnerStaffEmail);
+  await partnerPage.type('#staffPassword',partnerStaffPassword);
+  await partnerPage.click('#createStaffBtn');
+  await partnerPage.waitForSelector('#staffMsg .ok',{visible:true,timeout:15000});
+  await partnerPage.waitForFunction(email=>(document.querySelector('#staffDirectory')?.textContent||'').includes(email),{},partnerStaffEmail);
+  const partnerStaffCount=queryScalar(`select count(*) from public.partner_users where login_email=${sqlLiteral(partnerStaffEmail)} and role='partner_staff' and status='active' and removed_at is null`);
+  if(partnerStaffCount!=='1') throw new Error(`Partner Staff browser creation did not persist canonical active membership. Got ${partnerStaffCount}`);
+
   await partnerPage.waitForFunction(()=>document.querySelectorAll('#issueVersion option').length>1,{timeout:15000});
   await partnerPage.select('#issueVersion',await partnerPage.$eval('#issueVersion',el=>[...el.options].find(o=>o.value)?.value||''));
   await partnerPage.type('#issueName','Browser Customer');
@@ -162,7 +174,7 @@ try{
   await adminPage.waitForFunction(code=>(document.querySelector('#voucherReport')?.textContent||'').includes(code),{},voucherCode);
   await adminPage.waitForFunction(code=>(document.querySelector('#redemptionReport')?.textContent||'').includes(code),{},voucherCode);
 
-  console.log(`Browser portal core E2E passed for ${voucherCode}.`);
+  console.log(`Browser portal core E2E passed for ${voucherCode}, including Partner Staff creation ${partnerStaffEmail}.`);
 } finally {
   if(browser) await browser.close();
   server.kill('SIGTERM');
