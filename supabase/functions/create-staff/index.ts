@@ -37,22 +37,12 @@ serve(async (req) => {
     const caller = userData?.user;
     if (userError || !caller) return json({ success: false, error: "Unauthorized" }, 401);
 
-    const { data: adminRow } = await callerClient
-      .from("admin_users")
-      .select("user_id,display_name,status")
-      .eq("user_id", caller.id)
-      .eq("status", "active")
-      .maybeSingle();
+    const { data: realm, error: realmError } = await callerClient.rpc("current_operational_realm");
+    if (realmError) return json({ success: false, error: "Authorization check failed" }, 500);
 
-    const { data: manager } = await callerClient
-      .from("staff_users")
-      .select("id,user_id,branch_id,staff_name,role,status")
-      .eq("user_id", caller.id)
-      .eq("status", "active")
-      .maybeSingle();
-
-    const isAdmin = !!adminRow;
-    const managerRole = String(manager?.role || "").toLowerCase();
+    const isAdmin = realm?.authenticated === true && realm?.realm === "admin";
+    const isStaffRealm = realm?.authenticated === true && realm?.realm === "staff";
+    const managerRole = isStaffRealm ? String(realm?.role || "").toLowerCase() : "";
     const isManager = managerRole === "manager" || managerRole === "all_branch_manager";
     if (!isAdmin && !isManager) return json({ success: false, error: "Admin or Manager access required" }, 403);
 
@@ -75,20 +65,21 @@ serve(async (req) => {
         return json({ success: false, error: "Allowed roles: staff, manager" }, 400);
       }
       if (!requestedBranchId) return json({ success: false, error: "Please select a branch" }, 400);
-      const { data: branch } = await callerClient
+      const { data: branch, error: branchError } = await server
         .from("branches")
         .select("id,status")
         .eq("id", requestedBranchId)
         .eq("status", "active")
         .maybeSingle();
-      if (!branch) return json({ success: false, error: "Invalid or inactive branch" }, 400);
+      if (branchError || !branch) return json({ success: false, error: "Invalid or inactive branch" }, 400);
       finalRole = requestedRole;
       finalBranchId = branch.id;
     } else {
       if (requestedRole !== "staff") return json({ success: false, error: "Branch Manager can only create Staff accounts" }, 403);
-      if (!manager?.branch_id) return json({ success: false, error: "Manager has no assigned branch" }, 400);
+      const managerBranchId = typeof realm?.branch_id === "string" ? realm.branch_id : "";
+      if (!managerBranchId) return json({ success: false, error: "Manager has no assigned branch" }, 400);
       finalRole = "staff";
-      finalBranchId = manager.branch_id;
+      finalBranchId = managerBranchId;
     }
 
     const { data: newUserData, error: createUserError } = await server.auth.admin.createUser({
