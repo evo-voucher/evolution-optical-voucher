@@ -1,0 +1,150 @@
+version: "1.0"
+name: "XiaoE Change Classifier and Test Matrix"
+status: "active-guidance"
+purpose: >
+  Classify each change before execution so XiaoE runs the smallest sufficient verification set.
+  Faster does not mean less safe; test depth must match blast radius.
+
+classification_order:
+  - "Identify files / runtime surfaces affected."
+  - "Classify the highest-risk changed layer."
+  - "Use the highest applicable test profile when multiple classes apply."
+  - "Escalate when authorization, secrets, production config or data integrity are touched."
+  - "Never downgrade a change merely because the visible request sounds like UI work."
+
+change_classes:
+  UI_ONLY:
+    examples:
+      - "colors, typography, spacing, shadows, card layout"
+      - "copy/text labels without semantic behavior changes"
+      - "non-functional image/logo placement"
+    must_not_change:
+      - "RPC names or parameters"
+      - "Auth flow"
+      - "authorization logic"
+      - "backend config"
+      - "business state transitions"
+    minimum_tests:
+      - "targeted browser/UI test"
+      - "production public smoke after deploy when public surface changes"
+    full_runtime_smoke_required: false
+
+  FRONTEND_LOGIC:
+    examples:
+      - "QR scanner parsing"
+      - "client-side form behavior"
+      - "navigation or state handling"
+      - "frontend API/RPC invocation logic"
+    minimum_tests:
+      - "targeted browser E2E"
+      - "related frontend contract tests"
+      - "public smoke when deployed public paths change"
+    escalate_if:
+      - "Auth/session handling changes"
+      - "RPC contract changes"
+      - "redemption/issuance semantics change"
+
+  RPC_OR_BUSINESS_LOGIC:
+    examples:
+      - "Voucher issue/verify/redeem behavior"
+      - "Partner/Staff lifecycle RPC"
+      - "reporting business semantics"
+    minimum_tests:
+      - "relevant SQL contract tests"
+      - "related signed core-flow E2E"
+      - "browser E2E for affected portal path"
+      - "baseline verification when production is touched"
+    full_runtime_smoke_required: "normally yes"
+
+  EDGE_FUNCTION:
+    examples:
+      - "create-partner"
+      - "create-staff"
+      - "manage-partner-staff"
+      - "reset-partner-password"
+      - "voucher-engine"
+    minimum_tests:
+      - "Edge trusted-boundary E2E"
+      - "related lifecycle/control E2E"
+      - "Auth/role verification"
+      - "browser regression for caller path"
+    production_rule: >
+      GitHub/current source drift must be classified before deployment. Intentional hosted compatibility
+      must not be overwritten merely to make source text match.
+
+  AUTH_OR_AUTHORIZATION:
+    examples:
+      - "login/session behavior"
+      - "role checks"
+      - "RLS policies"
+      - "tenant/branch access"
+    minimum_tests:
+      - "positive authorized path"
+      - "negative unauthorized path"
+      - "cross-tenant / cross-branch rejection"
+      - "signed Auth E2E"
+      - "related browser E2E"
+    full_runtime_smoke_required: true
+
+  MIGRATION_OR_SCHEMA:
+    examples:
+      - "table/column/constraint/index changes"
+      - "function signature changes"
+      - "migration altering authoritative business structure"
+    before_change:
+      - "verify exact target project"
+      - "impact map"
+      - "backup/recovery or explicit reverse path"
+      - "reversible simulation when meaningful"
+    minimum_tests:
+      - "fresh rebuild from migrations"
+      - "SQL contracts"
+      - "relevant runtime E2E"
+      - "full regression for affected business flow"
+    full_runtime_smoke_required: true
+
+  PRODUCTION_CONFIG:
+    examples:
+      - "backend-config.js"
+      - "production project URL/key target"
+      - "deployment/cutover state"
+    before_change:
+      - "verify target project and branch"
+      - "confirm only publishable/browser-safe credentials"
+      - "rollback/fail-closed path"
+    minimum_tests:
+      - "preflight"
+      - "runtime smoke"
+      - "Pages deploy"
+      - "production public smoke"
+      - "real browser UAT when identity/business runtime changes"
+    full_runtime_smoke_required: true
+
+  SECURITY_OR_SECRETS:
+    examples:
+      - "service_role / secret handling"
+      - "EXECUTE grants"
+      - "security-definer exposure"
+      - "secret rotation"
+    rule: "Treat as high-impact even when code diff is small."
+    minimum_tests:
+      - "least-privilege verification"
+      - "negative access test"
+      - "dependency check"
+      - "recovery path"
+    full_runtime_smoke_required: "when runtime contracts may be affected"
+
+cost_and_resource_gate:
+  default: "Prefer free and smallest reasonable resource footprint."
+  paid_action_requires_eric_explicit_approval: true
+  delegated_authority_does_not_include_paid_action: true
+
+selection_rule: >
+  Run the smallest sufficient test set that proves the affected contract and its critical neighbors.
+  Do not run the full suite by habit for low-risk UI-only work, and do not use a narrow test set for
+  Auth, RLS, migrations, production config, secrets or business-state changes.
+
+closeout:
+  - "Record verification evidence."
+  - "Update project state only when the durable current state changed."
+  - "If a failed test reveals a deeper layer than originally classified, reclassify upward before fixing."
