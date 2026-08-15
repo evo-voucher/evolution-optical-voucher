@@ -65,15 +65,8 @@ serve(async (req) => {
         return json({ success: false, error: "Allowed roles: staff, manager" }, 400);
       }
       if (!requestedBranchId) return json({ success: false, error: "Please select a branch" }, 400);
-      const { data: branch, error: branchError } = await server
-        .from("branches")
-        .select("id,status")
-        .eq("id", requestedBranchId)
-        .eq("status", "active")
-        .maybeSingle();
-      if (branchError || !branch) return json({ success: false, error: "Invalid or inactive branch" }, 400);
       finalRole = requestedRole;
-      finalBranchId = branch.id;
+      finalBranchId = requestedBranchId;
     } else {
       if (requestedRole !== "staff") return json({ success: false, error: "Branch Manager can only create Staff accounts" }, 403);
       const managerBranchId = typeof realm?.branch_id === "string" ? realm.branch_id : "";
