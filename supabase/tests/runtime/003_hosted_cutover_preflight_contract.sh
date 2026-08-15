@@ -3,9 +3,11 @@ set -euo pipefail
 
 CONFIG="assets/js/backend-config.js"
 READINESS="docs/VOUCHER-ENGINE-READINESS.md"
+RUNBOOK="docs/HOSTED-CUTOVER-RUNBOOK.md"
 
 [[ -f "$CONFIG" ]] || { echo "Missing $CONFIG" >&2; exit 1; }
 [[ -f "$READINESS" ]] || { echo "Missing $READINESS" >&2; exit 1; }
+[[ -f "$RUNBOOK" ]] || { echo "Missing $RUNBOOK" >&2; exit 1; }
 
 # Until a new Voucher target is explicitly approved, the frontend must stay fail-closed.
 grep -Eq "enabled:[[:space:]]*false" "$CONFIG" || { echo "backend-config must remain disabled before hosted cutover approval" >&2; exit 1; }
@@ -31,4 +33,12 @@ fi
 grep -Fq 'hosted_cutover_verified = false' "$READINESS" || { echo "Readiness doc must explicitly keep hosted_cutover_verified = false" >&2; exit 1; }
 grep -Fq 'legacy production must not be mutated' "$READINESS" || { echo "Readiness doc must retain legacy-production protection" >&2; exit 1; }
 
-echo "Hosted cutover preflight contract OK: frontend fail-closed, forbidden targets absent, hosted cutover still false"
+# The operational runbook is part of the cutover safety contract.
+grep -Fq 'Status: PREPARED, NOT EXECUTED' "$RUNBOOK" || { echo "Runbook status must remain PREPARED, NOT EXECUTED before hosted cutover" >&2; exit 1; }
+grep -Fq 'hukihbcyyqhanaqrizvm' "$RUNBOOK" || { echo "Runbook must explicitly protect legacy production" >&2; exit 1; }
+grep -Fq 'uuqiwyqxllqsuboogbxh' "$RUNBOOK" || { echo "Runbook must explicitly protect XiaoE AI Core" >&2; exit 1; }
+grep -Fq 'Admin setup/allocation -> Partner issue -> WhatsApp share -> customer public Voucher -> Evolution Staff redeem -> Admin record reflects redemption' "$RUNBOOK" || { echo "Runbook must retain the exact hosted production smoke chain" >&2; exit 1; }
+grep -Fq 'hosted_cutover_verified = false' "$RUNBOOK" || { echo "Runbook must retain the false-until-proven cutover rule" >&2; exit 1; }
+grep -Fq 'live operational data' "$RUNBOOK" || { echo "Runbook must keep live-state migration as a separate concern" >&2; exit 1; }
+
+echo "Hosted cutover preflight contract OK: frontend fail-closed, forbidden targets absent, runbook safety gates present, hosted cutover still false"
