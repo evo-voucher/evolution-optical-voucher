@@ -21,10 +21,12 @@ try{
 
   for(const viewport of viewports){
     const page=await browser.newPage();
+    await page.setCacheEnabled(false);
     await page.setViewport({width:viewport.width,height:viewport.height,isMobile:true,hasTouch:true,deviceScaleFactor:2});
     for(const file of pages){
       const response=await page.goto(`${WEB_URL}/${file}`,{waitUntil:'networkidle0'});
-      if(!response?.ok()) throw new Error(`${file} failed to load at ${viewport.name}: HTTP ${response?.status()}`);
+      const status=response?.status();
+      if(!response || (status!==200 && status!==304)) throw new Error(`${file} failed to load at ${viewport.name}: HTTP ${status}`);
       const metrics=await page.evaluate(()=>({
         innerWidth:window.innerWidth,
         docWidth:document.documentElement.scrollWidth,
