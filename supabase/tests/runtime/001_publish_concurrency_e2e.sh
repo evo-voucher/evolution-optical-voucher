@@ -83,12 +83,15 @@ if [[ "$CURRENT_NO" != "2" ]]; then
   exit 1
 fi
 
+# Clean business fixtures, but deliberately retain the disposable Auth actor.
+# admin_audit_log is append-only and references auth.users with ON DELETE SET NULL;
+# deleting the actor would require mutating historical audit rows, which the schema correctly forbids.
+# This CI database is disposable and is torn down after the workflow.
 psql "$DB_URL" -v ON_ERROR_STOP=1 <<SQL
 begin;
 delete from public.voucher_versions where template_id='$TEMPLATE_ID'::uuid;
 delete from public.voucher_templates where id='$TEMPLATE_ID'::uuid;
 delete from public.admin_users where user_id='$ADMIN_UID'::uuid;
-delete from auth.users where id='$ADMIN_UID'::uuid;
 commit;
 SQL
 
