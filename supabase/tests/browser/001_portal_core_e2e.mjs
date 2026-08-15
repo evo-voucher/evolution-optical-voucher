@@ -9,12 +9,15 @@ const DB_URL='postgresql://postgres:postgres@127.0.0.1:54322/postgres';
 const WEB_URL='http://127.0.0.1:4173';
 const password='EvoBrowser!123456';
 const partnerStaffPassword='PartnerStaff!123456';
+const adminCreatedPartnerPassword='AdminCreated!123456';
 const suffix=`${Date.now()}-${Math.floor(Math.random()*100000)}`;
 const adminEmail=`browser-admin-${suffix}@example.test`;
 const partnerEmail=`browser-partner-${suffix}@example.test`;
 const partnerStaffEmail=`browser-partner-staff-${suffix}@example.test`;
+const adminCreatedPartnerEmail=`browser-admin-created-${suffix}@example.test`;
 const staffEmail=`browser-staff-${suffix}@example.test`;
 const partnerCode=`BROWSER_${String(Date.now()).slice(-8)}_${Math.floor(Math.random()*1000)}`;
+const adminCreatedPartnerCode=`ADMIN_${String(Date.now()).slice(-8)}_${Math.floor(Math.random()*1000)}`;
 const templateCode=`BROWSER_TEMPLATE_${String(Date.now()).slice(-8)}_${Math.floor(Math.random()*1000)}`;
 
 const statusText=execSync('supabase status -o env',{encoding:'utf8'});
@@ -49,10 +52,10 @@ function prepareWebRoot(){
   return root;
 }
 
-async function loginPage(page,file,email,readySelector){
+async function loginPage(page,file,email,readySelector,loginPassword=password){
   await page.goto(`${WEB_URL}/${file}`,{waitUntil:'networkidle0'});
   await page.type('#email',email);
-  await page.type('#password',password);
+  await page.type('#password',loginPassword);
   await page.click('#loginBtn');
   await page.waitForSelector(readySelector,{visible:true,timeout:15000});
 }
@@ -174,7 +177,27 @@ try{
   await adminPage.waitForFunction(code=>(document.querySelector('#voucherReport')?.textContent||'').includes(code),{},voucherCode);
   await adminPage.waitForFunction(code=>(document.querySelector('#redemptionReport')?.textContent||'').includes(code),{},voucherCode);
 
-  console.log(`Browser portal core E2E passed for ${voucherCode}, including Partner Staff creation ${partnerStaffEmail}.`);
+  await adminPage.type('#newPartnerCode',adminCreatedPartnerCode);
+  await adminPage.type('#newPartnerName','Browser Admin Created Partner');
+  await adminPage.type('#newPartnerContact','Browser Created Admin');
+  await adminPage.type('#newPartnerPhone','0129998888');
+  await adminPage.type('#newPartnerEmail',adminCreatedPartnerEmail);
+  await adminPage.type('#newPartnerPassword',adminCreatedPartnerPassword);
+  await adminPage.$eval('#newPartnerVoucherLimit',el=>el.value='12');
+  await adminPage.$eval('#newPartnerStaffLimit',el=>el.value='3');
+  await adminPage.click('#createPartnerBtn');
+  await adminPage.waitForSelector('#createPartnerMsg .ok',{visible:true,timeout:15000});
+  await adminPage.waitForFunction(code=>(document.querySelector('#partnerControls')?.textContent||'').includes(code),{},adminCreatedPartnerCode);
+
+  const adminCreatedPartnerCount=queryScalar(`select count(*) from public.partners p join public.partner_users pu on pu.partner_id=p.id where p.partner_code=${sqlLiteral(adminCreatedPartnerCode)} and p.status='active' and p.voucher_limit=12 and p.staff_limit=3 and pu.login_email=${sqlLiteral(adminCreatedPartnerEmail)} and pu.role='partner_admin' and pu.status='active' and pu.removed_at is null`);
+  if(adminCreatedPartnerCount!=='1') throw new Error(`Admin browser Partner provisioning did not persist one canonical active Partner realm. Got ${adminCreatedPartnerCount}`);
+
+  const adminCreatedPartnerPage=await browser.newPage();
+  await loginPage(adminCreatedPartnerPage,'partner.html',adminCreatedPartnerEmail,'#dashboardState:not(.hidden)',adminCreatedPartnerPassword);
+  const createdPartnerSessionText=await adminCreatedPartnerPage.$eval('#sessionMeta',el=>el.textContent||'');
+  if(!createdPartnerSessionText.includes('role: partner_admin')) throw new Error(`Admin-created Partner login did not resolve to partner_admin realm: ${createdPartnerSessionText}`);
+
+  console.log(`Browser portal core E2E passed for ${voucherCode}, including Partner Staff creation ${partnerStaffEmail} and Admin Partner provisioning ${adminCreatedPartnerEmail}.`);
 } finally {
   if(browser) await browser.close();
   server.kill('SIGTERM');
