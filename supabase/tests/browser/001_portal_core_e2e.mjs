@@ -194,12 +194,6 @@ try{
   const adminCreatedPartnerCount=queryScalar(`select count(*) from public.partners p join public.partner_users pu on pu.partner_id=p.id where p.partner_code=${sqlLiteral(adminCreatedPartnerCode)} and p.status='active' and p.voucher_limit=12 and p.staff_limit=3 and pu.login_email=${sqlLiteral(adminCreatedPartnerEmail)} and pu.role='partner_admin' and pu.status='active' and pu.removed_at is null`);
   if(adminCreatedPartnerCount!=='1') throw new Error(`Admin browser Partner provisioning did not persist one canonical active Partner realm. Got ${adminCreatedPartnerCount}`);
 
-  const adminCreatedPartnerPage=await browser.newPage();
-  await loginPage(adminCreatedPartnerPage,'partner.html',adminCreatedPartnerEmail,'#dashboardState:not(.hidden)',adminCreatedPartnerPassword);
-  const createdPartnerSessionText=await adminCreatedPartnerPage.$eval('#sessionMeta',el=>el.textContent||'');
-  if(!createdPartnerSessionText.includes('role: partner_admin')) throw new Error(`Admin-created Partner login did not resolve to partner_admin realm: ${createdPartnerSessionText}`);
-
-  await adminPage.bringToFront();
   const adminStaffPage=await browser.newPage();
   await adminStaffPage.goto(`${WEB_URL}/admin-staff.html`,{waitUntil:'networkidle0'});
   await adminStaffPage.waitForSelector('#provisionState:not(.hidden)',{visible:true,timeout:15000});
@@ -215,6 +209,11 @@ try{
 
   const adminCreatedStaffCount=queryScalar(`select count(*) from public.staff_users su join public.branches b on b.id=su.branch_id join auth.users au on au.id=su.user_id where lower(au.email)=lower(${sqlLiteral(adminCreatedStaffEmail)}) and su.staff_name='Browser Admin Staff' and su.role='staff' and su.status='active' and b.branch_code='MINES'`);
   if(adminCreatedStaffCount!=='1') throw new Error(`Admin Staff browser provisioning did not persist one canonical active MINES Staff. Got ${adminCreatedStaffCount}`);
+
+  const adminCreatedPartnerPage=await browser.newPage();
+  await loginPage(adminCreatedPartnerPage,'partner.html',adminCreatedPartnerEmail,'#dashboardState:not(.hidden)',adminCreatedPartnerPassword);
+  const createdPartnerSessionText=await adminCreatedPartnerPage.$eval('#sessionMeta',el=>el.textContent||'');
+  if(!createdPartnerSessionText.includes('role: partner_admin')) throw new Error(`Admin-created Partner login did not resolve to partner_admin realm: ${createdPartnerSessionText}`);
 
   const adminCreatedStaffPage=await browser.newPage();
   await adminCreatedStaffPage.goto(`${WEB_URL}/staff.html`,{waitUntil:'networkidle0'});
