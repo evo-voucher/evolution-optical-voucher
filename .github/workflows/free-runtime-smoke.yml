@@ -11,6 +11,7 @@ on:
       - 'recovery/**'
       - 'docs/SYSTEM-INITIALIZATION-BACKUP.md'
       - 'docs/VOUCHER-ENGINE-READINESS.md'
+      - 'docs/HOSTED-CUTOVER-RUNBOOK.md'
       - '.github/workflows/free-runtime-smoke.yml'
 
 permissions:
@@ -27,6 +28,9 @@ jobs:
 
       - name: Validate recovery manifest contract
         run: bash supabase/tests/runtime/002_recovery_manifest_contract.sh
+
+      - name: Validate hosted cutover preflight contract
+        run: bash supabase/tests/runtime/003_hosted_cutover_preflight_contract.sh
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
