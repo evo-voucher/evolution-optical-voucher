@@ -23,24 +23,28 @@ serve(async (req) => {
     if (!jwt) return json({ success: false, error: "Unauthorized" }, 401);
 
     const url = Deno.env.get("SUPABASE_URL");
+    const anon = Deno.env.get("SUPABASE_ANON_KEY");
     const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!url || !service) return json({ success: false, error: "Server configuration error" }, 500);
+    if (!url || !anon || !service) return json({ success: false, error: "Server configuration error" }, 500);
 
+    const callerClient = createClient(url, anon, {
+      global: { headers: { Authorization: `Bearer ${jwt}` } },
+      auth: { persistSession: false },
+    });
     const server = createClient(url, service, { auth: { persistSession: false } });
-    const { data: userData, error: userError } = await server.auth.getUser(jwt);
+
+    const { data: userData, error: userError } = await callerClient.auth.getUser(jwt);
     const caller = userData?.user;
     if (userError || !caller) return json({ success: false, error: "Unauthorized" }, 401);
 
-    const { data: adminRow, error: adminError } = await server
-      .from("partner_users")
-      .select("user_id")
-      .eq("user_id", caller.id)
-      .eq("role", "admin")
-      .eq("status", "active")
-      .is("removed_at", null)
-      .maybeSingle();
-    if (adminError) return json({ success: false, error: "Admin authorization check failed" }, 500);
-    if (!adminRow) return json({ success: false, error: "Admin access required" }, 403);
+    // One authorization boundary for both canonical and hosted identity lineages.
+    // The database owns the realm mapping; the Edge Function does not know which
+    // physical identity table backs Admin in this deployment.
+    const { data: realm, error: realmError } = await callerClient.rpc("current_operational_realm");
+    if (realmError) return json({ success: false, error: "Admin authorization check failed" }, 500);
+    if (!realm || realm.authenticated !== true || realm.realm !== "admin") {
+      return json({ success: false, error: "Admin access required" }, 403);
+    }
 
     const body = await req.json();
     const partner_code = typeof body.partner_code === "string" ? body.partner_code.trim().toUpperCase() : "";
@@ -85,7 +89,7 @@ serve(async (req) => {
     if (provisionError || !provisioned?.success) {
       try { await server.auth.admin.deleteUser(newUser.id); } catch (_) {}
       const message = provisionError?.message || provisioned?.error || "Partner provisioning failed";
-      const status = /already exists|duplicate|unique/i.test(message) ? 409 : /Admin access/i.test(message) ? 403 : 500;
+      const status = /already exists|duplicate|unique/i.test(message) ? 409 : /Admin access|Active Admin actor/i.test(message) ? 403 : 500;
       return json({ success: false, error: "Failed to provision Partner", details: message }, status);
     }
 
