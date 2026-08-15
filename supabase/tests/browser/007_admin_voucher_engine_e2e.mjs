@@ -36,6 +36,8 @@ insert into public.partners(partner_code,partner_name,voucher_limit,staff_limit,
 values (${lit(partnerCode)},'Voucher Engine Test Partner',0,5,true,'active');
 commit;
 `);
+const partnerIdSql=`(select id from public.partners where partner_code=${lit(partnerCode)})`;
+const claimBefore=scalar(`select concat(coalesce((select all_branches::text from public.partner_claim_settings where partner_id=${partnerIdSql}),'NULL'),'|',(select count(*) from public.partner_claim_branches where partner_id=${partnerIdSql}))`);
 
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'evo-voucher-engine-browser-'));
 fs.mkdirSync(path.join(root,'assets','js'),{recursive:true});
@@ -72,6 +74,14 @@ try{
   await page.$eval('#validMonths',el=>el.value='3');
   await page.select('#versionTheme','birthday');
   await page.type('#greetingText','Happy Birthday! 🎂');
+
+  await page.click('#versionAllBranches');
+  await page.waitForSelector('.versionBranchCheck:not([disabled])');
+  for(const code of ['MINES','BAHAU']){
+    const box=await page.$(`.versionBranchCheck[value="${code}"]`);
+    if(!box) throw new Error(`${code} Version branch checkbox not rendered`);
+    await box.click();
+  }
   await page.click('#publishBtn');
   await page.waitForSelector('#publishMsg .ok',{visible:true,timeout:15000});
 
@@ -83,21 +93,33 @@ try{
   await page.select('#allocationVersion',versionId);
   await page.$eval('#allocationQty',el=>el.value='12');
   await page.select('#allocationAnchor','allocation');
-  await page.$eval('#allocationDaysField',el=>el.classList.remove('hidden'));
+  await page.waitForSelector('#allocationDaysField:not(.hidden)');
   await page.$eval('#allocationDays',el=>el.value='100');
-  const mines=await page.$('.branchCheck[value="MINES"]');
-  if(!mines) throw new Error('MINES branch checkbox not rendered');
+
+  await page.click('#allocationAllBranches');
+  await page.waitForSelector('.allocationBranchCheck:not([disabled])');
+  const mines=await page.$('.allocationBranchCheck[value="MINES"]');
+  if(!mines) throw new Error('MINES Allocation branch checkbox not rendered');
   await mines.click();
   await page.click('#allocateBtn');
   await page.waitForSelector('#allocationMsg .ok',{visible:true,timeout:15000});
 
-  const versionCheck=scalar(`select concat(vv.validity_mode,'|',vv.valid_months,'|',coalesce(vv.theme_override_code,''),'|',coalesce(vv.greeting_text,'')) from public.voucher_versions vv where vv.id=${lit(versionId)}::uuid`);
-  if(versionCheck!==`months|3|birthday|Happy Birthday! 🎂`) throw new Error(`Published Version mismatch: ${versionCheck}`);
-  const allocationCheck=scalar(`select concat(a.quantity_allocated,'|',a.validity_anchor,'|',a.allocation_valid_days) from public.partner_voucher_allocations a where a.partner_id=${lit(partnerId)}::uuid and a.version_id=${lit(versionId)}::uuid order by a.created_at desc limit 1`);
-  if(allocationCheck!=='12|allocation|100') throw new Error(`Allocation mismatch: ${allocationCheck}`);
-  const branchCheck=scalar(`select string_agg(b.branch_code,',' order by b.branch_code) from public.partner_claim_branches pcb join public.branches b on b.id=pcb.branch_id where pcb.partner_id=${lit(partnerId)}::uuid`);
-  if(branchCheck!=='MINES') throw new Error(`Partner branch scope mismatch: ${branchCheck}`);
-  console.log(`Admin Voucher Engine browser E2E passed for ${templateCode}.`);
+  const versionCheck=scalar(`select concat(vv.validity_mode,'|',vv.valid_months,'|',coalesce(vv.theme_override_code,''),'|',coalesce(vv.greeting_text,''),'|',vv.all_branches) from public.voucher_versions vv where vv.id=${lit(versionId)}::uuid`);
+  if(versionCheck!==`months|3|birthday|Happy Birthday! 🎂|f`) throw new Error(`Published Version mismatch: ${versionCheck}`);
+  const versionBranches=scalar(`select string_agg(b.branch_code,',' order by b.branch_code) from public.voucher_version_branches vvb join public.branches b on b.id=vvb.branch_id where vvb.version_id=${lit(versionId)}::uuid`);
+  if(versionBranches!=='BAHAU,MINES') throw new Error(`Version branch scope mismatch: ${versionBranches}`);
+
+  const allocationId=scalar(`select a.id from public.partner_voucher_allocations a where a.partner_id=${lit(partnerId)}::uuid and a.version_id=${lit(versionId)}::uuid order by a.created_at desc limit 1`);
+  if(!allocationId) throw new Error('Allocation not persisted');
+  const allocationCheck=scalar(`select concat(a.quantity_allocated,'|',a.validity_anchor,'|',a.allocation_valid_days,'|',a.all_branches) from public.partner_voucher_allocations a where a.id=${lit(allocationId)}::uuid`);
+  if(allocationCheck!=='12|allocation|100|f') throw new Error(`Allocation mismatch: ${allocationCheck}`);
+  const allocationBranches=scalar(`select string_agg(b.branch_code,',' order by b.branch_code) from public.partner_voucher_allocation_branches ab join public.branches b on b.id=ab.branch_id where ab.allocation_id=${lit(allocationId)}::uuid`);
+  if(allocationBranches!=='MINES') throw new Error(`Allocation branch scope mismatch: ${allocationBranches}`);
+
+  const claimAfter=scalar(`select concat(coalesce((select all_branches::text from public.partner_claim_settings where partner_id=${lit(partnerId)}::uuid),'NULL'),'|',(select count(*) from public.partner_claim_branches where partner_id=${lit(partnerId)}::uuid))`);
+  if(claimAfter!==claimBefore) throw new Error(`Allocation UI unexpectedly rewrote Partner claim scope: before=${claimBefore} after=${claimAfter}`);
+
+  console.log(`Admin Voucher Engine browser E2E passed for ${templateCode}, including immutable Version scope and Allocation-level branch scope.`);
 } finally {
   if(browser) await browser.close();
   server.kill('SIGTERM');
