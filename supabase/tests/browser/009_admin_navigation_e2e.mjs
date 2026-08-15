@@ -59,12 +59,14 @@ try{
   await page.type('#password',password);
   await page.click('#loginBtn');
   await page.waitForSelector('#dashboardState:not(.hidden)',{visible:true,timeout:15000});
-  await page.waitForSelector('#adminToolsCard',{visible:true,timeout:5000});
+  await page.waitForSelector('a.tool[href="voucher-engine.html"]',{visible:true,timeout:5000});
+  await page.waitForSelector('a.tool[href="admin-staff.html"]',{visible:true,timeout:5000});
+  await page.waitForSelector('a.tool[href="admin-partner-password.html"]',{visible:true,timeout:5000});
 
   const links=await page.evaluate(()=>({
-    voucher:document.getElementById('voucherEngineLink')?.getAttribute('href'),
-    staff:document.getElementById('adminStaffLink')?.getAttribute('href'),
-    password:document.getElementById('partnerPasswordLink')?.getAttribute('href')
+    voucher:document.querySelector('a.tool[href="voucher-engine.html"]')?.getAttribute('href'),
+    staff:document.querySelector('a.tool[href="admin-staff.html"]')?.getAttribute('href'),
+    password:document.querySelector('a.tool[href="admin-partner-password.html"]')?.getAttribute('href')
   }));
   if(links.voucher!=='voucher-engine.html') throw new Error(`Voucher Engine Admin link mismatch: ${links.voucher}`);
   if(links.staff!=='admin-staff.html') throw new Error(`Admin Staff link mismatch: ${links.staff}`);
