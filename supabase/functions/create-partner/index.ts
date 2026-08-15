@@ -23,27 +23,23 @@ serve(async (req) => {
     if (!jwt) return json({ success: false, error: "Unauthorized" }, 401);
 
     const url = Deno.env.get("SUPABASE_URL");
-    const anon = Deno.env.get("SUPABASE_ANON_KEY");
     const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!url || !anon || !service) return json({ success: false, error: "Server configuration error" }, 500);
+    if (!url || !service) return json({ success: false, error: "Server configuration error" }, 500);
 
-    const callerClient = createClient(url, anon, {
-      global: { headers: { Authorization: `Bearer ${jwt}` } },
-      auth: { persistSession: false },
-    });
     const server = createClient(url, service, { auth: { persistSession: false } });
-
-    const { data: userData, error: userError } = await callerClient.auth.getUser(jwt);
+    const { data: userData, error: userError } = await server.auth.getUser(jwt);
     const caller = userData?.user;
     if (userError || !caller) return json({ success: false, error: "Unauthorized" }, 401);
 
-    const { data: adminRow, error: adminLookupError } = await callerClient
-      .from("admin_users")
-      .select("user_id,display_name,status")
+    const { data: adminRow, error: adminError } = await server
+      .from("partner_users")
+      .select("user_id")
       .eq("user_id", caller.id)
+      .eq("role", "admin")
       .eq("status", "active")
+      .is("removed_at", null)
       .maybeSingle();
-    if (adminLookupError) return json({ success: false, error: "Admin authorization check failed" }, 500);
+    if (adminError) return json({ success: false, error: "Admin authorization check failed" }, 500);
     if (!adminRow) return json({ success: false, error: "Admin access required" }, 403);
 
     const body = await req.json();
@@ -64,32 +60,32 @@ serve(async (req) => {
       return json({ success: false, error: "Invalid limits" }, 400);
     }
 
-    const { data: createdUserData, error: createUserError } = await server.auth.admin.createUser({
+    const { data: created, error: createError } = await server.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
     });
-    const newUser = createdUserData?.user;
-    if (createUserError || !newUser) {
-      return json({ success: false, error: "Failed to create Partner login", details: createUserError?.message }, 400);
+    const newUser = created?.user;
+    if (createError || !newUser) {
+      return json({ success: false, error: "Failed to create Partner login", details: createError?.message }, 400);
     }
 
-    const { data: provisioned, error: provisionError } = await server.rpc("admin_provision_partner", {
+    const { data: provisioned, error: provisionError } = await server.rpc("service_provision_partner", {
+      p_actor_user_id: caller.id,
+      p_new_user_id: newUser.id,
       p_partner_code: partner_code,
       p_partner_name: partner_name,
       p_contact_person: contact_person,
       p_contact_phone: contact_phone,
       p_voucher_limit: voucher_limit,
       p_staff_limit: staff_limit,
-      p_new_user_id: newUser.id,
       p_login_email: email,
-      p_actor_user_id: caller.id,
     });
 
     if (provisionError || !provisioned?.success) {
       try { await server.auth.admin.deleteUser(newUser.id); } catch (_) {}
       const message = provisionError?.message || provisioned?.error || "Partner provisioning failed";
-      const status = /duplicate|unique|already exists/i.test(message) ? 409 : 500;
+      const status = /already exists|duplicate|unique/i.test(message) ? 409 : /Admin access/i.test(message) ? 403 : 500;
       return json({ success: false, error: "Failed to provision Partner", details: message }, status);
     }
 
