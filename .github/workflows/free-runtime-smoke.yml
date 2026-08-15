@@ -6,6 +6,8 @@ on:
     branches: [main]
     paths:
       - 'supabase/**'
+      - '*.html'
+      - 'assets/js/**'
       - '.github/workflows/free-runtime-smoke.yml'
 
 permissions:
