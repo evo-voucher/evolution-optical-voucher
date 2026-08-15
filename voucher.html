@@ -8,13 +8,13 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="assets/js/backend-config.js"></script>
 <style>
-:root{--ink:#f7f8ff;--muted:#bcc7e3;--line:rgba(115,135,210,.34);--ok:#65e6b5;--warn:#ffd98c;--err:#ff92a5}
-*{box-sizing:border-box}body{margin:0;min-height:100vh;padding:18px;background:linear-gradient(160deg,#050716,#08102b 52%,#040816);color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.shell{width:min(700px,100%);margin:auto}.card{padding:24px;border-radius:24px;background:linear-gradient(155deg,#171746,#0b1b42 58%,#06132f);border:1px solid rgba(122,119,255,.55);box-shadow:0 20px 60px rgba(0,0,0,.36)}h1{margin:0 0 8px;font:500 30px Georgia,serif;letter-spacing:1.5px}h2{margin:20px 0 10px;font-size:18px}p{color:var(--muted);line-height:1.55}.status{margin-top:16px;padding:12px 14px;border-radius:14px;background:#101b44;border:1px solid var(--line);font-weight:800}.status.valid{color:var(--ok)}.status.expired,.status.redeemed{color:var(--warn)}.status.revoked,.status.error{color:var(--err)}.meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}.item{padding:12px;border-radius:14px;background:#0e1a42;border:1px solid var(--line)}.item span{display:block;color:#91a2c4;font-size:10px;text-transform:uppercase;letter-spacing:.7px}.item b{display:block;margin-top:5px;font-size:14px}.branches{display:grid;gap:9px}.branch{padding:12px;border-radius:14px;background:#0e1a42;border:1px solid var(--line)}.branch b{display:block;font-size:13px}.branch span{display:block;margin-top:4px;color:#aab8d8;font-size:11px;line-height:1.45}.small{font-size:12px;color:#91a2c4}.hidden{display:none!important}@media(max-width:580px){.meta{grid-template-columns:1fr}}
+:root{--ink:#f7f8ff;--muted:#bcc7e3;--line:rgba(115,135,210,.34);--ok:#65e6b5;--warn:#ffd98c;--err:#ff92a5;--accent:#8f91ff;--accent-soft:rgba(143,145,255,.16)}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;padding:18px;background:linear-gradient(160deg,#050716,#08102b 52%,#040816);color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.shell{width:min(700px,100%);margin:auto}.card{padding:24px;border-radius:24px;background:linear-gradient(155deg,#171746,#0b1b42 58%,#06132f);border:1px solid rgba(122,119,255,.55);box-shadow:0 20px 60px rgba(0,0,0,.36)}h1{margin:0 0 8px;font:500 30px Georgia,serif;letter-spacing:1.5px}h2{margin:20px 0 10px;font-size:18px}p{color:var(--muted);line-height:1.55}.theme-kicker{margin:2px 0 8px;color:var(--accent);font-size:12px;font-weight:900;letter-spacing:1.2px;text-transform:uppercase}.greeting{margin:14px 0 4px;padding:16px;border-radius:17px;background:var(--accent-soft);border:1px solid var(--accent);white-space:pre-line;line-height:1.55;font-weight:800}.status{margin-top:16px;padding:12px 14px;border-radius:14px;background:#101b44;border:1px solid var(--line);font-weight:800}.status.valid{color:var(--ok)}.status.expired,.status.redeemed{color:var(--warn)}.status.revoked,.status.error{color:var(--err)}.meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}.item{padding:12px;border-radius:14px;background:#0e1a42;border:1px solid var(--line)}.item span{display:block;color:#91a2c4;font-size:10px;text-transform:uppercase;letter-spacing:.7px}.item b{display:block;margin-top:5px;font-size:14px}.branches{display:grid;gap:9px}.branch{padding:12px;border-radius:14px;background:#0e1a42;border:1px solid var(--line)}.branch b{display:block;font-size:13px}.branch span{display:block;margin-top:4px;color:#aab8d8;font-size:11px;line-height:1.45}.terms{padding:13px;border-radius:14px;background:#0b1737;border:1px solid var(--line);white-space:pre-line;color:#aab8d8;font-size:12px;line-height:1.55}.small{font-size:12px;color:#91a2c4}.hidden{display:none!important}@media(max-width:580px){.meta{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <main class="shell">
-<section class="card">
+<section class="card" id="voucherCard">
   <h1>EVOLUTION OPTICAL</h1>
   <p>Customer Voucher</p>
 
@@ -27,6 +27,8 @@
   <section id="errorState" class="hidden"><div id="errorBox" class="status error"></div></section>
 
   <section id="voucherState" class="hidden">
+    <div id="themeKicker" class="theme-kicker hidden"></div>
+    <div id="greeting" class="greeting hidden"></div>
     <div id="voucherStatus" class="status"></div>
     <div class="meta">
       <div class="item"><span>Voucher Code</span><b id="voucherCode"></b></div>
@@ -38,6 +40,7 @@
     </div>
     <h2>Redeemable Branches</h2>
     <div id="branches" class="branches"></div>
+    <section id="termsState" class="hidden"><h2>Terms</h2><div id="termsText" class="terms"></div></section>
     <p class="small">Present this voucher to Evolution Optical staff for verification. Redemption is performed only by authorized Staff through the secure Staff Portal.</p>
   </section>
 </section>
@@ -54,16 +57,32 @@
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const token=(new URLSearchParams(location.search).get('v')||'').trim();
   const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const themeLabels={birthday:'Birthday Gift',raya:'Raya Gift',merdeka:'Merdeka Gift',christmas:'Christmas Gift',classic:'Special Gift',default:'Special Gift'};
+  const safeHex=/^#[0-9a-f]{6}$/i;
 
   function fail(text){$('loadingState').classList.add('hidden');$('voucherState').classList.add('hidden');$('errorState').classList.remove('hidden');$('errorBox').textContent=text;}
+  function applyTheme(themeCode,themeConfig){
+    const code=String(themeCode||'default').toLowerCase();
+    const cfgObj=themeConfig&&typeof themeConfig==='object'&&!Array.isArray(themeConfig)?themeConfig:{};
+    const accent=safeHex.test(String(cfgObj.accent_color||''))?cfgObj.accent_color:null;
+    const soft=safeHex.test(String(cfgObj.accent_soft_color||''))?cfgObj.accent_soft_color:null;
+    if(accent)document.documentElement.style.setProperty('--accent',accent);
+    if(soft)document.documentElement.style.setProperty('--accent-soft',soft);
+    $('voucherCard').dataset.theme=code;
+    $('themeKicker').textContent=themeLabels[code]||code.replace(/[_-]+/g,' ').replace(/\b\w/g,m=>m.toUpperCase());
+    $('themeKicker').classList.remove('hidden');
+  }
   function render(data){
     $('loadingState').classList.add('hidden');$('errorState').classList.add('hidden');$('voucherState').classList.remove('hidden');
+    applyTheme(data.theme_code,data.theme_config);
+    if(data.greeting){$('greeting').textContent=String(data.greeting);$('greeting').classList.remove('hidden')}else $('greeting').classList.add('hidden');
     const status=String(data.status||'unknown').toLowerCase();
     const label=status==='valid'?'Valid Voucher':status==='redeemed'?'Voucher Redeemed':status==='expired'?'Voucher Expired':status==='revoked'?'Voucher Revoked':`Voucher ${status}`;
     $('voucherStatus').className=`status ${status}`;$('voucherStatus').textContent=label;
     $('voucherCode').textContent=data.voucher_code||'—';$('voucherType').textContent=data.voucher_type||'—';$('customerName').textContent=data.customer_name||'—';$('partnerName').textContent=data.partner_name||'—';$('expiryDate').textContent=data.expiry_date||'—';$('issuedAt').textContent=data.issued_at?new Date(data.issued_at).toLocaleDateString():'—';
     const rows=Array.isArray(data.branches)?data.branches:[];
     $('branches').innerHTML=rows.length?rows.map(b=>`<div class="branch"><b>${esc(b.branch_name||b.branch_code||'Branch')}</b>${b.address?`<span>${esc(b.address)}</span>`:''}${b.phone?`<span>${esc(b.phone)}</span>`:''}</div>`).join(''):'<div class="branch"><b>No active branch information available.</b></div>';
+    if(data.terms_text){$('termsText').textContent=String(data.terms_text);$('termsState').classList.remove('hidden')}else $('termsState').classList.add('hidden');
   }
 
   if(!uuid.test(token)){fail('Invalid or missing voucher link.');return;}
