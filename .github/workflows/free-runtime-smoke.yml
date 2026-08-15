@@ -52,6 +52,9 @@ jobs:
             psql -v ON_ERROR_STOP=1 -f "$file"
           done
 
+      - name: Run concurrent version publish runtime E2E
+        run: bash supabase/tests/runtime/001_publish_concurrency_e2e.sh
+
       - name: Run signed GoTrue HTTP core flow E2E
         run: bash supabase/tests/http/001_signed_gotrue_core_flow_e2e.sh
 
