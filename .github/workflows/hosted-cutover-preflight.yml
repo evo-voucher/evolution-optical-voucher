@@ -1,0 +1,23 @@
+name: Hosted Cutover Preflight
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/backend-config.js'
+      - 'docs/VOUCHER-ENGINE-READINESS.md'
+      - 'supabase/tests/runtime/003_hosted_cutover_preflight_contract.sh'
+      - '.github/workflows/hosted-cutover-preflight.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate hosted cutover preflight contract
+        run: bash supabase/tests/runtime/003_hosted_cutover_preflight_contract.sh
