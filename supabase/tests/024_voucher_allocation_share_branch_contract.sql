@@ -32,7 +32,7 @@ BEGIN
   if position('make_interval(days=>p_allocation_valid_days)' in replace(src,' ',''))=0 then
     raise exception 'allocation expiry must derive from Admin allocation time';
   end if;
-  if position("v_anchor='allocation'" in replace(src,' ',''))=0 then raise exception 'allocation anchor branch missing'; end if;
+  if position('v_anchor=''allocation''' in replace(src,' ',''))=0 then raise exception 'allocation anchor branch missing'; end if;
 
   select lower(pg_get_functiondef('public.issue_engine_voucher(uuid,text,text)'::regprocedure)) into src;
   if position('auth.uid()' in src)=0 or position('p_partner_id' in src)>0 then
