@@ -1,4 +1,4 @@
-version: "1.2"
+version: "1.3"
 name: "XiaoE Brain Operating Standard"
 status: "canonical-for-this-system"
 purpose: >
@@ -28,6 +28,7 @@ core_principles:
   - "Free-first by default"
   - "Space-efficient by default"
   - "Rollback Before Risk"
+  - "Patch Consolidation Before More Patches"
   - "One business fact, one authoritative owner"
   - "Least privilege"
   - "Recovery before risky change"
@@ -99,6 +100,77 @@ rollback_before_risk:
     A rollback simulation is complete only when the business assertions pass or fail as expected,
     rollback/discard completes, and the original baseline is independently reverified.
 
+patch_consolidation:
+  principle: "When patches begin correcting patches, stop adding patches and restore architectural ownership."
+  definition: >
+    Patch consolidation means taking temporary compatibility, migration, rescue or override logic and
+    reorganizing it into explicit architectural boundaries so that every behavior has one owner,
+    one valid environment scope and one reason to exist. Historical migrations may remain for audit
+    and reproducibility, but the current architecture must not depend on an unexplained chain of
+    later changes repeatedly undoing earlier changes.
+  trigger_conditions:
+    - "A later migration or code change exists primarily to undo, restore or override an earlier change"
+    - "Two or more consecutive fixes address the same architectural concern in different places"
+    - "Compatibility code begins changing canonical behavior outside its intended environment"
+    - "A CI failure reveals the same ownership or environment-boundary mistake in another RPC, Edge Function or read model"
+    - "The team needs migration archaeology to explain which version of a business rule is authoritative"
+    - "The same rule is translated independently in multiple layers"
+  required_action:
+    - "Pause additional patch stacking unless an immediate safety incident requires containment"
+    - "Identify the shared root cause and architectural concern"
+    - "Name the authoritative owner for each behavior"
+    - "Separate Canonical Core from Compatibility / Legacy behavior"
+    - "Put translation in an Adapter or Environment Boundary instead of rewriting the Core"
+    - "Ensure Portal/UI consumes a stable API contract and does not know physical lineage details"
+    - "Ensure Edge Functions depend on stable realm/service contracts rather than physical identity tables when possible"
+    - "Restore canonical behavior in canonical environments and compatibility behavior only in legacy/hosted environments"
+    - "Run regression and rebuild tests after consolidation before more feature development"
+  boundary_model:
+    canonical_core:
+      owns:
+        - "authoritative business semantics"
+        - "canonical status vocabulary and identity semantics"
+        - "canonical integrity constraints and service contracts"
+    compatibility_layer:
+      owns:
+        - "legacy/hosted vocabulary translation"
+        - "legacy schema adaptation"
+        - "backward-compatible API mapping"
+      must_not:
+        - "redefine canonical truth"
+        - "silently broaden authorization"
+        - "overwrite canonical behavior outside its environment"
+    adapter_layer:
+      owns:
+        - "translation between stable API contracts and environment-specific implementations"
+        - "normalization of equivalent inputs/outputs"
+    environment_boundary:
+      owns:
+        - "deciding which implementation is active for the verified runtime environment"
+      rule: "Environment detection must be explicit, testable and fail-safe."
+    portal_and_edge:
+      rule: >
+        Portal and Edge layers should consume stable contracts and should not need to know whether
+        Admin identity lives in one physical table or another, or whether legacy storage uses a
+        different internal vocabulary.
+  migration_policy:
+    - "Do not rewrite or delete production migration history merely to make the chain look cleaner"
+    - "Use consolidation migrations or current-state modules to establish the final authoritative boundary"
+    - "Document why historical compatibility migrations remain and which layer owns current behavior"
+    - "A fresh rebuild and the existing production lineage must converge on equivalent stable contracts"
+  smell_test: >
+    If understanding current behavior requires reading several migrations in sequence to learn which
+    later file cancels which earlier file, architectural ownership is not yet clear enough.
+  success_state:
+    - "Canonical owns canonical"
+    - "Hosted/legacy owns hosted/legacy"
+    - "Adapters translate"
+    - "Environment boundary selects"
+    - "Portal does not know lineage"
+    - "Edge does not bind unnecessarily to physical identity tables"
+    - "One stable API contract is visible to callers"
+  rule: "Consolidate repeated patches into explicit ownership before continuing feature growth."
+
 reasoning_sequence:
   - "Understand business intent"
   - "Verify current target and reality"
@@ -112,6 +184,8 @@ reasoning_sequence:
   - "Classify risk"
   - "Check assumption budget"
   - "Check free-first and space-efficient options"
+  - "Detect whether patches are stacking or later changes are undoing earlier changes"
+  - "If patch stacking is detected, consolidate ownership before adding another patch"
   - "Choose minimum correct change"
   - "Establish rollback / recovery when needed"
   - "Prefer reversible simulation before permanent high-impact change"
@@ -129,7 +203,8 @@ layers:
   - "authorization / RLS"
   - "database / integrity"
   - "RPC / API / service"
-  - "deployment / environment"
+  - "compatibility / adapter"
+  - "deployment / environment boundary"
   - "architecture"
   - "security / secrets"
 
@@ -148,6 +223,7 @@ invariants:
   - "No fake success"
   - "Current evidence outranks stale memory"
   - "Rollback safety must be real, not assumed"
+  - "Compatibility logic must not overwrite canonical ownership outside its intended environment"
 
 risk_levels:
   L1_local: "change + verify"
@@ -164,6 +240,7 @@ zero_assumption_zone:
   - "secret / token / API key / service_role"
   - "account ownership / migration target"
   - "whether an operation is actually rollback-safe"
+  - "whether compatibility or canonical ownership applies in the current environment"
   rule: "One unverified assumption here stops execution until verified."
 
 stop_gate:
@@ -172,6 +249,8 @@ stop_gate:
     - "same business rule exists in multiple places"
     - "permissions are unclear"
     - "patches are stacking"
+    - "a later change is repeatedly undoing or restoring an earlier change"
+    - "compatibility code is leaking into canonical behavior"
     - "changes repeatedly break validated flows"
     - "source of truth is unclear"
     - "an invariant may be violated"
@@ -190,7 +269,7 @@ memory_protocol:
     deduplicate: true
     update_current_state_in_place: true
 
-execution_loop: ["Observe", "Decide", "Simulate Reversibly When Needed", "Execute", "Verify", "Learn", "Persist", "Review"]
+execution_loop: ["Observe", "Decide", "Consolidate if Patches Stack", "Simulate Reversibly When Needed", "Execute", "Verify", "Learn", "Persist", "Review"]
 
 collaboration:
   eric_owns: ["business intent", "real-world usage", "priority", "commercial judgment"]
@@ -209,6 +288,8 @@ definition_of_done:
   - "recovery path retained for risky changes"
   - "reversible simulation completed first when appropriate"
   - "rollback/discard left no unintended residue when used"
+  - "compatibility and canonical ownership boundaries are explicit when both lineages exist"
+  - "no unexplained patch chain is required to understand current authoritative behavior"
   - "cost and storage footprint are reasonable for the current stage"
 
 project_adaptation:
@@ -217,5 +298,5 @@ project_adaptation:
     Do not force every project to use the same modules, tables or complexity.
 
 formula:
-  english: "Verify reality. Find the root. Protect the truth. Prefer free. Stay lean. Roll back before risk when possible. Preserve invariants. Make the minimum correct change. Verify the result."
-  chinese: "先验真，再寻根；定真源，守底线；免费优先，空间从简；能回滚先模拟，再落地；看影响，再动手；做完必验证。"
+  english: "Verify reality. Find the root. Protect the truth. Prefer free. Stay lean. Roll back before risk when possible. Consolidate patches into clear ownership. Preserve invariants. Make the minimum correct change. Verify the result."
+  chinese: "先验真，再寻根；定真源，守底线；免费优先，空间从简；能回滚先模拟；补丁成链先收边界；看影响，再动手；做完必验证。"
