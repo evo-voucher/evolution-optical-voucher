@@ -51,6 +51,7 @@ Apply strictly by numeric filename order:
 38. `038_atomic_identity_provisioning.sql`
 39. `039_partner_staff_server_management.sql`
 40. `040_partner_password_reset_audit.sql`
+41. `041_serialize_voucher_version_publish.sql`
 
 ## Important dependency / ownership checkpoints
 - 009 introduces Voucher Engine tables; 010 is the canonical Partner issuance RPC.
@@ -67,6 +68,7 @@ Apply strictly by numeric filename order:
 - 038 keeps broad service-role table DML closed. Partner/Evolution Staff provisioning is performed by narrow server-only SECURITY DEFINER RPCs after the Edge Function verifies the original caller JWT. Auth user creation remains in trusted Edge code; DB profile/business writes are atomic.
 - 039 owns Partner Staff create/rename/suspend/activate/remove and password-reset audit boundaries. Partner identity is derived from the active Partner Admin actor; Partner row locking serializes `staff_limit` enforcement.
 - 040 owns the database audit row for successful Partner Admin Auth password reset under the original authenticated Admin caller context.
+- 041 serializes Voucher Version publishing on the owning Voucher Template row before allocating `version_no`; the existing unique `(template_id,version_no)` remains the declarative last line of defense.
 
 ## Automated contracts
 Before cutover all SQL contracts under `supabase/tests/*.sql` must pass, including:
@@ -89,17 +91,20 @@ Before cutover all SQL contracts under `supabase/tests/*.sql` must pass, includi
 - `017_atomic_identity_provisioning_contract.sql`
 - `018_partner_staff_server_management_contract.sql`
 - `019_partner_password_reset_audit_contract.sql`
+- `020_voucher_version_publish_concurrency_contract.sql`
 
 ## Free runtime gates
 The free GitHub Actions local-Supabase pipeline must pass from a clean rebuild:
 1. `supabase start` succeeds.
-2. `supabase db reset` applies 001–040 without error.
+2. `supabase db reset` applies 001–041 without error.
 3. Every SQL contract succeeds with `ON_ERROR_STOP=1`.
 4. `supabase/tests/http/001_signed_gotrue_core_flow_e2e.sh` passes real GoTrue signup/login -> signed JWT -> PostgREST RPC flow.
 5. Local Edge Functions start and unauthenticated protected calls fail closed.
 6. `002_edge_function_boundary_e2e.sh` passes create-partner, create-staff, Voucher Engine Admin boundary and Partner denial.
 7. `003_partner_staff_edge_lifecycle_e2e.sh` passes Partner Staff create/rename/suspend/activate/password-reset/remove with tenant/realm preservation.
 8. `004_admin_edge_controls_e2e.sh` passes Admin staff-limit control and Partner password reset, while Partner JWT is rejected from Admin boundaries.
+9. `supabase/tests/browser/001_portal_core_e2e.mjs` passes Partner login -> issue -> Public Voucher -> Staff verify/redeem -> public redeemed state -> Admin reporting in a real headless browser.
+10. Portal HTML and shared frontend JS changes trigger the same runtime smoke workflow; frontend changes are not exempt from backend-integrated regression proof.
 
 ## Security / data gates
 Do not bind frontend URL/key until all are true:
@@ -112,6 +117,7 @@ Do not bind frontend URL/key until all are true:
 - Partner issuance derives tenant from Auth and never accepts browser `partner_id`.
 - `voucher_limit=0` behaves as unlimited; positive Partner quota cannot be exceeded concurrently.
 - Staff Verify is read-only; Redeem is atomic and branch-scoped; double redemption is rejected.
+- Successful Staff redemption leaves an explicit visible confirmation before the operator continues; transient form state must not hide the outcome.
 - Admin reversal restores usage but preserves the reversed Redemption row.
 - Reporting reconciles to canonical Vouchers + Redemptions using revoked > expired > redeemed > active.
 - Service-role credentials never appear in browser code.
@@ -120,11 +126,11 @@ Do not bind frontend URL/key until all are true:
 
 ## Cutover order
 1. Verify a new hosted Supabase target using `docs/RUNTIME_DEPLOYMENT_PREFLIGHT_V1.md`.
-2. Apply 001–040 in order.
+2. Apply 001–041 in order.
 3. Confirm the seven branch baseline rows.
 4. Create first Admin Auth user + active `admin_users` row.
 5. Deploy required Edge Functions with JWT enforcement.
-6. Run all SQL contracts and signed HTTP/Edge E2E tests against disposable identities.
+6. Run all SQL contracts, signed HTTP/Edge E2E tests and browser portal E2E against disposable identities.
 7. Run concurrency/cross-tenant proofs.
 8. Only then set `assets/js/backend-config.js` to the new Supabase URL/publishable key and `enabled:true`.
 9. Keep legacy production untouched as rollback/reference until the new environment is stable.
@@ -140,6 +146,7 @@ Do not bind frontend URL/key until all are true:
 - Partner tenants are isolated; Admin is the only cross-Partner operational realm.
 - One live Auth identity belongs to exactly one operational realm.
 - Published Voucher Versions are immutable business snapshots.
+- Voucher Version publishing is serialized per Template; version allocation is not best-effort retry logic.
 - QR `voucher_code` and customer `public_token` are separate credentials/use cases.
 - Partner-wide quota is enforced at Voucher INSERT; 0 means unlimited.
 - Voucher Engine Admin and identity/lifecycle mutations are database-owned atomic/scoped operations.
