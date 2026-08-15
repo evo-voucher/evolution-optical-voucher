@@ -17,26 +17,41 @@ The disposable local Supabase CI baseline has verified the following core invari
 - FROM ALLOCATION validity with arbitrary positive day counts and rejection of non-positive values.
 - Multiple allocation batches use earliest-expiry-first consumption for allocation-anchored stock.
 - Issued Voucher validity, Theme, Greeting, Terms, and branch IDs are frozen snapshots.
-- Partner claim scope and Voucher Version scope intersect at issuance; Partner/Staff cannot broaden redemption scope.
+- Final issued redemption scope is the intersection of Partner claim scope, Version scope, and Allocation scope.
+- Version and Allocation branch scopes are independently configurable by Admin; an Allocation does not mutate Partner global claim scope.
 - An issued all-branches Voucher does not gain branches that are created later.
 - Partner WhatsApp sharing uses the frozen issued Voucher snapshot and appends the customer Voucher URL from the configured site base.
 - Public customer Voucher rendering exposes the frozen Theme, approved Greeting, optional occasion Greeting, Terms, and snapshotted branch details.
 - Public presentation configuration is constrained to safe whitelisted values rather than raw HTML/script/arbitrary CSS execution.
-- Admin Voucher Engine UI can create classifications/templates, publish immutable Versions, configure validity/presentation, and allocate stock to Partners.
+- Admin Voucher Engine UI can create classifications/templates, publish immutable Versions, configure validity/presentation/Version scope, and allocate stock with Allocation scope.
+- Admin navigation to Voucher Engine, Evolution Staff, and Partner password tools is browser-tested.
+- The repository has passed clean local recovery from migrations and runtime assets without hidden manual database repair.
 
 ## Key runtime evidence
 
 - Partner WhatsApp browser E2E: `supabase/tests/browser/006_partner_whatsapp_share_e2e.mjs`
 - Admin Voucher Engine browser E2E: `supabase/tests/browser/007_admin_voucher_engine_e2e.mjs`
 - Public Voucher presentation browser E2E: `supabase/tests/browser/008_public_voucher_presentation_e2e.mjs`
+- Admin navigation browser E2E: `supabase/tests/browser/009_admin_navigation_e2e.mjs`
 - Voucher delivery snapshot runtime E2E: `supabase/tests/025_voucher_delivery_runtime_e2e.sql`
 - Allocation FEFO / future-branch freeze E2E: `supabase/tests/026_voucher_allocation_fefo_and_branch_freeze_e2e.sql`
+- Allocation branch-scope runtime E2E: `supabase/tests/026_allocation_branch_scope_runtime_e2e.sql`
 - Partner Staff tenant / branch non-broadening E2E: `supabase/tests/027_partner_staff_tenant_branch_non_broadening_e2e.sql`
+- Recovery manifest contract: `supabase/tests/runtime/002_recovery_manifest_contract.sh`
+- Hosted cutover preflight contract: `supabase/tests/runtime/003_hosted_cutover_preflight_contract.sh`
 
-Latest verified local workflow evidence before this document update:
+Latest verified local workflow evidence:
 
-- Run `31873170653`
-- Job `94984779560`
+- Run `31880492960`
+- Job `95002270064`
+- Head `a7935d77fb646b64fa6eaf38637948e58bb6e1be`
+- Conclusion: success
+
+Clean-rebuild recovery evidence:
+
+- Run `31879716239`
+- Job `95000488980`
+- Head `e1b24d5078ad97bd41e7cf70848363c45d66a866`
 - Conclusion: success
 
 ## Approved customer share intro
@@ -51,14 +66,14 @@ Here is your Evolution Optical Voucher.
 
 An occasion greeting such as Birthday / Raya / Merdeka / Christmas may be appended by the Version and is frozen at issuance.
 
-## Cutover gate — NOT VERIFIED YET
+## Hosted cutover gate — NOT VERIFIED YET
 
 Local CI success does **not** mean the hosted production cutover is complete.
 
 Before commercial hosted use, all of the following must be explicitly verified against the intended new Voucher Supabase target:
 
 1. Confirm the exact hosted target project ID and environment ownership.
-2. Confirm no migration or secret is pointed at the XiaoE AI Core project.
+2. Confirm no migration or frontend config is pointed at the XiaoE AI Core project.
 3. Confirm the legacy Evolution production project remains untouched during preparation.
 4. Apply migrations to the intended new Voucher target only.
 5. Deploy required Edge Functions to that same target.
@@ -72,24 +87,28 @@ Until those hosted checks pass, the authoritative state remains:
 
 - `hosted_cutover_verified = false`
 - legacy production must not be mutated as part of this preparation
+- frontend backend configuration remains fail-closed
+- no existing Supabase project is implicitly treated as the new Voucher target
 
 ## Architecture invariants
 
 - Stable Core owns identity, Voucher state, redemption state, and durable relationships.
 - Voucher Version owns customer offer and presentation policy.
-- Partner Allocation owns Partner stock and allocation-relative validity clock when used.
+- Partner Allocation owns Partner stock, Allocation branch scope, and allocation-relative validity clock when used.
 - Issued Voucher Snapshot owns immutable customer-facing truth after issuance.
 - Browser code does not receive service-role credentials.
 - High-impact mutations go through narrow Admin or trusted Edge/RPC boundaries.
 - Frontend presentation must not be able to widen authorization or redemption scope.
 
-## Remaining product polish
+## Remaining work before hosted launch
 
-These are not core-engine blockers but should be closed before a polished commercial release:
+The remaining work is now predominantly environment-specific rather than core-engine architecture:
 
-- Admin navigation/discoverability for Voucher Engine, Staff provisioning, and Partner password tools.
-- Reciprocal Back links and navigation browser assertions.
-- Hosted operational runbook after the actual target exists.
-- Final user acceptance pass on mobile layouts and wording.
+- nominate a clean hosted Voucher Supabase target;
+- run the hosted cutover procedure against that exact target;
+- deploy Edge Functions and configure only public frontend credentials for that target;
+- initialize real Admin / branch baseline / required Partner accounts;
+- perform the exact production E2E smoke flow;
+- complete final mobile wording/user-acceptance review against the hosted environment.
 
 This document records the verified local architecture and the remaining hosted cutover boundary. It must not be used as evidence that hosted production is already live.
