@@ -10,11 +10,13 @@ const WEB_URL='http://127.0.0.1:4173';
 const password='EvoBrowser!123456';
 const partnerStaffPassword='PartnerStaff!123456';
 const adminCreatedPartnerPassword='AdminCreated!123456';
+const adminCreatedStaffPassword='AdminStaff!123456';
 const suffix=`${Date.now()}-${Math.floor(Math.random()*100000)}`;
 const adminEmail=`browser-admin-${suffix}@example.test`;
 const partnerEmail=`browser-partner-${suffix}@example.test`;
 const partnerStaffEmail=`browser-partner-staff-${suffix}@example.test`;
 const adminCreatedPartnerEmail=`browser-admin-created-${suffix}@example.test`;
+const adminCreatedStaffEmail=`browser-admin-staff-${suffix}@example.test`;
 const staffEmail=`browser-staff-${suffix}@example.test`;
 const partnerCode=`BROWSER_${String(Date.now()).slice(-8)}_${Math.floor(Math.random()*1000)}`;
 const adminCreatedPartnerCode=`ADMIN_${String(Date.now()).slice(-8)}_${Math.floor(Math.random()*1000)}`;
@@ -42,7 +44,7 @@ function queryScalar(sql){
 function prepareWebRoot(){
   const root=fs.mkdtempSync(path.join(os.tmpdir(),'evo-browser-'));
   fs.mkdirSync(path.join(root,'assets','js'),{recursive:true});
-  for(const name of ['admin.html','partner.html','staff.html','voucher.html']){
+  for(const name of ['admin.html','admin-staff.html','partner.html','staff.html','voucher.html']){
     let html=fs.readFileSync(name,'utf8');
     html=html.replace(/const configured=cfg\.enabled===true&&[\s\S]*?;\s*if\(!configured\)return;/,'const configured=cfg.enabled===true;if(!configured)return;');
     if(!html.includes('const configured=cfg.enabled===true;if(!configured)return;')) throw new Error(`Unable to patch local test config guard in ${name}`);
@@ -197,7 +199,32 @@ try{
   const createdPartnerSessionText=await adminCreatedPartnerPage.$eval('#sessionMeta',el=>el.textContent||'');
   if(!createdPartnerSessionText.includes('role: partner_admin')) throw new Error(`Admin-created Partner login did not resolve to partner_admin realm: ${createdPartnerSessionText}`);
 
-  console.log(`Browser portal core E2E passed for ${voucherCode}, including Partner Staff creation ${partnerStaffEmail} and Admin Partner provisioning ${adminCreatedPartnerEmail}.`);
+  await adminPage.bringToFront();
+  const adminStaffPage=await browser.newPage();
+  await adminStaffPage.goto(`${WEB_URL}/admin-staff.html`,{waitUntil:'networkidle0'});
+  await adminStaffPage.waitForSelector('#provisionState:not(.hidden)',{visible:true,timeout:15000});
+  const minesBranchId=await adminStaffPage.$eval('#staffBranch',el=>[...el.options].find(o=>o.textContent?.includes('(MINES)'))?.value||'');
+  if(!minesBranchId) throw new Error('Admin Staff provisioning UI did not expose active MINES branch');
+  await adminStaffPage.type('#staffName','Browser Admin Staff');
+  await adminStaffPage.type('#staffEmail',adminCreatedStaffEmail);
+  await adminStaffPage.type('#staffPassword',adminCreatedStaffPassword);
+  await adminStaffPage.select('#staffBranch',minesBranchId);
+  await adminStaffPage.select('#staffRole','staff');
+  await adminStaffPage.click('#createBtn');
+  await adminStaffPage.waitForSelector('#createMsg .ok',{visible:true,timeout:15000});
+
+  const adminCreatedStaffCount=queryScalar(`select count(*) from public.staff_users su join public.branches b on b.id=su.branch_id join auth.users au on au.id=su.user_id where lower(au.email)=lower(${sqlLiteral(adminCreatedStaffEmail)}) and su.staff_name='Browser Admin Staff' and su.role='staff' and su.status='active' and b.branch_code='MINES'`);
+  if(adminCreatedStaffCount!=='1') throw new Error(`Admin Staff browser provisioning did not persist one canonical active MINES Staff. Got ${adminCreatedStaffCount}`);
+
+  const adminCreatedStaffPage=await browser.newPage();
+  await adminCreatedStaffPage.goto(`${WEB_URL}/staff.html`,{waitUntil:'networkidle0'});
+  await adminCreatedStaffPage.waitForSelector('#loginState:not(.hidden)',{visible:true,timeout:15000});
+  await adminCreatedStaffPage.type('#email',adminCreatedStaffEmail);
+  await adminCreatedStaffPage.type('#password',adminCreatedStaffPassword);
+  await adminCreatedStaffPage.click('#loginBtn');
+  await adminCreatedStaffPage.waitForSelector('#operationState:not(.hidden)',{visible:true,timeout:15000});
+
+  console.log(`Browser portal core E2E passed for ${voucherCode}, including Partner Staff creation ${partnerStaffEmail}, Admin Partner provisioning ${adminCreatedPartnerEmail}, and Admin Staff provisioning ${adminCreatedStaffEmail}.`);
 } finally {
   if(browser) await browser.close();
   server.kill('SIGTERM');
