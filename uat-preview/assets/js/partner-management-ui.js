@@ -45,7 +45,6 @@
       .partner-control-tabs button.active{border-color:rgba(101,230,181,.82)!important;background:linear-gradient(180deg,#176158,#0d3a35)!important}
       .partner-control-panel-hidden{display:none!important}
       .partner-control-panel{margin-top:8px;padding-top:8px;border-top:1px solid rgba(115,135,210,.22)}
-      .partner-inner-back{width:auto!important;min-height:32px!important;padding:5px 8px!important;margin:0 0 8px!important;font-size:11px!important;border-radius:9px!important}
       #partnerControls .partner .controls{margin-top:0!important;grid-template-columns:1fr!important}
       #partnerControls .partner .controls .wide{min-height:34px!important;margin-top:6px!important;padding:6px 8px!important;font-size:11px!important}
       #partnerControls .partner .controls input,#partnerControls .partner .controls select{min-height:38px!important;padding:8px 9px!important;font-size:12px!important}
@@ -83,9 +82,7 @@
   function setPartnerControlView(partner,view){
     const panel=partner.querySelector(`.partner-control-panel[data-panel="${view}"]`);
     const button=partner.querySelector(`.partner-control-tabs [data-control-view="${view}"]`);
-    const sameOpen=!!button?.classList.contains('active');
     closePartnerPanels(partner);
-    if(sameOpen)return;
     panel?.classList.remove('partner-control-panel-hidden');
     button?.classList.add('active');
   }
@@ -94,12 +91,6 @@
     const panel=document.createElement('div');
     panel.className='partner-control-panel partner-control-panel-hidden';
     panel.dataset.panel=kind;
-    const back=document.createElement('button');
-    back.type='button';
-    back.className='partner-inner-back';
-    back.textContent='← Back';
-    back.addEventListener('click',()=>closePartnerPanels(panel.closest('.partner')));
-    panel.appendChild(back);
     panel.appendChild(node);
     return panel;
   }
