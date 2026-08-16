@@ -1,0 +1,39 @@
+name: One-time Admin Performance Inject
+on:
+  push:
+    branches: [agent/new-supabase-cutover]
+    paths:
+      - '.github/workflows/one-time-admin-performance-inject.yml'
+permissions:
+  contents: write
+jobs:
+  inject:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/new-supabase-cutover
+          fetch-depth: 0
+      - name: Inject Partner performance module
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('admin.html')
+          text=p.read_text(encoding='utf-8')
+          tag='<script src="assets/js/admin-partner-performance.js"></script>'
+          if tag not in text:
+              if '</body>' not in text:
+                  raise SystemExit('admin.html missing </body>')
+              text=text.replace('</body>',tag+'\n</body>',1)
+              p.write_text(text,encoding='utf-8')
+          PY
+      - name: Remove one-time workflow
+        run: rm .github/workflows/one-time-admin-performance-inject.yml
+      - name: Commit exact injection
+        run: |
+          git config user.name 'XiaoE Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add admin.html .github/workflows/one-time-admin-performance-inject.yml
+          git diff --cached --check
+          git commit -m 'feat: load Admin Partner performance module'
+          git push origin agent/new-supabase-cutover
