@@ -1,20 +1,9 @@
 (()=>{
-  const CARD_SELECTOR='#dashboardState > .card';
+  const CARD_SELECTOR='#dashboardState .card';
+  const VIEW_HIDDEN='partner-stage-view-hidden';
 
   function cardByTitle(title){
-    return [...document.querySelectorAll(CARD_SELECTOR)].find(card=>(card.querySelector('h2')?.textContent||'').trim()===title)||null;
-  }
-
-  function preserveViewport(change){
-    const x=window.scrollX||0;
-    const y=window.scrollY||0;
-    change();
-    const restore=()=>window.scrollTo({left:x,top:y,behavior:'auto'});
-    restore();
-    requestAnimationFrame(()=>{
-      restore();
-      requestAnimationFrame(restore);
-    });
+    return [...document.querySelectorAll(CARD_SELECTOR)].find(card=>(card.querySelector(':scope > h2')?.textContent||card.querySelector('h2')?.textContent||'').trim()===title)||null;
   }
 
   function installStyle(){
@@ -22,11 +11,12 @@
     const s=document.createElement('style');
     s.id='partnerManagementUiStyle';
     s.textContent=`
-      #partnerSubnavCard,#partnerControls,#partnerDirectory{overflow-anchor:none}
-      .partner-subnav{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-      .partner-subnav button{min-height:76px!important;padding:14px!important;font-weight:800!important;transform:none!important;transition:filter .08s ease,box-shadow .08s ease!important}
+      .partner-stage{position:relative;height:520px;min-height:520px;overflow:hidden;overflow-anchor:none}
+      .partner-stage>.card{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-height:0!important;margin:0!important;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+      .partner-stage-view-hidden{display:none!important}
+      .partner-subnav{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+      .partner-subnav button{height:112px!important;min-height:112px!important;padding:16px 14px!important;font-weight:800!important;transform:none!important;transition:filter .08s ease,box-shadow .08s ease!important;-webkit-tap-highlight-color:transparent}
       .partner-subnav button:active{transform:none!important;filter:brightness(.88);box-shadow:inset 0 4px 12px rgba(0,0,0,.34),0 8px 16px rgba(0,0,0,.22)!important}
-      .partner-sub-hidden{display:none!important}
       .partner-sub-return{width:auto!important;min-width:96px!important;min-height:40px!important;padding:8px 12px!important;margin:0 0 12px!important}
       .partner-setup-details{border:1px solid rgba(118,91,255,.5);border-radius:16px;background:#0a1736;overflow:hidden}
       .partner-setup-details>summary{list-style:none;cursor:pointer;padding:14px 16px;font-weight:800;color:#e9efff;display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -34,7 +24,6 @@
       .partner-setup-details>summary::after{content:'›';font-size:24px;line-height:1;color:#8feaff;transform:rotate(90deg);transition:transform .18s ease}
       .partner-setup-details[open]>summary::after{transform:rotate(-90deg)}
       .partner-setup-details-body{padding:0 12px 12px}
-
       .partner-directory{display:block;margin-top:10px}
       .partner-directory-group{margin:12px 0 16px}
       .partner-directory-letter{font-size:12px;font-weight:900;letter-spacing:.14em;color:#8feaff;margin:0 0 7px;padding:0 2px}
@@ -45,7 +34,6 @@
       .partner-directory-group.suspended-group .partner-directory-name{opacity:.78}
       .partner-directory-empty{padding:14px 4px;color:#91a2c4;font-size:12px}
       .partner-directory-hidden{display:none!important}
-
       #partnerControls.partner-directory-list-hidden{display:none!important}
       #partnerControls.partner-detail-mode{display:block!important}
       #partnerControls.partner-detail-mode>.partner{display:none!important}
@@ -73,11 +61,11 @@
       #partnerControls .partner .claimbox{margin-top:0!important;padding:8px!important}
       #partnerControls .partner .claimbox>button{min-height:34px!important;padding:6px 8px!important;font-size:11px!important;width:auto!important}
       #partnerControls .partner .branchgrid{grid-template-columns:1fr!important}
-
       @media(max-width:430px){.partner-directory-list{grid-template-columns:1fr}}
       @media(max-width:560px){
+        .partner-stage{height:500px;min-height:500px}
         .partner-subnav{grid-template-columns:1fr 1fr;gap:10px}
-        .partner-subnav button{min-height:68px!important;padding:10px!important;font-size:13px!important}
+        .partner-subnav button{height:112px!important;min-height:112px!important;padding:14px 10px!important;font-size:13px!important}
         .partner-setup-details>summary{padding:13px 14px}
       }
     `;
@@ -102,13 +90,11 @@
   }
 
   function setPartnerControlView(partner,view){
-    preserveViewport(()=>{
-      const panel=partner.querySelector(`.partner-control-panel[data-panel="${view}"]`);
-      const button=partner.querySelector(`.partner-control-tabs [data-control-view="${view}"]`);
-      closePartnerPanels(partner);
-      panel?.classList.remove('partner-control-panel-hidden');
-      button?.classList.add('active');
-    });
+    const panel=partner.querySelector(`.partner-control-panel[data-panel="${view}"]`);
+    const button=partner.querySelector(`.partner-control-tabs [data-control-view="${view}"]`);
+    closePartnerPanels(partner);
+    panel?.classList.remove('partner-control-panel-hidden');
+    button?.classList.add('active');
   }
 
   function buildPanel(kind,node){
@@ -123,32 +109,27 @@
     const root=controlsCard?.querySelector('#partnerControls');
     const dir=controlsCard?.querySelector('#partnerDirectory');
     if(!root||!dir)return;
-    preserveViewport(()=>{
-      root.classList.remove('partner-detail-mode');
-      root.classList.add('partner-directory-list-hidden');
-      root.querySelectorAll('.partner').forEach(p=>{p.classList.remove('partner-detail-active');closePartnerPanels(p);});
-      dir.classList.remove('partner-directory-hidden');
-    });
+    root.classList.remove('partner-detail-mode');
+    root.classList.add('partner-directory-list-hidden');
+    root.querySelectorAll('.partner').forEach(p=>{p.classList.remove('partner-detail-active');closePartnerPanels(p);});
+    dir.classList.remove('partner-directory-hidden');
+    controlsCard.scrollTop=0;
   }
 
   function showPartnerDetail(controlsCard,partner){
     const root=controlsCard?.querySelector('#partnerControls');
     const dir=controlsCard?.querySelector('#partnerDirectory');
     if(!root||!dir||!partner)return;
-    preserveViewport(()=>{
-      dir.classList.add('partner-directory-hidden');
-      root.classList.remove('partner-directory-list-hidden');
-      root.classList.add('partner-detail-mode');
-      root.querySelectorAll('.partner').forEach(p=>p.classList.toggle('partner-detail-active',p===partner));
-      closePartnerPanels(partner);
-    });
+    dir.classList.add('partner-directory-hidden');
+    root.classList.remove('partner-directory-list-hidden');
+    root.classList.add('partner-detail-mode');
+    root.querySelectorAll('.partner').forEach(p=>p.classList.toggle('partner-detail-active',p===partner));
+    closePartnerPanels(partner);
+    controlsCard.scrollTop=0;
   }
 
   function partnerStatus(partner){return (partner.querySelector('.partnerhead .badge')?.textContent||'').trim().toLowerCase();}
-  function partnerId(partner){
-    const statusSelect=partner.querySelector('select[id^="st-"]');
-    return statusSelect?.id?.replace(/^st-/,'')||'';
-  }
+  function partnerId(partner){return partner.querySelector('select[id^="st-"]')?.id?.replace(/^st-/,'')||'';}
 
   function syncQuickStatus(partner){
     const status=partnerStatus(partner);
@@ -162,7 +143,6 @@
   function ensureQuickStatus(partner,head,basic){
     const statusField=[...basic.querySelectorAll('.field')].find(field=>(field.querySelector('label')?.textContent||'').trim()==='Status');
     statusField?.classList.add('partner-legacy-status-control');
-
     const actions=document.createElement('div');
     actions.className='partner-status-actions';
     actions.innerHTML='<button type="button" data-partner-status="active">Active</button><button type="button" data-partner-status="suspended">Suspend</button>';
@@ -171,8 +151,7 @@
       if(!btn)return;
       const target=btn.dataset.partnerStatus;
       const id=partnerId(partner);
-      if(!id||typeof window.setStatus!=='function')return;
-      if(partnerStatus(partner)===target)return;
+      if(!id||typeof window.setStatus!=='function'||partnerStatus(partner)===target)return;
       window.setStatus(id,target);
     });
     head.insertAdjacentElement('afterend',actions);
@@ -187,16 +166,13 @@
     const access=partner.querySelector('.claimbox');
     if(!head||!basic||!access)return;
     partner.dataset.compactControlsReady='1';
-
     const dirBack=document.createElement('button');
     dirBack.type='button';
     dirBack.className='partner-directory-back';
     dirBack.textContent='← Back to Partners';
     dirBack.addEventListener('click',()=>showPartnerDirectory(controlsCard));
     partner.prepend(dirBack);
-
     const statusActions=ensureQuickStatus(partner,head,basic);
-
     const tabs=document.createElement('div');
     tabs.className='partner-control-tabs';
     tabs.innerHTML='<button type="button" data-control-view="basic">Basic</button><button type="button" data-control-view="access">Access</button>';
@@ -205,10 +181,8 @@
       if(btn)setPartnerControlView(partner,btn.dataset.controlView);
     });
     statusActions.insertAdjacentElement('afterend',tabs);
-    const basicPanel=buildPanel('basic',basic);
-    const accessPanel=buildPanel('access',access);
-    tabs.insertAdjacentElement('afterend',accessPanel);
-    tabs.insertAdjacentElement('afterend',basicPanel);
+    tabs.insertAdjacentElement('afterend',buildPanel('access',access));
+    tabs.insertAdjacentElement('afterend',buildPanel('basic',basic));
   }
 
   function partnerName(partner){return (partner.querySelector('.partnerhead b')?.textContent||'').trim();}
@@ -238,10 +212,7 @@
   function rebuildPartnerDirectory(controlsCard){
     const root=controlsCard?.querySelector('#partnerControls');
     if(!root)return;
-    const x=window.scrollX||0;
-    const y=window.scrollY||0;
     root.querySelectorAll('.partner').forEach(p=>compactPartnerCard(p,controlsCard));
-
     let dir=controlsCard.querySelector('#partnerDirectory');
     if(!dir){
       dir=document.createElement('div');
@@ -249,20 +220,16 @@
       dir.className='partner-directory';
       root.insertAdjacentElement('beforebegin',dir);
     }
-
     const partners=[...root.querySelectorAll('.partner')]
-      .map((partner,index)=>({partner,index,name:partnerName(partner),status:partnerStatus(partner)}))
+      .map(partner=>({partner,name:partnerName(partner),status:partnerStatus(partner)}))
       .filter(x=>x.name)
       .sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}));
-
     dir.innerHTML='';
     if(!partners.length){
       dir.innerHTML='<div class="partner-directory-empty">No Partners match the current search.</div>';
       root.classList.add('partner-directory-list-hidden');
-      window.scrollTo({left:x,top:y,behavior:'auto'});
       return;
     }
-
     const active=partners.filter(x=>x.status!=='suspended');
     const suspended=partners.filter(x=>x.status==='suspended');
     const groups=new Map();
@@ -271,12 +238,24 @@
       if(!groups.has(letter))groups.set(letter,[]);
       groups.get(letter).push(item);
     });
-
     [...groups.entries()].sort((a,b)=>a[0].localeCompare(b[0])).forEach(([letter,items])=>appendDirectoryGroup(dir,letter,items,controlsCard,false));
     appendDirectoryGroup(dir,'Suspended',suspended,controlsCard,true);
-
     showPartnerDirectory(controlsCard);
-    window.scrollTo({left:x,top:y,behavior:'auto'});
+  }
+
+  function stage(){return document.getElementById('partnerManagementStage');}
+  function launcher(){return document.getElementById('partnerSubnavCard');}
+
+  function setStageView(view){
+    const createCard=cardByTitle('Create Partner');
+    const controlsCard=cardByTitle('Partner Controls');
+    const menu=launcher();
+    if(!createCard||!controlsCard||!menu)return;
+    menu.classList.toggle(VIEW_HIDDEN,view!=='menu');
+    createCard.classList.toggle(VIEW_HIDDEN,view!=='add');
+    controlsCard.classList.toggle(VIEW_HIDDEN,view!=='controls');
+    if(view==='controls')rebuildPartnerDirectory(controlsCard);
+    (view==='menu'?menu:view==='add'?createCard:controlsCard).scrollTop=0;
   }
 
   function ensureReturn(card){
@@ -285,61 +264,41 @@
     btn.type='button';
     btn.className='partner-sub-return';
     btn.textContent='← Return';
-    btn.addEventListener('click',()=>showMenu());
+    btn.addEventListener('click',()=>setStageView('menu'));
     const h=card.querySelector('h2');
     if(h)card.insertBefore(btn,h);else card.prepend(btn);
   }
 
-  function launcher(){return document.getElementById('partnerSubnavCard');}
-
-  function showMenu(){
-    preserveViewport(()=>{
-      const createCard=cardByTitle('Create Partner');
-      const controlsCard=cardByTitle('Partner Controls');
-      createCard?.classList.add('partner-sub-hidden');
-      controlsCard?.classList.add('partner-sub-hidden');
-      launcher()?.classList.remove('partner-sub-hidden');
-    });
-  }
-
-  function showSubview(which){
-    preserveViewport(()=>{
-      const createCard=cardByTitle('Create Partner');
-      const controlsCard=cardByTitle('Partner Controls');
-      launcher()?.classList.add('partner-sub-hidden');
-      createCard?.classList.toggle('partner-sub-hidden',which!=='add');
-      controlsCard?.classList.toggle('partner-sub-hidden',which!=='controls');
-      if(which==='controls')rebuildPartnerDirectory(controlsCard);
-    });
-  }
-
-  function ensureLauncher(createCard,controlsCard){
-    if(document.getElementById('partnerSubnavCard'))return;
-    const card=document.createElement('section');
-    card.id='partnerSubnavCard';
-    card.className='card';
-    card.dataset.adminSection='partners';
-    card.innerHTML=`<h2>Partner Management</h2><div class="partner-subnav"><button type="button" data-partner-view="add">＋ Add Partner</button><button type="button" data-partner-view="controls">⚙ Partner Controls</button></div>`;
-    card.addEventListener('click',e=>{
+  function ensureStage(createCard,controlsCard){
+    if(stage())return stage();
+    const parent=createCard.parentNode;
+    const st=document.createElement('section');
+    st.id='partnerManagementStage';
+    st.className='partner-stage';
+    st.dataset.adminSection='partners';
+    parent.insertBefore(st,createCard);
+    const menu=document.createElement('section');
+    menu.id='partnerSubnavCard';
+    menu.className='card';
+    menu.innerHTML='<h2>Partner Management</h2><div class="partner-subnav"><button type="button" data-partner-view="add">＋ Add Partner</button><button type="button" data-partner-view="controls">⚙ Partner Controls</button></div>';
+    menu.addEventListener('click',e=>{
       const btn=e.target.closest('[data-partner-view]');
-      if(btn)showSubview(btn.dataset.partnerView);
+      if(btn)setStageView(btn.dataset.partnerView);
     });
-    const first=createCard||controlsCard;
-    first?.parentNode?.insertBefore(card,first);
+    st.append(menu,createCard,controlsCard);
+    return st;
   }
 
   function mount(){
     const createCard=cardByTitle('Create Partner');
     const controlsCard=cardByTitle('Partner Controls');
     if(!createCard||!controlsCard)return false;
-
     installStyle();
-    ensureLauncher(createCard,controlsCard);
+    ensureStage(createCard,controlsCard);
     ensureReturn(createCard);
     ensureReturn(controlsCard);
     ensureVoucherCollapse(createCard);
     rebuildPartnerDirectory(controlsCard);
-
     const partnerRoot=controlsCard.querySelector('#partnerControls');
     if(partnerRoot&&!partnerRoot.dataset.directoryObserverReady){
       partnerRoot.dataset.directoryObserverReady='1';
@@ -351,12 +310,11 @@
       });
       po.observe(partnerRoot,{childList:true});
     }
-
-    if(!document.body.dataset.partnerSubnavReady){
-      document.body.dataset.partnerSubnavReady='1';
-      showMenu();
+    if(!document.body.dataset.partnerStageReady){
+      document.body.dataset.partnerStageReady='1';
+      setStageView('menu');
       const bodyObserver=new MutationObserver(muts=>{
-        if(muts.some(m=>m.type==='attributes'&&m.attributeName==='data-admin-section')&&document.body.dataset.adminSection==='partners')showMenu();
+        if(muts.some(m=>m.type==='attributes'&&m.attributeName==='data-admin-section')&&document.body.dataset.adminSection==='partners')setStageView('menu');
       });
       bodyObserver.observe(document.body,{attributes:true,attributeFilter:['data-admin-section']});
     }
@@ -373,6 +331,5 @@
     const mo=new MutationObserver(()=>{if(mount())mo.disconnect();});
     mo.observe(document.documentElement,{childList:true,subtree:true});
   };
-
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
