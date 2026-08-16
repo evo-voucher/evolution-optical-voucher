@@ -1,5 +1,16 @@
 /* Partner Management entrance layout only.
    Fixed dimensions prevent the launcher from stretching or shifting vertically. */
+html:has(#partnerSubnavCard:not(.partner-sub-hidden)),
+body:has(#partnerSubnavCard:not(.partner-sub-hidden)){
+  overflow:hidden!important;
+  overscroll-behavior:none!important;
+}
+
+body:has(#partnerSubnavCard:not(.partner-sub-hidden)) #partnerSubnavCard,
+body:has(#partnerSubnavCard:not(.partner-sub-hidden)) #partnerSubnavCard *{
+  touch-action:manipulation;
+}
+
 #partnerSubnavCard{
   height:280px;
   min-height:280px;
@@ -17,6 +28,9 @@
   min-height:112px!important;
   padding:16px 14px!important;
   align-self:auto;
+  -webkit-user-select:none;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
 }
 
 @media(max-width:560px){
