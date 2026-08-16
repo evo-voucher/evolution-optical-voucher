@@ -101,7 +101,7 @@
   async function verifyStaff(session){
     if(!session?.user)return false;
     const {data,error}=await db.rpc('current_operational_realm');if(error)throw error;
-    if(!data||data.authenticated!==true||data.realm!=='staff'){await db.auth.signOut();throw new Error('This account is not an active Evolution Staff account.');}
+    if(!data||data.authenticated!==true||!['staff','admin'].includes(data.realm)){await db.auth.signOut();throw new Error('This account is not an active Evolution Staff or Admin account.');}
     $('loginState').classList.add('hidden');$('staffState').classList.remove('hidden');$('operationState').classList.remove('hidden');$('logoutBtn').classList.remove('hidden');
     $('sessionMeta').textContent=`Signed in as ${session.user.email||session.user.id} • role: ${data.role||'—'} • branch_id: ${data.branch_id||'—'}`;
     try{await loadOperations();}catch(e){show($('contextMsg'),e.message||'Staff context load failed.');}
