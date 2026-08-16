@@ -1,6 +1,10 @@
 // Evolution Voucher UAT Preview backend configuration.
 // Isolated preview: canonical reconstructed Supabase backend + preview-local customer links.
 // Browser clients use the Supabase publishable key only. Never place service_role here.
+const EVOLUTION_ASSET_VERSION='20260817-1';
+window.EVOLUTION_ASSET_VERSION=EVOLUTION_ASSET_VERSION;
+const evolutionAsset=path=>`${path}?v=${encodeURIComponent(EVOLUTION_ASSET_VERSION)}`;
+
 window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   enabled: true,
   environment: 'production',
@@ -15,7 +19,7 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   const link=document.createElement('link');
   link.id='evolutionCommercialTheme';
   link.rel='stylesheet';
-  link.href='assets/css/evolution-theme.css?v=1';
+  link.href=evolutionAsset('assets/css/evolution-theme.css');
   document.head.appendChild(link);
 })();
 
@@ -24,7 +28,7 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   const link=document.createElement('link');
   link.id='allocationCompactStyle';
   link.rel='stylesheet';
-  link.href='assets/css/allocation-compact.css?v=1';
+  link.href=evolutionAsset('assets/css/allocation-compact.css');
   document.head.appendChild(link);
 })();
 
@@ -35,7 +39,7 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   const link=document.createElement('link');
   link.id='partnerEntryLayoutStyle';
   link.rel='stylesheet';
-  link.href='assets/css/partner-entry-layout.css?v=3';
+  link.href=evolutionAsset('assets/css/partner-entry-layout.css');
   document.head.appendChild(link);
 })();
 
@@ -69,7 +73,7 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   if(document.getElementById('allocationValidityUiScript'))return;
   const script=document.createElement('script');
   script.id='allocationValidityUiScript';
-  script.src='assets/js/allocation-validity-ui.js?v=1';
+  script.src=evolutionAsset('assets/js/allocation-validity-ui.js');
   document.head.appendChild(script);
 })();
 
@@ -79,6 +83,6 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   if(document.getElementById('partnerManagementUiScript'))return;
   const script=document.createElement('script');
   script.id='partnerManagementUiScript';
-  script.src='assets/js/partner-management-ui.js?v=3';
+  script.src=evolutionAsset('assets/js/partner-management-ui.js');
   document.head.appendChild(script);
 })();
