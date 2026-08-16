@@ -4,6 +4,28 @@ body[data-admin-section="partners"] #adminPageHead{
   margin-top:24px;
 }
 
+/* Partner Management is a contained mobile surface.
+   Children may wrap, but they must never widen the page viewport. */
+body[data-admin-section="partners"] .shell{
+  max-width:100%;
+  overflow-x:clip;
+}
+body[data-admin-section="partners"] #dashboardState,
+body[data-admin-section="partners"] #dashboardState > .card,
+body[data-admin-section="partners"] #partnerControls,
+body[data-admin-section="partners"] #partnerControls .partner,
+body[data-admin-section="partners"] .partner-control-panel,
+body[data-admin-section="partners"] .claimbox,
+body[data-admin-section="partners"] .branchgrid,
+body[data-admin-section="partners"] .check{
+  min-width:0;
+  max-width:100%;
+}
+body[data-admin-section="partners"] .check span{
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+
 #partnerSubnavCard{
   height:300px;
   min-height:300px;
