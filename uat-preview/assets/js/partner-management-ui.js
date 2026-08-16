@@ -20,7 +20,21 @@
       .partner-setup-details>summary::after{content:'›';font-size:24px;line-height:1;color:#8feaff;transform:rotate(90deg);transition:transform .18s ease}
       .partner-setup-details[open]>summary::after{transform:rotate(-90deg)}
       .partner-setup-details-body{padding:0 12px 12px}
-      @media(max-width:560px){.partner-subnav{grid-template-columns:1fr 1fr;gap:10px}.partner-subnav button{min-height:68px!important;padding:10px!important;font-size:13px!important}.partner-setup-details>summary{padding:13px 14px}}
+      .partner-control-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+      .partner-control-tabs button{min-height:40px!important;padding:7px 10px!important;font-size:12px!important;border-radius:11px!important}
+      .partner-control-tabs button.active{border-color:rgba(101,230,181,.82)!important;background:linear-gradient(180deg,#176158,#0d3a35)!important}
+      .partner-control-panel-hidden{display:none!important}
+      #partnerControls .partner{padding:12px!important}
+      #partnerControls .partner .controls{margin-top:10px}
+      #partnerControls .partner .controls .wide{min-height:38px!important;margin-top:8px!important;padding:7px 10px!important;font-size:12px!important}
+      #partnerControls .partner .claimbox{margin-top:10px}
+      #partnerControls .partner .claimbox>button{min-height:38px!important;padding:7px 10px!important;font-size:12px!important;width:auto!important}
+      @media(max-width:560px){
+        .partner-subnav{grid-template-columns:1fr 1fr;gap:10px}
+        .partner-subnav button{min-height:68px!important;padding:10px!important;font-size:13px!important}
+        .partner-setup-details>summary{padding:13px 14px}
+        .partner-control-tabs{grid-template-columns:1fr 1fr;gap:8px}
+      }
     `;
     document.head.appendChild(s);
   }
@@ -36,6 +50,44 @@
     const body=details.querySelector('.partner-setup-details-body');
     while(setup.firstChild)body.appendChild(setup.firstChild);
     setup.appendChild(details);
+  }
+
+  function setPartnerControlView(partner,view){
+    const basic=partner.querySelector('.controls');
+    const access=partner.querySelector('.claimbox');
+    const buttons=[...partner.querySelectorAll('.partner-control-tabs [data-control-view]')];
+    const sameOpen=buttons.find(b=>b.dataset.controlView===view)?.classList.contains('active');
+    basic?.classList.add('partner-control-panel-hidden');
+    access?.classList.add('partner-control-panel-hidden');
+    buttons.forEach(b=>b.classList.remove('active'));
+    if(sameOpen)return;
+    const target=view==='basic'?basic:access;
+    target?.classList.remove('partner-control-panel-hidden');
+    buttons.find(b=>b.dataset.controlView===view)?.classList.add('active');
+  }
+
+  function compactPartnerCard(partner){
+    if(!partner||partner.dataset.compactControlsReady==='1')return;
+    const head=partner.querySelector('.partnerhead');
+    const basic=partner.querySelector('.controls');
+    const access=partner.querySelector('.claimbox');
+    if(!head||!basic||!access)return;
+
+    partner.dataset.compactControlsReady='1';
+    const tabs=document.createElement('div');
+    tabs.className='partner-control-tabs';
+    tabs.innerHTML='<button type="button" data-control-view="basic">Basic</button><button type="button" data-control-view="access">Access</button>';
+    tabs.addEventListener('click',e=>{
+      const btn=e.target.closest('[data-control-view]');
+      if(btn)setPartnerControlView(partner,btn.dataset.controlView);
+    });
+    head.insertAdjacentElement('afterend',tabs);
+    basic.classList.add('partner-control-panel-hidden');
+    access.classList.add('partner-control-panel-hidden');
+  }
+
+  function compactPartnerControls(controlsCard){
+    controlsCard?.querySelectorAll('#partnerControls .partner').forEach(compactPartnerCard);
   }
 
   function ensureReturn(card){
@@ -68,6 +120,7 @@
     launcher()?.classList.add('partner-sub-hidden');
     createCard?.classList.toggle('partner-sub-hidden',which!=='add');
     controlsCard?.classList.toggle('partner-sub-hidden',which!=='controls');
+    if(which==='controls')compactPartnerControls(controlsCard);
     const target=which==='add'?createCard:controlsCard;
     target?.scrollIntoView({behavior:'smooth',block:'start'});
   }
@@ -97,6 +150,14 @@
     ensureReturn(createCard);
     ensureReturn(controlsCard);
     ensureVoucherCollapse(createCard);
+    compactPartnerControls(controlsCard);
+
+    const partnerRoot=controlsCard.querySelector('#partnerControls');
+    if(partnerRoot&&!partnerRoot.dataset.compactObserverReady){
+      partnerRoot.dataset.compactObserverReady='1';
+      const po=new MutationObserver(()=>compactPartnerControls(controlsCard));
+      po.observe(partnerRoot,{childList:true});
+    }
 
     if(!document.body.dataset.partnerSubnavReady){
       document.body.dataset.partnerSubnavReady='1';
