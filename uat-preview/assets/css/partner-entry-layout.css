@@ -1,34 +1,31 @@
 /* Partner Management entrance layout only.
-   Keep the launcher card in place; use its lower empty space for taller actions. */
+   Fixed dimensions prevent the launcher from stretching or shifting vertically. */
 #partnerSubnavCard{
-  min-height:310px;
-  display:flex;
-  flex-direction:column;
+  height:280px;
+  min-height:280px;
+  display:block;
 }
 
 #partnerSubnavCard .partner-subnav{
-  flex:1;
-  align-items:stretch;
   margin-top:12px;
-  padding-bottom:18px;
+  padding-bottom:0;
+  align-items:stretch;
 }
 
 #partnerSubnavCard .partner-subnav button{
-  height:142px!important;
-  min-height:142px!important;
-  padding:20px 14px!important;
-  align-self:stretch;
+  height:112px!important;
+  min-height:112px!important;
+  padding:16px 14px!important;
+  align-self:auto;
 }
 
 @media(max-width:560px){
   #partnerSubnavCard{
-    min-height:310px;
-  }
-  #partnerSubnavCard .partner-subnav{
-    padding-bottom:18px;
+    height:280px;
+    min-height:280px;
   }
   #partnerSubnavCard .partner-subnav button{
-    height:142px!important;
-    min-height:142px!important;
+    height:112px!important;
+    min-height:112px!important;
   }
 }
