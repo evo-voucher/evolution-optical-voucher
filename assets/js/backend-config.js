@@ -29,6 +29,17 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   document.head.appendChild(link);
 })();
 
+(function installPartnerEntryLayout(){
+  const path=String(window.location?.pathname||'').toLowerCase();
+  if(!path.endsWith('/admin.html'))return;
+  if(document.getElementById('partnerEntryLayoutStyle'))return;
+  const link=document.createElement('link');
+  link.id='partnerEntryLayoutStyle';
+  link.rel='stylesheet';
+  link.href='assets/css/partner-entry-layout.css?v=1';
+  document.head.appendChild(link);
+})();
+
 // Auth session ownership
 // ----------------------
 // All portals are served from the same GitHub Pages origin and use the same Supabase project.
