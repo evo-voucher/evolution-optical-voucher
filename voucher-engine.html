@@ -18,7 +18,6 @@
   <section id="loginState" class="hidden"><div class="grid"><div class="field"><label>Admin Email</label><input id="email" type="email" autocomplete="username"></div><div class="field"><label>Password</label><input id="password" type="password" autocomplete="current-password"></div></div><button id="loginBtn" class="wide">Sign In</button><div id="loginMsg"></div></section>
   <section id="adminState" class="hidden"><div class="msg ok">Admin identity verified.</div><div id="sessionMeta" class="small"></div></section>
 </section>
-
 <section id="engineState" class="hidden">
 <div class="split">
 <section class="card">
@@ -33,10 +32,9 @@
   <div class="field"><label>Description</label><textarea id="templateDescription" placeholder="Internal purpose / business meaning"></textarea></div>
   <button id="createTemplateBtn" class="wide">Create Classification</button><div id="templateMsg"></div>
 </section>
-
 <section class="card">
   <h2>2. Publish New Version</h2>
-  <p class="small">Published Versions are immutable. Validity starts when the Partner issues the Voucher. Branch scope is frozen into the Version.</p>
+  <p class="small">Published Versions are immutable. Validity starts when the Partner issues the Voucher. Branch scope and occasion greeting are frozen into the Version.</p>
   <div class="field"><label>Classification</label><select id="versionTemplate"><option value="">Select classification</option></select></div>
   <div class="grid">
     <div class="field"><label>Version Name</label><input id="versionName" placeholder="Current 2026"></div>
@@ -47,15 +45,15 @@
     <div class="field"><label>Theme</label><select id="versionTheme"><option value="classic">Classic</option><option value="birthday">Birthday</option><option value="raya">Raya</option><option value="merdeka">Merdeka</option><option value="christmas">Christmas</option></select></div>
     <div class="field"><label>Supply Limit (optional)</label><input id="supplyLimit" type="number" min="1" step="1" placeholder="Unlimited"></div>
   </div>
+  <div class="field"><label>Occasion Greeting (optional)</label><input id="greetingText" placeholder="Happy Birthday! 🎂"></div>
   <div class="field"><label>Terms (optional)</label><textarea id="termsText"></textarea></div>
   <h3>Version Redemption Scope</h3>
   <label class="checkline"><input id="versionAllBranches" type="checkbox" checked> Allow all active Evolution Optical branches</label>
   <div id="versionBranchList" class="branchList"></div>
-  <div class="sectionNote">If All Branches is off, select at least one active branch. The Version and its branch scope are published atomically; an invalid branch selection cancels the whole publish.</div>
+  <div class="sectionNote">If All Branches is off, select at least one active branch. The Version, greeting and branch scope are published atomically.</div>
   <button id="publishBtn" class="wide">Publish New Version</button><div id="publishMsg"></div>
 </section>
 </div>
-
 <section class="card">
   <h2>3. Allocate to Partner</h2>
   <p class="small">Allocation grants Partner stock for one active Version. Branch scope remains controlled by Partner claim access and Version scope.</p>
@@ -67,7 +65,6 @@
   <div class="sectionNote">Allocation is executed through the protected <b>voucher-engine-admin</b> Edge Function. Allocation-specific branch scope remains disabled until its backend layer exists.</div>
   <button id="allocateBtn" class="wide">Allocate Voucher Stock</button><div id="allocationMsg"></div>
 </section>
-
 <section class="card">
   <div class="top"><div><h2>Current Engine Inventory</h2><p class="small">Read-only operational view from the authenticated Admin session.</p></div><button id="refreshBtn">Refresh</button></div>
   <div class="tableWrap"><table><thead><tr><th>Classification</th><th>Version</th><th>Value</th><th>Validity</th><th>Theme</th><th>Branch Scope</th><th>Status</th></tr></thead><tbody id="inventoryBody"><tr><td colspan="7">No data loaded.</td></tr></tbody></table></div>
@@ -101,8 +98,7 @@ async function loadData(){
   const[tRes,vRes,pRes,bRes]=await Promise.all([
     db.from('voucher_templates').select('id,template_code,template_name,voucher_category,status,theme_code,current_version_id,created_at').order('created_at',{ascending:false}),
     db.from('voucher_versions').select('id,template_id,version_no,version_name,face_value,validity_type,validity_mode,validity_mode_v2,valid_days,valid_months,theme_override_code,all_branches,status,created_at').order('created_at',{ascending:false}),
-    rpc('admin_partner_directory'),
-    rpc('admin_active_branches')
+    rpc('admin_partner_directory'),rpc('admin_active_branches')
   ]);
   if(tRes.error)throw tRes.error;if(vRes.error)throw vRes.error;
   templates=tRes.data||[];versions=vRes.data||[];partners=pRes||[];branches=bRes||[];renderSelectors();renderVersionBranches();renderInventory();
@@ -112,7 +108,7 @@ $('loginBtn').addEventListener('click',async()=>{const email=$('email').value.tr
 $('validityMode').addEventListener('change',()=>{const m=$('validityMode').value;$('monthsField').classList.toggle('hidden',m!=='calendar_months_after_issue');$('daysField').classList.toggle('hidden',m!=='days_after_issue')});
 $('versionAllBranches').addEventListener('change',renderVersionBranches);
 $('createTemplateBtn').addEventListener('click',async()=>{msg($('templateMsg'),'');const code=$('templateCode').value.trim(),name=$('templateName').value.trim(),category=$('templateCategory').value.trim()||'custom',description=$('templateDescription').value.trim()||null,theme=$('templateTheme').value;if(!code||!name){msg($('templateMsg'),'Code and Name are required.');return}$('createTemplateBtn').disabled=true;try{await rpc('admin_create_voucher_template_theme',{p_template_code:code,p_template_name:name,p_voucher_category:category,p_description:description,p_theme_code:theme});msg($('templateMsg'),`Classification ${code.toUpperCase()} created.`,true);$('templateCode').value='';$('templateName').value='';$('templateDescription').value='';await loadData()}catch(e){msg($('templateMsg'),e.message||'Template creation failed.')}finally{$('createTemplateBtn').disabled=false}});
-$('publishBtn').addEventListener('click',async()=>{msg($('publishMsg'),'');const template=$('versionTemplate').value,mode=$('validityMode').value,all=$('versionAllBranches').checked,codes=selectedCodes();if(!template){msg($('publishMsg'),'Select a classification.');return}const months=mode==='calendar_months_after_issue'?intOrNull('validMonths'):null,days=mode==='days_after_issue'?intOrNull('validDays'):null;if(mode==='calendar_months_after_issue'&&(!months||months<1)){msg($('publishMsg'),'Calendar months must be at least 1.');return}if(mode==='days_after_issue'&&(!days||days<1)){msg($('publishMsg'),'Days must be at least 1.');return}if(!all&&!codes.length){msg($('publishMsg'),'Select at least one branch or enable All Branches.');return}$('publishBtn').disabled=true;try{await rpc('admin_publish_voucher_version_scoped',{p_template_id:template,p_version_name:$('versionName').value.trim()||null,p_face_value:numOrNull('faceValue'),p_discount_percent:null,p_validity_mode:mode,p_valid_days:days,p_valid_months:months,p_min_spend:null,p_max_discount:null,p_usage_limit:1,p_transferable:true,p_terms_text:$('termsText').value.trim()||null,p_supply_limit:intOrNull('supplyLimit'),p_all_branches:all,p_branch_codes:all?[]:codes,p_theme_override_code:$('versionTheme').value});msg($('publishMsg'),all?'New immutable Voucher Version published for all branches.':'New immutable Voucher Version published with restricted branch scope.',true);await loadData()}catch(e){msg($('publishMsg'),e.message||'Version publish failed.')}finally{$('publishBtn').disabled=false}});
+$('publishBtn').addEventListener('click',async()=>{msg($('publishMsg'),'');const template=$('versionTemplate').value,mode=$('validityMode').value,all=$('versionAllBranches').checked,codes=selectedCodes();if(!template){msg($('publishMsg'),'Select a classification.');return}const months=mode==='calendar_months_after_issue'?intOrNull('validMonths'):null,days=mode==='days_after_issue'?intOrNull('validDays'):null;if(mode==='calendar_months_after_issue'&&(!months||months<1)){msg($('publishMsg'),'Calendar months must be at least 1.');return}if(mode==='days_after_issue'&&(!days||days<1)){msg($('publishMsg'),'Days must be at least 1.');return}if(!all&&!codes.length){msg($('publishMsg'),'Select at least one branch or enable All Branches.');return}$('publishBtn').disabled=true;try{await rpc('admin_publish_voucher_version_scoped',{p_template_id:template,p_version_name:$('versionName').value.trim()||null,p_face_value:numOrNull('faceValue'),p_discount_percent:null,p_validity_mode:mode,p_valid_days:days,p_valid_months:months,p_min_spend:null,p_max_discount:null,p_usage_limit:1,p_transferable:true,p_terms_text:$('termsText').value.trim()||null,p_supply_limit:intOrNull('supplyLimit'),p_all_branches:all,p_branch_codes:all?[]:codes,p_theme_override_code:$('versionTheme').value,p_greeting_text:$('greetingText').value.trim()||null});msg($('publishMsg'),all?'New immutable Voucher Version published for all branches.':'New immutable Voucher Version published with restricted branch scope.',true);await loadData()}catch(e){msg($('publishMsg'),e.message||'Version publish failed.')}finally{$('publishBtn').disabled=false}});
 $('allocateBtn').addEventListener('click',async()=>{msg($('allocationMsg'),'');const partner=$('allocationPartner').value,version=$('allocationVersion').value,qty=intOrNull('allocationQty');if(!partner||!version||!qty||qty<1){msg($('allocationMsg'),'Partner, Version and positive Quantity are required.');return}$('allocateBtn').disabled=true;try{const{data,error}=await db.functions.invoke('voucher-engine-admin',{body:{action:'allocate',partner_id:partner,version_id:version,quantity:qty}});if(error)throw error;if(!data?.success)throw new Error(data?.error||'Allocation failed.');msg($('allocationMsg'),`Allocation completed. Quantity: ${qty}.`,true);await loadData()}catch(e){msg($('allocationMsg'),e.message||'Allocation failed.')}finally{$('allocateBtn').disabled=false}});
 $('refreshBtn').addEventListener('click',async()=>{try{await loadData()}catch(e){alert(e.message||'Refresh failed.')}});
 db.auth.getSession().then(async({data})=>{if(data?.session){try{await verifyAdmin(data.session)}catch(e){msg($('loginMsg'),e.message||'Session verification failed.')}}});
