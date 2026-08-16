@@ -19,7 +19,7 @@
   <div class="toprow"><div><h1>EVOLUTION OPTICAL</h1><p>Staff Voucher Portal</p></div><button id="logoutBtn" class="hidden">Sign Out</button></div>
   <section id="closedState"><div class="status">New backend not configured. Staff access remains disabled for safety.</div><p class="small">Fail-closed mode is active. This page creates no Supabase client until the verified reconstructed backend is explicitly enabled.</p></section>
   <section id="loginState" class="hidden"><div class="field"><label>Email</label><input id="email" type="email" autocomplete="username"></div><div class="field"><label>Password</label><input id="password" type="password" autocomplete="current-password"></div><button id="loginBtn" class="wide">Sign In</button><div id="loginMsg"></div></section>
-  <section id="staffState" class="hidden"><div class="msg ok">Staff / Admin identity verified.</div><div id="sessionMeta" class="meta"></div></section>
+  <section id="staffState" class="hidden"><div class="msg ok">Staff identity verified.</div><div id="sessionMeta" class="meta"></div></section>
 </section>
 
 <section id="operationState" class="hidden">
@@ -102,7 +102,7 @@
   async function verifyStaff(session){
     if(!session?.user)return false;
     const {data,error}=await db.rpc('current_operational_realm');if(error)throw error;
-    if(!data||data.authenticated!==true||!['staff','admin'].includes(data.realm)){await db.auth.signOut();throw new Error('This account is not an active Evolution Staff or Admin account.');}
+    if(!data||data.authenticated!==true||data.realm!=='staff'){await db.auth.signOut();throw new Error('This account is not an active Evolution Staff account.');}
     $('loginState').classList.add('hidden');$('staffState').classList.remove('hidden');$('operationState').classList.remove('hidden');$('logoutBtn').classList.remove('hidden');
     $('sessionMeta').textContent=`Signed in as ${session.user.email||session.user.id} • realm: ${data.realm||'—'} • role: ${data.role||data.realm||'—'} • branch_id: ${data.branch_id||'—'}`;
     try{await loadOperations();}catch(e){show($('contextMsg'),e.message||'Staff context load failed.');}
