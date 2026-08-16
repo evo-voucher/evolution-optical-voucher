@@ -1,60 +1,13 @@
-/* Partner Management entrance layout only.
-   iOS-safe fixed viewport: launcher is visually pinned; only button feedback moves visually. */
-html:has(#partnerSubnavCard:not(.partner-sub-hidden)){
-  overflow:hidden!important;
-  overscroll-behavior:none!important;
-}
-
-body:has(#partnerSubnavCard:not(.partner-sub-hidden)){
-  position:fixed!important;
-  inset:0!important;
-  width:100%!important;
-  height:100dvh!important;
-  overflow:hidden!important;
-  overscroll-behavior:none!important;
-}
-
-body:has(#partnerSubnavCard:not(.partner-sub-hidden)) #partnerSubnavCard,
-body:has(#partnerSubnavCard:not(.partner-sub-hidden)) #partnerSubnavCard *{
-  touch-action:manipulation;
-}
-
-#partnerSubnavCard{
-  height:280px;
-  min-height:280px;
-  display:block;
-}
-
-#partnerSubnavCard .partner-subnav{
-  margin-top:12px;
-  padding-bottom:0;
-  align-items:stretch;
-}
-
-#partnerSubnavCard .partner-subnav button{
-  height:112px!important;
-  min-height:112px!important;
-  padding:16px 14px!important;
-  align-self:auto;
-  transform:none!important;
-  -webkit-user-select:none;
-  user-select:none;
-  -webkit-tap-highlight-color:transparent;
-}
-
-#partnerSubnavCard .partner-subnav button:active{
-  transform:none!important;
-  filter:brightness(.88);
-  box-shadow:inset 0 4px 12px rgba(0,0,0,.34),0 8px 16px rgba(0,0,0,.22)!important;
+/* Partner Management stage sizing only.
+   View switching is handled inside one fixed stage; no body/viewport locking. */
+#partnerManagementStage{
+  height:520px;
+  min-height:520px;
 }
 
 @media(max-width:560px){
-  #partnerSubnavCard{
-    height:280px;
-    min-height:280px;
-  }
-  #partnerSubnavCard .partner-subnav button{
-    height:112px!important;
-    min-height:112px!important;
+  #partnerManagementStage{
+    height:500px;
+    min-height:500px;
   }
 }
