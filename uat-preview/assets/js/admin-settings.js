@@ -12,6 +12,7 @@
     settings:{title:'System Settings',sub:'Administrative tools and system shortcuts.'}
   };
   let currentSection='home';
+  let initialVoucherVersions=[];
 
   function retireVoucherLimitUI(){
     const createInput=document.getElementById('newPartnerVoucherLimit');
@@ -19,35 +20,51 @@
     document.querySelectorAll('#partnerControls .field').forEach(field=>{const label=(field.querySelector('label')?.textContent||'').trim();if(label==='Voucher Limit')field.remove();});
   }
 
+  function voucherOptions(selected=''){
+    return '<option value="">Select published Voucher</option>'+initialVoucherVersions.map(v=>`<option value="${esc(v.version_id)}" ${v.version_id===selected?'selected':''}>${esc(v.voucher_label)} · ${esc(v.version_name||('Version '+v.version_no))}</option>`).join('');
+  }
+
+  function addInitialVoucherRow(selected='',quantity=1){
+    const list=document.getElementById('initialVoucherRows');if(!list)return;
+    const row=document.createElement('div');row.className='initial-voucher-row';
+    row.innerHTML=`<div class="field"><label>Voucher</label><select class="initial-voucher-version">${voucherOptions(selected)}</select></div><div class="field"><label>Initial Allocation Quantity</label><input class="initial-voucher-qty" type="number" min="1" step="1" value="${Number.isInteger(quantity)&&quantity>0?quantity:1}"></div><button type="button" class="initial-voucher-remove">Remove</button>`;
+    row.querySelector('.initial-voucher-remove').onclick=()=>{row.remove();if(!document.querySelector('.initial-voucher-row'))addInitialVoucherRow();};
+    list.appendChild(row);
+  }
+
   async function ensureInitialSetupUI(){
-    if(document.getElementById('initialVoucherVersion'))return;
+    if(document.getElementById('initialVoucherRows'))return;
     const code=document.getElementById('newPartnerCode');
     const form=code?.closest('.card')?.querySelector('.formgrid');
     if(!form)return;
-    const wrap=document.createElement('div');wrap.id='initialVoucherSetup';wrap.className='partner-initial-setup';
-    wrap.innerHTML=`
-      <div class="field"><label>Initial Voucher</label><select id="initialVoucherVersion"><option value="">Loading published vouchers…</option></select></div>
-      <div class="field"><label>Initial Quantity</label><input id="initialVoucherQuantity" type="number" min="1" value="1"></div>
-      <div class="field initial-branch-field"><label>Claim Branch</label><label class="check"><input id="initialAllBranches" type="checkbox"><span>All active branches</span></label><div id="initialBranchChoices" class="branchgrid"></div></div>`;
-    form.appendChild(wrap);
-    const style=document.createElement('style');style.id='initialSetupStyle';style.textContent=`.partner-initial-setup{display:contents}.initial-branch-field{grid-column:1/-1}.initial-branch-field>.check{margin:6px 0 10px}.initial-branch-field .branchgrid{padding:12px;border:1px solid rgba(118,91,255,.5);border-radius:16px;background:#0a1736}.initial-branch-field .check{font-size:13px}.initial-branch-field input[type=checkbox]{min-height:0!important;width:auto!important}@media(max-width:780px){.initial-branch-field{grid-column:auto}}`;
-    if(!document.getElementById('initialSetupStyle'))document.head.appendChild(style);
+
     const [versionsRes,branchesRes]=await Promise.all([db.rpc('admin_active_voucher_versions'),db.rpc('admin_active_branches')]);
     if(versionsRes.error)throw versionsRes.error;if(branchesRes.error)throw branchesRes.error;
-    const versions=versionsRes.data||[],branches=branchesRes.data||[];
-    const select=document.getElementById('initialVoucherVersion');
-    select.innerHTML='<option value="">Select published Voucher</option>'+versions.map(v=>`<option value="${esc(v.version_id)}">${esc(v.voucher_label)} · ${esc(v.version_name||('Version '+v.version_no))}</option>`).join('');
+    initialVoucherVersions=versionsRes.data||[];const branches=branchesRes.data||[];
+
+    const wrap=document.createElement('div');wrap.id='initialVoucherSetup';wrap.className='partner-initial-setup';
+    wrap.innerHTML=`<div class="initial-voucher-field"><div class="initial-voucher-head"><div><label>Initial Vouchers</label><div class="small">Choose one or more published Vouchers. Each Voucher has its own initial allocation.</div></div><button id="addInitialVoucherBtn" type="button">+ Add Voucher</button></div><div id="initialVoucherRows"></div></div><div class="field initial-branch-field"><label>Claim Branch</label><label class="check"><input id="initialAllBranches" type="checkbox"><span>All active branches</span></label><div id="initialBranchChoices" class="branchgrid"></div></div>`;
+    form.appendChild(wrap);
+
+    if(!document.getElementById('initialSetupStyle')){
+      const style=document.createElement('style');style.id='initialSetupStyle';
+      style.textContent=`.partner-initial-setup{display:contents}.initial-voucher-field,.initial-branch-field{grid-column:1/-1}.initial-voucher-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-end;margin-bottom:8px}.initial-voucher-head label{margin:0}.initial-voucher-head button{width:auto!important;min-width:126px!important}.initial-voucher-row{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(150px,.6fr) auto;gap:10px;align-items:end;padding:12px;margin:8px 0;border:1px solid rgba(118,91,255,.5);border-radius:16px;background:#0a1736}.initial-voucher-row .field{margin:0}.initial-voucher-remove{min-width:88px!important;background:linear-gradient(180deg,#8a3e50,#5e2132)!important;border-color:#c45a6c!important}.initial-branch-field>.check{margin:6px 0 10px}.initial-branch-field .branchgrid{padding:12px;border:1px solid rgba(118,91,255,.5);border-radius:16px;background:#0a1736}.initial-branch-field .check{font-size:13px}.initial-branch-field input[type=checkbox]{min-height:0!important;width:auto!important}@media(max-width:780px){.initial-voucher-field,.initial-branch-field{grid-column:auto}.initial-voucher-head{align-items:flex-start;flex-direction:column}.initial-voucher-row{grid-template-columns:1fr}.initial-voucher-remove{width:100%!important}}`;
+      document.head.appendChild(style);
+    }
+
     document.getElementById('initialBranchChoices').innerHTML=branches.map(b=>`<label class="check"><input type="checkbox" class="initial-branch" value="${esc(b.branch_code)}"><span>${esc(b.branch_name)} (${esc(b.branch_code)})</span></label>`).join('')||'<div class="empty">No active branches.</div>';
     const all=document.getElementById('initialAllBranches');
     const sync=()=>document.querySelectorAll('.initial-branch').forEach(x=>x.disabled=all.checked);
     all.onchange=sync;sync();
+    document.getElementById('addInitialVoucherBtn').onclick=()=>addInitialVoucherRow();
+    addInitialVoucherRow();
   }
 
   function setCreateMsg(text,ok=false){const n=document.getElementById('createPartnerMsg');if(n)n.innerHTML=text?`<div class="msg ${ok?'ok':'err'}">${esc(text)}</div>`:'';}
 
-  function installCreatePartnerV3(){
-    const btn=document.getElementById('createPartnerBtn');if(!btn||btn.__initialSetupInstalled)return;
-    btn.__initialSetupInstalled=true;
+  function installCreatePartnerV4(){
+    const btn=document.getElementById('createPartnerBtn');if(!btn||btn.__multiInitialInstalled)return;
+    btn.__multiInitialInstalled=true;
     btn.onclick=async()=>{
       const g=id=>document.getElementById(id);
       const partner_code=(g('newPartnerCode')?.value||'').trim().toUpperCase();
@@ -57,26 +74,30 @@
       const email=(g('newPartnerEmail')?.value||'').trim().toLowerCase();
       const password=g('newPartnerPassword')?.value||'';
       const staff_limit=Number(g('newPartnerStaffLimit')?.value||0);
-      const version_id=g('initialVoucherVersion')?.value||'';
-      const quantity=Number(g('initialVoucherQuantity')?.value||0);
       const all_branches=!!g('initialAllBranches')?.checked;
       const branch_codes=[...document.querySelectorAll('.initial-branch:checked')].map(x=>x.value);
+      const allocations=[...document.querySelectorAll('.initial-voucher-row')].map(row=>({version_id:row.querySelector('.initial-voucher-version')?.value||'',quantity:Number(row.querySelector('.initial-voucher-qty')?.value||0)}));
       setCreateMsg('');
       if(!partner_code||!partner_name||!email||!password){setCreateMsg('Partner code, name, login email and password are required.');return;}
       if(!/^[A-Z0-9_-]+$/.test(partner_code)){setCreateMsg('Partner code may use A-Z, 0-9, underscore and hyphen only.');return;}
       if(password.length<6){setCreateMsg('Password must be at least 6 characters.');return;}
       if(!Number.isInteger(staff_limit)||staff_limit<0||staff_limit>1000){setCreateMsg('Staff Limit must be 0 to 1000.');return;}
-      if(!version_id){setCreateMsg('Select an Initial Voucher.');return;}
-      if(!Number.isInteger(quantity)||quantity<1){setCreateMsg('Initial Quantity must be at least 1.');return;}
+      if(!allocations.length||allocations.some(x=>!x.version_id)){setCreateMsg('Select a Voucher for every Initial Voucher row.');return;}
+      if(allocations.some(x=>!Number.isInteger(x.quantity)||x.quantity<1)){setCreateMsg('Each Initial Allocation Quantity must be a whole number of at least 1.');return;}
+      if(new Set(allocations.map(x=>x.version_id)).size!==allocations.length){setCreateMsg('The same Voucher cannot be selected twice.');return;}
       if(!all_branches&&!branch_codes.length){setCreateMsg('Select at least one Claim Branch.');return;}
       btn.disabled=true;btn.textContent='Creating Partner…';
       try{
-        const {data,error}=await db.functions.invoke('create-partner',{body:{partner_code,partner_name,contact_person:contact_person||null,contact_phone:contact_phone||null,email,password,staff_limit,version_id,quantity,all_branches,branch_codes}});
+        const {data,error}=await db.functions.invoke('create-partner',{body:{partner_code,partner_name,contact_person:contact_person||null,contact_phone:contact_phone||null,email,password,staff_limit,allocations,all_branches,branch_codes}});
         if(error)throw error;if(!data?.success)throw new Error(data?.details||data?.error||'Partner creation failed.');
-        setCreateMsg(`Partner ${partner_name} created with initial Voucher allocation.`,true);
+        setCreateMsg(`Partner ${partner_name} created with ${allocations.length} initial Voucher allocation${allocations.length===1?'':'s'}.`,true);
         setTimeout(()=>location.reload(),900);
       }catch(e){setCreateMsg(e?.message||'Partner creation failed.');btn.disabled=false;btn.textContent='Create Partner';}
     };
+  }
+
+  async function purgeExpiredUnredeemed(){
+    try{await db.rpc('admin_purge_expired_unredeemed_vouchers',{});}catch(_){ }
   }
 
   function ensureSettingsCard(){
@@ -106,8 +127,9 @@
     try{
       const {data,error}=await db.rpc('current_operational_realm');if(error)return;
       if(data?.authenticated===true&&data?.realm==='admin'){
+        await purgeExpiredUnredeemed();
         ensureSettingsCard();ensureHub();installClaimSaveFeedback();retireVoucherLimitUI();
-        await ensureInitialSetupUI();installCreatePartnerV3();
+        await ensureInitialSetupUI();installCreatePartnerV4();
         try{currentSection=sessionStorage.getItem('evo-admin-section')||'home'}catch(_){currentSection='home'}
         applySections();
         const dash=document.getElementById('dashboardState');if(dash&&!dash.__adminHubObserved){const o=new MutationObserver(()=>applySections());o.observe(dash,{childList:true,subtree:false});dash.__adminHubObserved=true;}
