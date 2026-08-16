@@ -19,6 +19,15 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   document.head.appendChild(link);
 })();
 
+(function installAllocationCompactStyle(){
+  if(document.getElementById('allocationCompactStyle')) return;
+  const link=document.createElement('link');
+  link.id='allocationCompactStyle';
+  link.rel='stylesheet';
+  link.href='assets/css/allocation-compact.css?v=1';
+  document.head.appendChild(link);
+})();
+
 (function installPortalAuthNamespace() {
   const supabase = window.supabase;
   if (!supabase || typeof supabase.createClient !== 'function' || supabase.__evolutionAuthNamespaced) return;
