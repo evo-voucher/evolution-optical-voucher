@@ -2,12 +2,9 @@
   const cfg=window.EVOLUTION_VOUCHER_BACKEND||{};
   const siteBase=String(cfg.siteBase||'').replace(/\/?$/,'/');
   if(!siteBase)return;
+  const portalUrl=`${siteBase}partner.html`;
   const path=String(window.location?.pathname||'').toLowerCase();
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
-  function portalUrlFor(role){
-    return role==='Evolution Staff'?`${siteBase}staff.html`:`${siteBase}partner.html`;
-  }
 
   function ensureStyle(){
     if(document.getElementById('portalAccessShareStyle'))return;
@@ -18,12 +15,10 @@
   }
 
   function shareText(role,name,email){
-    const portalUrl=portalUrlFor(role);
     return [`Evolution Optical ${role} Portal`,name?`Account: ${name}`:'',email?`Login Email: ${email}`:'',`Login: ${portalUrl}`].filter(Boolean).join('\n');
   }
 
   async function shareAccess(role,name,email){
-    const portalUrl=portalUrlFor(role);
     const text=shareText(role,name,email);
     if(navigator.share){
       try{await navigator.share({title:`Evolution Optical ${role} Portal`,text,url:portalUrl});return}catch(e){if(e?.name==='AbortError')return}
@@ -31,8 +26,7 @@
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`,'_blank','noopener');
   }
 
-  async function copyLink(role,statusNode){
-    const portalUrl=portalUrlFor(role);
+  async function copyLink(statusNode){
     try{
       await navigator.clipboard.writeText(portalUrl);
       if(statusNode){statusNode.textContent='Link copied ✓';setTimeout(()=>{if(statusNode.isConnected)statusNode.textContent=''},1800)}
@@ -45,12 +39,11 @@
   function renderShare(target,{role,name,email,id}){
     if(!target)return;
     ensureStyle();
-    const portalUrl=portalUrlFor(role);
     target.querySelector(`#${id}`)?.remove();
     const box=document.createElement('div');box.id=id;box.className='portal-share-box';
     box.innerHTML=`<b>Share ${esc(role)} Login</b><div class="portal-share-meta">${name?`${esc(name)}<br>`:''}${email?`${esc(email)}<br>`:''}${esc(portalUrl)}</div><div class="portal-share-actions"><button type="button" data-share>Share Link</button><button type="button" data-copy>Copy Link</button></div><div class="portal-share-copy-ok"></div>`;
     box.querySelector('[data-share]').onclick=()=>shareAccess(role,name,email);
-    box.querySelector('[data-copy]').onclick=()=>copyLink(role,box.querySelector('.portal-share-copy-ok'));
+    box.querySelector('[data-copy]').onclick=()=>copyLink(box.querySelector('.portal-share-copy-ok'));
     target.appendChild(box);
   }
 
@@ -96,27 +89,9 @@
     observer.observe(out,{childList:true,subtree:true});
   }
 
-  function installEvolutionStaffShare(){
-    const btn=document.getElementById('createBtn'),out=document.getElementById('createMsg');
-    if(!btn||!out)return;
-    let pending=null;
-    btn.addEventListener('click',()=>{
-      pending={name:(document.getElementById('staffName')?.value||'').trim(),email:(document.getElementById('staffEmail')?.value||'').trim().toLowerCase()};
-      document.getElementById('evolutionStaffAccessShare')?.remove();
-    },true);
-    const observer=new MutationObserver(()=>{
-      const ok=out.querySelector('.msg.ok');
-      if(!ok||!pending?.email||!ok.textContent.includes('created successfully'))return;
-      renderShare(out,{role:'Evolution Staff',name:pending.name||'',email:pending.email,id:'evolutionStaffAccessShare'});
-      pending=null;
-    });
-    observer.observe(out,{childList:true,subtree:true});
-  }
-
   function mount(){
     if(path.endsWith('/admin.html'))installAdminShare();
     if(path.endsWith('/partner.html'))installPartnerStaffShare();
-    if(path.endsWith('/admin-staff.html'))installEvolutionStaffShare();
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
 })();
