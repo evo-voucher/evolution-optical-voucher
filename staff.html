@@ -68,9 +68,10 @@
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const show=(node,text,type='err')=>node.innerHTML=text?`<div class="msg ${type}">${esc(text)}</div>`:'';
   const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  let staffContext=null, verified=null, qrScanner=null, scannerRunning=false, scanBusy=false;
+  let staffContext=null, verified=null, verificationMethod=null, qrScanner=null, scannerRunning=false, scanBusy=false;
 
   function selectedBranchCode(){return staffContext?.branch_selection_required?$('branchCode').value:(staffContext?.branches?.[0]?.branch_code||null);}
+  function clearVerified(){verified=null;verificationMethod=null;$('verifiedVoucher').innerHTML='';$('redeemCard').classList.add('hidden');}
   function renderContext(c){
     staffContext=c;
     const branches=Array.isArray(c.branches)?c.branches:[];
@@ -101,23 +102,24 @@
   async function verifyStaff(session){
     if(!session?.user)return false;
     const {data,error}=await db.rpc('current_operational_realm');if(error)throw error;
-    if(!data||data.authenticated!==true||!['staff','admin'].includes(data.realm)){await db.auth.signOut();throw new Error('This account is not an active Evolution Staff or Admin account.');}
+    if(!data||data.authenticated!==true||data.realm!=='staff'){await db.auth.signOut();throw new Error('This account is not an active Evolution Staff account.');}
     $('loginState').classList.add('hidden');$('staffState').classList.remove('hidden');$('operationState').classList.remove('hidden');$('logoutBtn').classList.remove('hidden');
     $('sessionMeta').textContent=`Signed in as ${session.user.email||session.user.id} • role: ${data.role||'—'} • branch_id: ${data.branch_id||'—'}`;
     try{await loadOperations();}catch(e){show($('contextMsg'),e.message||'Staff context load failed.');}
     return true;
   }
 
-  async function verifyCurrentVoucher(){
+  async function verifyCurrentVoucher(method='manual_code'){
     const code=$('voucherCode').value.trim().toUpperCase(), branch=selectedBranchCode();
-    verified=null;$('verifiedVoucher').innerHTML='';$('redeemCard').classList.add('hidden');show($('verifyMsg'),'');show($('redeemMsg'),'');
+    clearVerified();show($('verifyMsg'),'');show($('redeemMsg'),'');
     if(!code){show($('verifyMsg'),'Enter a Voucher code.');return;}
     if(staffContext?.branch_selection_required&&!branch){show($('verifyMsg'),'Select the redemption branch first.');return;}
+    if(!['manual_code','qr'].includes(method)){show($('verifyMsg'),'Unsupported verification source.');return;}
     $('verifyBtn').disabled=true;$('scanBtn').disabled=true;
     try{
       const {data,error}=await db.rpc('verify_voucher',{p_voucher_code:code,p_branch_code:branch});if(error)throw error;
       if(!data?.success){show($('verifyMsg'),data?.error||'Voucher verification failed.');return;}
-      verified=data;renderVerified(data);
+      verified=data;verificationMethod=method;renderVerified(data);
     }catch(e){show($('verifyMsg'),e.message||'Voucher verification failed.');}
     finally{$('verifyBtn').disabled=false;$('scanBtn').disabled=false;}
   }
@@ -162,7 +164,7 @@
           $('voucherCode').value=code;
           await stopScanner();
           show($('verifyMsg'),`Scanned ${code}. Verifying…`,'ok');
-          await verifyCurrentVoucher();
+          await verifyCurrentVoucher('qr');
         }catch(e){scanBusy=false;show($('verifyMsg'),e.message||'Unable to read this Voucher QR code.');}
       },()=>{});
       scannerRunning=true;
@@ -172,28 +174,29 @@
     }
   }
 
-  $('verifyBtn').addEventListener('click',verifyCurrentVoucher);
+  $('verifyBtn').addEventListener('click',()=>verifyCurrentVoucher('manual_code'));
   $('scanBtn').addEventListener('click',startScanner);
   $('closeScannerBtn').addEventListener('click',stopScanner);
 
   $('redeemBtn').addEventListener('click',async()=>{
     if(!verified?.can_redeem){show($('redeemMsg'),'Verify an eligible Voucher first.');return;}
+    if(!['manual_code','qr'].includes(verificationMethod)){show($('redeemMsg'),'Verification source is missing. Verify the Voucher again.');return;}
     const branch=selectedBranchCode();
     if(staffContext?.branch_selection_required&&!branch){show($('redeemMsg'),'Select the redemption branch first.');return;}
     $('redeemBtn').disabled=true;show($('redeemMsg'),'');
     try{
-      const {data,error}=await db.rpc('redeem_voucher',{p_voucher_code:verified.voucher_code,p_notes:$('notes').value.trim()||null,p_branch_code:branch,p_redeem_method:'manual_code'});if(error)throw error;
+      const {data,error}=await db.rpc('redeem_voucher',{p_voucher_code:verified.voucher_code,p_notes:$('notes').value.trim()||null,p_branch_code:branch,p_redeem_method:verificationMethod});if(error)throw error;
       if(!data?.success){show($('redeemMsg'),data?.error||'Redemption failed.');return;}
       show($('redeemMsg'),`Redeemed ${data.voucher_code} at ${data.branch_name}.`,'ok');
-      verified=null;$('redeemCard').classList.add('hidden');$('verifiedVoucher').innerHTML='';$('notes').value='';await loadOperations();
+      clearVerified();$('notes').value='';await loadOperations();
     }catch(e){show($('redeemMsg'),e.message||'Redemption failed.');}
     finally{$('redeemBtn').disabled=false;}
   });
 
-  $('cancelRedeemBtn').addEventListener('click',()=>{verified=null;$('redeemCard').classList.add('hidden');$('verifiedVoucher').innerHTML='';$('notes').value='';show($('redeemMsg'),'');});
-  $('branchCode').addEventListener('change',async()=>{await stopScanner();verified=null;$('verifiedVoucher').innerHTML='';$('redeemCard').classList.add('hidden');show($('verifyMsg'),'');});
+  $('cancelRedeemBtn').addEventListener('click',()=>{clearVerified();$('notes').value='';show($('redeemMsg'),'');});
+  $('branchCode').addEventListener('change',async()=>{await stopScanner();clearVerified();show($('verifyMsg'),'');});
   $('loginBtn').addEventListener('click',async()=>{const email=$('email').value.trim().toLowerCase(),password=$('password').value;if(!email||!password){show($('loginMsg'),'Enter email and password.');return;}$('loginBtn').disabled=true;show($('loginMsg'),'');try{const {data,error}=await db.auth.signInWithPassword({email,password});if(error)throw error;await verifyStaff(data.session);}catch(e){show($('loginMsg'),e.message||'Sign in failed.');}finally{$('loginBtn').disabled=false;}});
-  $('logoutBtn').addEventListener('click',async()=>{await stopScanner();await db.auth.signOut();staffContext=null;verified=null;$('staffState').classList.add('hidden');$('operationState').classList.add('hidden');$('logoutBtn').classList.add('hidden');$('loginState').classList.remove('hidden');$('password').value='';});
+  $('logoutBtn').addEventListener('click',async()=>{await stopScanner();await db.auth.signOut();staffContext=null;clearVerified();$('staffState').classList.add('hidden');$('operationState').classList.add('hidden');$('logoutBtn').classList.add('hidden');$('loginState').classList.remove('hidden');$('password').value='';});
   db.auth.getSession().then(async({data})=>{if(data?.session){try{await verifyStaff(data.session);}catch(e){show($('loginMsg'),e.message||'Session verification failed.');}}});
 })();
 </script>
