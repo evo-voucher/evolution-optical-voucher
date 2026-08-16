@@ -66,3 +66,15 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
     writable: false
   });
 })();
+
+// Per-allocation validity UI is isolated from core page logic so the feature can evolve
+// without rewriting Admin or Voucher Engine pages.
+(function loadAllocationValidityUI(){
+  const path=String(window.location?.pathname||'').toLowerCase();
+  if(!(path.endsWith('/admin.html')||path.includes('voucher-engine')))return;
+  if(document.getElementById('allocationValidityUiScript'))return;
+  const script=document.createElement('script');
+  script.id='allocationValidityUiScript';
+  script.src='assets/js/allocation-validity-ui.js?v=1';
+  document.head.appendChild(script);
+})();
