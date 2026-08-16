@@ -10,6 +10,16 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   siteBase: 'https://evo-voucher.github.io/evolution-optical-voucher/'
 });
 
+// Shared commercial UI theme. Kept outside page business logic so visual changes remain reversible.
+(function installEvolutionTheme(){
+  if(document.getElementById('evolutionCommercialTheme')) return;
+  const link=document.createElement('link');
+  link.id='evolutionCommercialTheme';
+  link.rel='stylesheet';
+  link.href='assets/css/evolution-theme.css?v=1';
+  document.head.appendChild(link);
+})();
+
 // Auth session ownership
 // ----------------------
 // All portals are served from the same GitHub Pages origin and use the same Supabase project.
