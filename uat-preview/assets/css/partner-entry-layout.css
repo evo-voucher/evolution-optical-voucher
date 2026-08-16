@@ -1,5 +1,9 @@
 /* Partner Management entrance layout only.
    Fixed dimensions prevent the launcher from stretching or shifting vertically. */
+body[data-admin-section="partners"] #adminPageHead{
+  margin-top:24px;
+}
+
 #partnerSubnavCard{
   height:300px;
   min-height:300px;
@@ -20,6 +24,9 @@
 }
 
 @media(max-width:560px){
+  body[data-admin-section="partners"] #adminPageHead{
+    margin-top:24px;
+  }
   #partnerSubnavCard{
     height:300px;
     min-height:300px;
