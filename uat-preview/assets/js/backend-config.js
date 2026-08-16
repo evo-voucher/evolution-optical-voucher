@@ -10,6 +10,15 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   siteBase: 'https://evo-voucher.github.io/evolution-optical-voucher/uat-preview/'
 });
 
+(function installEvolutionTheme(){
+  if(document.getElementById('evolutionCommercialTheme')) return;
+  const link=document.createElement('link');
+  link.id='evolutionCommercialTheme';
+  link.rel='stylesheet';
+  link.href='assets/css/evolution-theme.css?v=1';
+  document.head.appendChild(link);
+})();
+
 (function installPortalAuthNamespace() {
   const supabase = window.supabase;
   if (!supabase || typeof supabase.createClient !== 'function' || supabase.__evolutionAuthNamespaced) return;
