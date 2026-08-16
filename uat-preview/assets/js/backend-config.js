@@ -62,12 +62,12 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   document.head.appendChild(script);
 })();
 
-(function loadPartnerSetupCollapse(){
+(function loadPartnerManagementUI(){
   const path=String(window.location?.pathname||'').toLowerCase();
   if(!path.endsWith('/admin.html'))return;
-  if(document.getElementById('partnerSetupCollapseScript'))return;
+  if(document.getElementById('partnerManagementUiScript'))return;
   const script=document.createElement('script');
-  script.id='partnerSetupCollapseScript';
-  script.src='assets/js/partner-setup-collapse.js?v=1';
+  script.id='partnerManagementUiScript';
+  script.src='assets/js/partner-management-ui.js?v=1';
   document.head.appendChild(script);
 })();
