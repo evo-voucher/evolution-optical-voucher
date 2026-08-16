@@ -1,0 +1,41 @@
+.initial-voucher-row .validity-note{display:none!important}
+
+@media(max-width:780px){
+  .initial-voucher-row{
+    padding:10px!important;
+    gap:8px!important;
+  }
+
+  .initial-voucher-row .allocation-validity-grid{
+    display:grid!important;
+    grid-template-columns:minmax(0,1.55fr) 72px minmax(92px,.8fr)!important;
+    gap:6px!important;
+    align-items:end!important;
+  }
+
+  .initial-voucher-row .allocation-validity-grid::before{
+    content:'Validity';
+    grid-column:1/-1;
+    display:block;
+    margin-bottom:-1px;
+    font-size:12px;
+    font-weight:800;
+    color:#d9e3ff;
+  }
+
+  .initial-voucher-row .allocation-validity-grid .field label{
+    display:none!important;
+  }
+
+  .initial-voucher-row .allocation-validity-grid select,
+  .initial-voucher-row .allocation-validity-grid input{
+    min-height:42px!important;
+    padding:8px 9px!important;
+    font-size:14px!important;
+  }
+
+  .initial-voucher-row .initial-voucher-remove{
+    min-height:42px!important;
+    margin-top:0!important;
+  }
+}
