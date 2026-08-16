@@ -13,8 +13,31 @@
     document.getElementById('settingsRefreshAll').onclick=()=>location.reload();
     return card;
   }
+  function installClaimSaveFeedback(){
+    if(typeof window.saveClaim!=='function'||window.saveClaim.__evolutionFeedbackWrapped)return;
+    const original=window.saveClaim;
+    const wrapped=async id=>{
+      const box=document.getElementById('claim-'+id);
+      const button=box?.querySelector('button[onclick^="saveClaim"]');
+      const previous=button?.textContent||'Save Claim Access';
+      if(button){button.disabled=true;button.textContent='Saving...';}
+      await original(id);
+      const ok=!!document.querySelector('#partnerMsg .msg.ok');
+      if(button){
+        button.textContent=ok?'Saved ✓':previous;
+        if(ok)setTimeout(()=>{if(button.isConnected){button.textContent='Save Claim Access';button.disabled=false;}},1800);
+        else button.disabled=false;
+      }
+      if(ok){
+        const target=document.getElementById('partnerMsg');
+        if(target)target.innerHTML='<div class="msg ok">Claim access updated successfully.</div>';
+      }
+    };
+    wrapped.__evolutionFeedbackWrapped=true;
+    window.saveClaim=wrapped;
+  }
   async function mount(){
-    try{const {data,error}=await db.rpc('current_operational_realm');if(error)return;if(data?.authenticated===true&&data?.realm==='admin')ensureCard();}catch(_){ }
+    try{const {data,error}=await db.rpc('current_operational_realm');if(error)return;if(data?.authenticated===true&&data?.realm==='admin'){ensureCard();installClaimSaveFeedback();}}catch(_){ }
   }
   db.auth.onAuthStateChange(()=>setTimeout(mount,0));setTimeout(mount,350);
 })();
