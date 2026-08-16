@@ -69,18 +69,18 @@ Canonical RPC:
 
 ### Version
 Canonical publish RPC:
-- `admin_publish_voucher_version_v3`
+- `admin_publish_voucher_version`
 
-Older publish variants are transitional implementation history, not public canonical APIs.
+There must be no public canonical `v2`, `v3`, theme-wrapper, or compatibility publish path.
 
 ### Allocation
 Canonical server path:
 - Browser invokes Edge Function `voucher-engine`
-- `voucher-engine` invokes `admin_engine_allocate_v3`
+- `voucher-engine` invokes service-only RPC `admin_engine_allocate`
 
 Allocation branch scope is part of the canonical allocation contract.
 
-Older allocation functions (`admin_engine_allocate`, `admin_engine_allocate_v2`) are transitional implementation history and should not remain public canonical APIs.
+There must be no active canonical `admin_engine_allocate_v2`, `admin_engine_allocate_v3`, `allocate_all`, or duplicate allocation path.
 
 ### Partner Catalog
 Canonical RPC:
@@ -169,10 +169,22 @@ Service-only RPCs include identity provisioning and trusted mutation helpers suc
 - `admin_provision_staff`
 - Partner Staff provisioning/mutation helpers
 - first-Admin bootstrap helpers
+- `admin_engine_allocate`
 
 Browser code must never contain or receive the service-role key.
 
-## 10. Legacy Retirement Rule
+## 10. Migration Chain Discipline
+
+The active `supabase/migrations` directory is part of the canonical rebuild source of truth.
+
+Rules:
+- It must not contain migrations that target a retired hosted backend, factory-reset experiment, temporary superuser compatibility path, or obsolete recovery route.
+- Historical evidence belongs in Git history, not in the active rebuild chain.
+- Corrective logic discovered before release should be folded into the canonical rebuild migration that owns that invariant where safe and unambiguous.
+- Do not create another numbered migration merely to preserve an error that has never shipped as the canonical production baseline.
+- Hosted Supabase migration history may remain historical; the repository rebuild chain should converge to the final canonical state.
+
+## 11. Legacy Retirement Rule
 
 A legacy function/page may remain temporarily only for rollback while cutover is unverified.
 
@@ -183,7 +195,7 @@ After canonical UAT passes:
 4. remove obsolete function variants from the final rebuild baseline
 5. regenerate a clean baseline migration set instead of carrying endless corrective migrations forward
 
-## 11. Rebuild Requirement
+## 12. Rebuild Requirement
 
 The final repository must be sufficient to recreate the canonical system from zero:
 - schema
@@ -197,7 +209,7 @@ The final repository must be sufficient to recreate the canonical system from ze
 
 Hosted Supabase state and GitHub source must not intentionally drift.
 
-## 12. Release Gate
+## 13. Release Gate
 
 Do not merge cutover to production until all of these pass against the canonical backend:
 
