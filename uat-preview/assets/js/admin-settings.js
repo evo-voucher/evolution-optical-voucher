@@ -2,7 +2,7 @@
   const cfg=window.EVOLUTION_VOUCHER_BACKEND||{};
   if(!(cfg.enabled===true&&cfg.supabaseUrl&&cfg.publishableKey))return;
   const db=window.supabase.createClient(cfg.supabaseUrl,cfg.publishableKey,{auth:{persistSession:true}});
-  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const SECTIONS={
     home:{title:'Admin Dashboard',sub:'Overview and quick access.'},
     partners:{title:'Partner Management',sub:'Create Partners, manage status, staff, claim access and passwords.'},
