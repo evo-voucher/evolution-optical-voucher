@@ -43,11 +43,16 @@
       #partnerControls .partnerhead .small{font-size:10px!important;line-height:1.3}
       #partnerControls .partnerhead .badge{font-size:9px!important;padding:4px 6px!important}
       .partner-directory-back{width:auto!important;min-height:34px!important;padding:6px 9px!important;margin:0 0 10px!important;font-size:11px!important;border-radius:9px!important}
+      .partner-status-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+      .partner-status-actions button{min-height:36px!important;padding:6px 8px!important;font-size:11px!important;border-radius:10px!important}
+      .partner-status-actions button.active-state{border-color:rgba(101,230,181,.82)!important;background:linear-gradient(180deg,#176158,#0d3a35)!important}
+      .partner-status-actions button.suspended-state{border-color:rgba(255,146,165,.82)!important;background:linear-gradient(180deg,#6f3141,#4a1d2a)!important}
       .partner-control-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
       .partner-control-tabs button{min-height:36px!important;padding:6px 8px!important;font-size:11px!important;border-radius:10px!important}
       .partner-control-tabs button.active{border-color:rgba(101,230,181,.82)!important;background:linear-gradient(180deg,#176158,#0d3a35)!important}
       .partner-control-panel-hidden{display:none!important}
       .partner-control-panel{margin-top:8px;padding-top:8px;border-top:1px solid rgba(115,135,210,.22)}
+      .partner-legacy-status-control{display:none!important}
       #partnerControls .partner .controls{margin-top:0!important;grid-template-columns:1fr!important}
       #partnerControls .partner .controls .wide{min-height:34px!important;margin-top:6px!important;padding:6px 8px!important;font-size:11px!important}
       #partnerControls .partner .controls input,#partnerControls .partner .controls select{min-height:38px!important;padding:8px 9px!important;font-size:12px!important}
@@ -120,6 +125,42 @@
     partner.scrollIntoView({behavior:'smooth',block:'start'});
   }
 
+  function partnerStatus(partner){return (partner.querySelector('.partnerhead .badge')?.textContent||'').trim().toLowerCase();}
+  function partnerId(partner){
+    const statusSelect=partner.querySelector('select[id^="st-"]');
+    return statusSelect?.id?.replace(/^st-/,'')||'';
+  }
+
+  function syncQuickStatus(partner){
+    const status=partnerStatus(partner);
+    partner.querySelectorAll('.partner-status-actions [data-partner-status]').forEach(btn=>{
+      const target=btn.dataset.partnerStatus;
+      btn.classList.toggle('active-state',target==='active'&&status==='active');
+      btn.classList.toggle('suspended-state',target==='suspended'&&status==='suspended');
+    });
+  }
+
+  function ensureQuickStatus(partner,head,basic){
+    const statusField=[...basic.querySelectorAll('.field')].find(field=>(field.querySelector('label')?.textContent||'').trim()==='Status');
+    statusField?.classList.add('partner-legacy-status-control');
+
+    const actions=document.createElement('div');
+    actions.className='partner-status-actions';
+    actions.innerHTML='<button type="button" data-partner-status="active">Active</button><button type="button" data-partner-status="suspended">Suspend</button>';
+    actions.addEventListener('click',e=>{
+      const btn=e.target.closest('[data-partner-status]');
+      if(!btn)return;
+      const target=btn.dataset.partnerStatus;
+      const id=partnerId(partner);
+      if(!id||typeof window.setStatus!=='function')return;
+      if(partnerStatus(partner)===target)return;
+      window.setStatus(id,target);
+    });
+    head.insertAdjacentElement('afterend',actions);
+    syncQuickStatus(partner);
+    return actions;
+  }
+
   function compactPartnerCard(partner,controlsCard){
     if(!partner||partner.dataset.compactControlsReady==='1')return;
     const head=partner.querySelector('.partnerhead');
@@ -135,6 +176,8 @@
     dirBack.addEventListener('click',()=>showPartnerDirectory(controlsCard));
     partner.prepend(dirBack);
 
+    const statusActions=ensureQuickStatus(partner,head,basic);
+
     const tabs=document.createElement('div');
     tabs.className='partner-control-tabs';
     tabs.innerHTML='<button type="button" data-control-view="basic">Basic</button><button type="button" data-control-view="access">Access</button>';
@@ -142,7 +185,7 @@
       const btn=e.target.closest('[data-control-view]');
       if(btn)setPartnerControlView(partner,btn.dataset.controlView);
     });
-    head.insertAdjacentElement('afterend',tabs);
+    statusActions.insertAdjacentElement('afterend',tabs);
     const basicPanel=buildPanel('basic',basic);
     const accessPanel=buildPanel('access',access);
     tabs.insertAdjacentElement('afterend',accessPanel);
@@ -150,7 +193,6 @@
   }
 
   function partnerName(partner){return (partner.querySelector('.partnerhead b')?.textContent||'').trim();}
-  function partnerStatus(partner){return (partner.querySelector('.partnerhead .badge')?.textContent||'').trim().toLowerCase();}
   function partnerLetter(name){const c=(name||'').trim().charAt(0).toUpperCase();return /^[A-Z]$/.test(c)?c:'#';}
 
   function appendDirectoryGroup(dir,label,items,controlsCard,suspended=false){
