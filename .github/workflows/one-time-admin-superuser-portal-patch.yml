@@ -16,29 +16,30 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Patch exact realm checks
+      - name: Patch guarded realm checks
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
 
           patches = {
             'staff.html': (
-              "if(!data||data.authenticated!==true||data.realm!=='staff'){await db.auth.signOut();throw new Error('This account is not an active Evolution Staff account.');}",
+              r"if\(!data\|\|data\.authenticated!==true\|\|data\.realm!=='staff'\)\{await db\.auth\.signOut\(\);throw new Error\('This account is not an active Evolution Staff account\.'\);?\}",
               "if(!data||data.authenticated!==true||!['staff','admin'].includes(data.realm)){await db.auth.signOut();throw new Error('This account is not an active Evolution Staff or Admin account.');}"
             ),
             'partner.html': (
-              "if(!data||data.authenticated!==true||data.realm!=='partner'){await db.auth.signOut();throw new Error('This account is not an active Partner account.');}",
+              r"if\(!data\|\|data\.authenticated!==true\|\|data\.realm!=='partner'\)\{await db\.auth\.signOut\(\);throw new Error\('This account is not an active Partner account\.'\);?\}",
               "if(!data||data.authenticated!==true||!['partner','admin'].includes(data.realm)){await db.auth.signOut();throw new Error('This account is not an active Partner or Admin account.');}"
             )
           }
 
-          for filename, (old, new) in patches.items():
+          for filename, (pattern, replacement) in patches.items():
             p = Path(filename)
             text = p.read_text(encoding='utf-8')
-            count = text.count(old)
+            updated, count = re.subn(pattern, replacement, text, count=1)
             if count != 1:
-              raise SystemExit(f'{filename}: expected exact old string once, found {count}')
-            p.write_text(text.replace(old, new, 1), encoding='utf-8')
+              raise SystemExit(f'{filename}: guarded realm patch expected 1 match, found {count}')
+            p.write_text(updated, encoding='utf-8')
             print(f'patched {filename}')
           PY
       - name: Remove one-time workflow
