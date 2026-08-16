@@ -67,7 +67,7 @@ serve(async (req) => {
         return json({ success: false, error: "Allocation validity days must be at least 1" }, 400);
       }
 
-      const { data, error } = await server.rpc("admin_engine_allocate_v3", {
+      const { data, error } = await server.rpc("admin_engine_allocate", {
         p_partner_id: partnerId,
         p_version_id: versionId,
         p_quantity: quantity,
@@ -75,21 +75,6 @@ serve(async (req) => {
         p_allocation_valid_days: allocationValidDays,
         p_all_branches: allBranches,
         p_branch_codes: allBranches ? [] : branchCodes,
-        p_actor_user_id: caller.id,
-      });
-      if (error) return json({ success: false, error: error.message }, 409);
-      return json({ success: true, result: data });
-    }
-
-    if (action === "allocate_all") {
-      const versionId = typeof body.version_id === "string" ? body.version_id.trim() : "";
-      const quantity = Number(body.quantity);
-      if (!versionId || !Number.isInteger(quantity) || quantity <= 0) {
-        return json({ success: false, error: "Valid version_id and positive quantity are required" }, 400);
-      }
-      const { data, error } = await server.rpc("admin_engine_allocate_all", {
-        p_version_id: versionId,
-        p_quantity: quantity,
         p_actor_user_id: caller.id,
       });
       if (error) return json({ success: false, error: error.message }, 409);
