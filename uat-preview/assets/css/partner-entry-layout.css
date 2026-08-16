@@ -1,5 +1,5 @@
 /* Partner Management entrance layout only.
-   Keeps the launcher visually stable while leaving business logic untouched. */
+   Keep the launcher card in place; use its lower empty space for taller actions. */
 #partnerSubnavCard{
   min-height:310px;
   display:flex;
@@ -10,23 +10,25 @@
   flex:1;
   align-items:stretch;
   margin-top:12px;
-  padding-bottom:34px;
+  padding-bottom:18px;
 }
 
 #partnerSubnavCard .partner-subnav button{
-  min-height:112px!important;
-  padding:18px 14px!important;
+  height:142px!important;
+  min-height:142px!important;
+  padding:20px 14px!important;
   align-self:stretch;
 }
 
 @media(max-width:560px){
   #partnerSubnavCard{
-    min-height:300px;
+    min-height:310px;
   }
   #partnerSubnavCard .partner-subnav{
-    padding-bottom:30px;
+    padding-bottom:18px;
   }
   #partnerSubnavCard .partner-subnav button{
-    min-height:104px!important;
+    height:142px!important;
+    min-height:142px!important;
   }
 }
