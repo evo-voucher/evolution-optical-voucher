@@ -200,5 +200,6 @@
   db.auth.getSession().then(async({data})=>{if(data?.session){try{await verifyStaff(data.session);}catch(e){show($('loginMsg'),e.message||'Session verification failed.');}}});
 })();
 </script>
+<script src="assets/js/staff-manager-parity.js"></script>
 </body>
 </html>
