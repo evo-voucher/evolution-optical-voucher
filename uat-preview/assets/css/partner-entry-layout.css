@@ -1,0 +1,32 @@
+/* Partner Management entrance layout only.
+   Keeps the launcher visually stable while leaving business logic untouched. */
+#partnerSubnavCard{
+  min-height:310px;
+  display:flex;
+  flex-direction:column;
+}
+
+#partnerSubnavCard .partner-subnav{
+  flex:1;
+  align-items:stretch;
+  margin-top:12px;
+  padding-bottom:34px;
+}
+
+#partnerSubnavCard .partner-subnav button{
+  min-height:112px!important;
+  padding:18px 14px!important;
+  align-self:stretch;
+}
+
+@media(max-width:560px){
+  #partnerSubnavCard{
+    min-height:300px;
+  }
+  #partnerSubnavCard .partner-subnav{
+    padding-bottom:30px;
+  }
+  #partnerSubnavCard .partner-subnav button{
+    min-height:104px!important;
+  }
+}
