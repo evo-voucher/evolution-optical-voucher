@@ -5,13 +5,27 @@
     return [...document.querySelectorAll(CARD_SELECTOR)].find(card=>(card.querySelector('h2')?.textContent||'').trim()===title)||null;
   }
 
+  function preserveViewport(change){
+    const x=window.scrollX||0;
+    const y=window.scrollY||0;
+    change();
+    const restore=()=>window.scrollTo({left:x,top:y,behavior:'auto'});
+    restore();
+    requestAnimationFrame(()=>{
+      restore();
+      requestAnimationFrame(restore);
+    });
+  }
+
   function installStyle(){
     if(document.getElementById('partnerManagementUiStyle'))return;
     const s=document.createElement('style');
     s.id='partnerManagementUiStyle';
     s.textContent=`
+      #partnerSubnavCard,#partnerControls,#partnerDirectory{overflow-anchor:none}
       .partner-subnav{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-      .partner-subnav button{min-height:76px!important;padding:14px!important;font-weight:800!important}
+      .partner-subnav button{min-height:76px!important;padding:14px!important;font-weight:800!important;transform:none!important;transition:filter .08s ease,box-shadow .08s ease!important}
+      .partner-subnav button:active{transform:none!important;filter:brightness(.88);box-shadow:inset 0 4px 12px rgba(0,0,0,.34),0 8px 16px rgba(0,0,0,.22)!important}
       .partner-sub-hidden{display:none!important}
       .partner-sub-return{width:auto!important;min-width:96px!important;min-height:40px!important;padding:8px 12px!important;margin:0 0 12px!important}
       .partner-setup-details{border:1px solid rgba(118,91,255,.5);border-radius:16px;background:#0a1736;overflow:hidden}
@@ -88,11 +102,13 @@
   }
 
   function setPartnerControlView(partner,view){
-    const panel=partner.querySelector(`.partner-control-panel[data-panel="${view}"]`);
-    const button=partner.querySelector(`.partner-control-tabs [data-control-view="${view}"]`);
-    closePartnerPanels(partner);
-    panel?.classList.remove('partner-control-panel-hidden');
-    button?.classList.add('active');
+    preserveViewport(()=>{
+      const panel=partner.querySelector(`.partner-control-panel[data-panel="${view}"]`);
+      const button=partner.querySelector(`.partner-control-tabs [data-control-view="${view}"]`);
+      closePartnerPanels(partner);
+      panel?.classList.remove('partner-control-panel-hidden');
+      button?.classList.add('active');
+    });
   }
 
   function buildPanel(kind,node){
@@ -107,21 +123,25 @@
     const root=controlsCard?.querySelector('#partnerControls');
     const dir=controlsCard?.querySelector('#partnerDirectory');
     if(!root||!dir)return;
-    root.classList.remove('partner-detail-mode');
-    root.classList.add('partner-directory-list-hidden');
-    root.querySelectorAll('.partner').forEach(p=>{p.classList.remove('partner-detail-active');closePartnerPanels(p);});
-    dir.classList.remove('partner-directory-hidden');
+    preserveViewport(()=>{
+      root.classList.remove('partner-detail-mode');
+      root.classList.add('partner-directory-list-hidden');
+      root.querySelectorAll('.partner').forEach(p=>{p.classList.remove('partner-detail-active');closePartnerPanels(p);});
+      dir.classList.remove('partner-directory-hidden');
+    });
   }
 
   function showPartnerDetail(controlsCard,partner){
     const root=controlsCard?.querySelector('#partnerControls');
     const dir=controlsCard?.querySelector('#partnerDirectory');
     if(!root||!dir||!partner)return;
-    dir.classList.add('partner-directory-hidden');
-    root.classList.remove('partner-directory-list-hidden');
-    root.classList.add('partner-detail-mode');
-    root.querySelectorAll('.partner').forEach(p=>p.classList.toggle('partner-detail-active',p===partner));
-    closePartnerPanels(partner);
+    preserveViewport(()=>{
+      dir.classList.add('partner-directory-hidden');
+      root.classList.remove('partner-directory-list-hidden');
+      root.classList.add('partner-detail-mode');
+      root.querySelectorAll('.partner').forEach(p=>p.classList.toggle('partner-detail-active',p===partner));
+      closePartnerPanels(partner);
+    });
   }
 
   function partnerStatus(partner){return (partner.querySelector('.partnerhead .badge')?.textContent||'').trim().toLowerCase();}
@@ -218,6 +238,8 @@
   function rebuildPartnerDirectory(controlsCard){
     const root=controlsCard?.querySelector('#partnerControls');
     if(!root)return;
+    const x=window.scrollX||0;
+    const y=window.scrollY||0;
     root.querySelectorAll('.partner').forEach(p=>compactPartnerCard(p,controlsCard));
 
     let dir=controlsCard.querySelector('#partnerDirectory');
@@ -237,6 +259,7 @@
     if(!partners.length){
       dir.innerHTML='<div class="partner-directory-empty">No Partners match the current search.</div>';
       root.classList.add('partner-directory-list-hidden');
+      window.scrollTo({left:x,top:y,behavior:'auto'});
       return;
     }
 
@@ -253,6 +276,7 @@
     appendDirectoryGroup(dir,'Suspended',suspended,controlsCard,true);
 
     showPartnerDirectory(controlsCard);
+    window.scrollTo({left:x,top:y,behavior:'auto'});
   }
 
   function ensureReturn(card){
@@ -269,20 +293,24 @@
   function launcher(){return document.getElementById('partnerSubnavCard');}
 
   function showMenu(){
-    const createCard=cardByTitle('Create Partner');
-    const controlsCard=cardByTitle('Partner Controls');
-    createCard?.classList.add('partner-sub-hidden');
-    controlsCard?.classList.add('partner-sub-hidden');
-    launcher()?.classList.remove('partner-sub-hidden');
+    preserveViewport(()=>{
+      const createCard=cardByTitle('Create Partner');
+      const controlsCard=cardByTitle('Partner Controls');
+      createCard?.classList.add('partner-sub-hidden');
+      controlsCard?.classList.add('partner-sub-hidden');
+      launcher()?.classList.remove('partner-sub-hidden');
+    });
   }
 
   function showSubview(which){
-    const createCard=cardByTitle('Create Partner');
-    const controlsCard=cardByTitle('Partner Controls');
-    launcher()?.classList.add('partner-sub-hidden');
-    createCard?.classList.toggle('partner-sub-hidden',which!=='add');
-    controlsCard?.classList.toggle('partner-sub-hidden',which!=='controls');
-    if(which==='controls')rebuildPartnerDirectory(controlsCard);
+    preserveViewport(()=>{
+      const createCard=cardByTitle('Create Partner');
+      const controlsCard=cardByTitle('Partner Controls');
+      launcher()?.classList.add('partner-sub-hidden');
+      createCard?.classList.toggle('partner-sub-hidden',which!=='add');
+      controlsCard?.classList.toggle('partner-sub-hidden',which!=='controls');
+      if(which==='controls')rebuildPartnerDirectory(controlsCard);
+    });
   }
 
   function ensureLauncher(createCard,controlsCard){
