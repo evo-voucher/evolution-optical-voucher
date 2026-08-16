@@ -274,7 +274,7 @@
     const parent=createCard.parentNode;
     const st=document.createElement('section');
     st.id='partnerManagementStage';
-    st.className='partner-stage';
+    st.className='card partner-stage';
     st.dataset.adminSection='partners';
     parent.insertBefore(st,createCard);
     const menu=document.createElement('section');
