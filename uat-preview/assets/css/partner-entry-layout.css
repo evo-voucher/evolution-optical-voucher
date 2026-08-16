@@ -1,8 +1,8 @@
 /* Partner Management entrance layout only.
    Fixed dimensions prevent the launcher from stretching or shifting vertically. */
 #partnerSubnavCard{
-  height:280px;
-  min-height:280px;
+  height:300px;
+  min-height:300px;
   display:block;
 }
 
@@ -21,8 +21,8 @@
 
 @media(max-width:560px){
   #partnerSubnavCard{
-    height:280px;
-    min-height:280px;
+    height:300px;
+    min-height:300px;
   }
   #partnerSubnavCard .partner-subnav button{
     height:112px!important;
