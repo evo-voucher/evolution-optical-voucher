@@ -24,8 +24,11 @@
       .partner-directory{display:block;margin-top:10px}
       .partner-directory-group{margin:12px 0 16px}
       .partner-directory-letter{font-size:12px;font-weight:900;letter-spacing:.14em;color:#8feaff;margin:0 0 7px;padding:0 2px}
+      .partner-directory-group.suspended-group{margin-top:22px;padding-top:14px;border-top:1px solid rgba(115,135,210,.22)}
+      .partner-directory-group.suspended-group .partner-directory-letter{color:#ffb4c0;letter-spacing:.08em}
       .partner-directory-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
       .partner-directory-name{min-height:40px!important;padding:8px 10px!important;font-size:12px!important;text-align:left!important;border-radius:11px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .partner-directory-group.suspended-group .partner-directory-name{opacity:.78}
       .partner-directory-empty{padding:14px 4px;color:#91a2c4;font-size:12px}
       .partner-directory-hidden{display:none!important}
 
@@ -147,7 +150,29 @@
   }
 
   function partnerName(partner){return (partner.querySelector('.partnerhead b')?.textContent||'').trim();}
+  function partnerStatus(partner){return (partner.querySelector('.partnerhead .badge')?.textContent||'').trim().toLowerCase();}
   function partnerLetter(name){const c=(name||'').trim().charAt(0).toUpperCase();return /^[A-Z]$/.test(c)?c:'#';}
+
+  function appendDirectoryGroup(dir,label,items,controlsCard,suspended=false){
+    if(!items.length)return;
+    const group=document.createElement('section');
+    group.className='partner-directory-group'+(suspended?' suspended-group':'');
+    const title=document.createElement('div');
+    title.className='partner-directory-letter';
+    title.textContent=label;
+    const list=document.createElement('div');
+    list.className='partner-directory-list';
+    items.forEach(item=>{
+      const btn=document.createElement('button');
+      btn.type='button';
+      btn.className='partner-directory-name';
+      btn.textContent=item.name;
+      btn.addEventListener('click',()=>showPartnerDetail(controlsCard,item.partner));
+      list.appendChild(btn);
+    });
+    group.append(title,list);
+    dir.appendChild(group);
+  }
 
   function rebuildPartnerDirectory(controlsCard){
     const root=controlsCard?.querySelector('#partnerControls');
@@ -163,7 +188,7 @@
     }
 
     const partners=[...root.querySelectorAll('.partner')]
-      .map((partner,index)=>({partner,index,name:partnerName(partner)}))
+      .map((partner,index)=>({partner,index,name:partnerName(partner),status:partnerStatus(partner)}))
       .filter(x=>x.name)
       .sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}));
 
@@ -174,32 +199,17 @@
       return;
     }
 
+    const active=partners.filter(x=>x.status!=='suspended');
+    const suspended=partners.filter(x=>x.status==='suspended');
     const groups=new Map();
-    partners.forEach(item=>{
+    active.forEach(item=>{
       const letter=partnerLetter(item.name);
       if(!groups.has(letter))groups.set(letter,[]);
       groups.get(letter).push(item);
     });
 
-    [...groups.entries()].sort((a,b)=>a[0].localeCompare(b[0])).forEach(([letter,items])=>{
-      const group=document.createElement('section');
-      group.className='partner-directory-group';
-      const title=document.createElement('div');
-      title.className='partner-directory-letter';
-      title.textContent=letter;
-      const list=document.createElement('div');
-      list.className='partner-directory-list';
-      items.forEach(item=>{
-        const btn=document.createElement('button');
-        btn.type='button';
-        btn.className='partner-directory-name';
-        btn.textContent=item.name;
-        btn.addEventListener('click',()=>showPartnerDetail(controlsCard,item.partner));
-        list.appendChild(btn);
-      });
-      group.append(title,list);
-      dir.appendChild(group);
-    });
+    [...groups.entries()].sort((a,b)=>a[0].localeCompare(b[0])).forEach(([letter,items])=>appendDirectoryGroup(dir,letter,items,controlsCard,false));
+    appendDirectoryGroup(dir,'Suspended',suspended,controlsCard,true);
 
     showPartnerDirectory(controlsCard);
   }
