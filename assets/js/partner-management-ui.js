@@ -122,7 +122,6 @@
     root.classList.add('partner-detail-mode');
     root.querySelectorAll('.partner').forEach(p=>p.classList.toggle('partner-detail-active',p===partner));
     closePartnerPanels(partner);
-    partner.scrollIntoView({behavior:'smooth',block:'start'});
   }
 
   function partnerStatus(partner){return (partner.querySelector('.partnerhead .badge')?.textContent||'').trim().toLowerCase();}
@@ -275,7 +274,6 @@
     createCard?.classList.add('partner-sub-hidden');
     controlsCard?.classList.add('partner-sub-hidden');
     launcher()?.classList.remove('partner-sub-hidden');
-    window.scrollTo({top:0,behavior:'smooth'});
   }
 
   function showSubview(which){
@@ -285,8 +283,6 @@
     createCard?.classList.toggle('partner-sub-hidden',which!=='add');
     controlsCard?.classList.toggle('partner-sub-hidden',which!=='controls');
     if(which==='controls')rebuildPartnerDirectory(controlsCard);
-    const target=which==='add'?createCard:controlsCard;
-    target?.scrollIntoView({behavior:'smooth',block:'start'});
   }
 
   function ensureLauncher(createCard,controlsCard){
