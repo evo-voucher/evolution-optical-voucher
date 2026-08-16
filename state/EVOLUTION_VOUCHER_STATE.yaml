@@ -1,6 +1,6 @@
-version: "1.0"
+version: "1.1"
 project_key: "evolution_voucher"
-status: "VERIFIED"
+status: "FACTORY_RESET_APPLIED_PENDING_REAL_DEVICE_UAT"
 state_date: "2026-08-16"
 
 truth_role: >
@@ -10,6 +10,8 @@ truth_role: >
 repository:
   full_name: "evo-voucher/evolution-optical-voucher"
   branch: "main"
+  admin_superuser_frontend_commit: "4ea7d991137281d10c22ddba600b5518c04075d4"
+  latest_migration_sync_commit_before_state_update: "69e0df009a4a7ee10f63c4f7336b96a067413cf5"
 
 runtime:
   frontend_url: "https://evo-voucher.github.io/evolution-optical-voucher/"
@@ -21,31 +23,99 @@ runtime:
 cutover:
   cutover_state: "VERIFIED"
   hosted_cutover_verified: true
-  latest_verified_runtime_commit: "24b42530822d9d079bb3abb3841dbd497e2b07bc"
-  latest_verified_runtime_smoke: 127
-  latest_verified_pages_deploy: 271
-  latest_verified_public_smoke: 2
+  note: "The previously verified production cutover remains the base runtime; business data was factory-reset on 2026-08-16."
 
-business_baseline:
-  vouchers: 43
-  redemptions: 8
-  baseline_verified_after_browser_smoke: true
-  note: "Historical TEST-MINES-001 / redemption predates this cutover and is not current smoke residue."
+factory_reset:
+  state: "APPLIED"
+  applied_date: "2026-08-16"
+  transaction_simulation_before_apply: "PASS_AND_ROLLED_BACK_CLEANLY"
+  business_partners: 0
+  non_admin_partner_users: 0
+  non_admin_staff_users: 0
+  vouchers: 0
+  redemptions: 0
+  voucher_branches: 0
+  partner_voucher_access: 0
+  partner_voucher_allocations: 0
+  voucher_allocation_events: 0
+  old_admin_audit_rows: 0
+  old_health_check_runs: 0
+  old_health_alerts: 0
+  preserved_branches: 7
+  preserved_voucher_templates: 6
+  preserved_voucher_versions: 7
+  note: >
+    Business/runtime data was reset to a clean launch state. The internal ADMIN identity anchor is preserved
+    but excluded from business Partner counts and the Admin Partner directory.
+
+admin_superuser:
+  state: "IMPLEMENTED_PENDING_REAL_DEVICE_UAT"
+  admin_user_id: "ace13e4f-78af-4407-bdc2-9ce85373387b"
+  internal_partner_code: "ADMIN"
+  internal_partner_name: "Evolution Optical Admin"
+  internal_partner_visible_in_business_counts: false
+  admin_partner_user_rows: 1
+  admin_operational_staff_rows: 1
+  staff_operational_role: "all_branch_manager"
+  staff_operational_branch_id: null
+  admin_portal: "EXISTING_ADMIN_REALM"
+  partner_portal: "ADMIN_REALM_ALLOWED_USING_INTERNAL_ADMIN_PARTNER_CONTEXT"
+  staff_portal: "ADMIN_REALM_ALLOWED_USING_ADMIN_OPERATIONAL_STAFF_CONTEXT"
+  normal_partner_tenant_isolation_changed: false
+  normal_staff_business_rules_bypassed: false
+  note: >
+    Admin access was implemented by explicit compatibility paths, not by globally disabling RLS or authorization.
+    Partner Portal uses only the internal ADMIN system Partner context. Staff Portal reuses existing Staff RPCs
+    through Eric's all_branch_manager operational staff identity.
+
+recovery:
+  temporary_schema: "reset_recovery_20260816"
+  runtime_dependency: false
+  status: "TEMPORARY_RECOVERY_ONLY"
+  captured_pre_reset_counts:
+    partners: 4
+    partner_users: 5
+    staff_users: 6
+    vouchers: 43
+    redemptions: 8
+    voucher_branches: 48
+    partner_voucher_access: 16
+    partner_voucher_allocations: 16
+    voucher_allocation_events: 19
+    admin_audit_log: 196
+    system_health_check_runs: 140
+    system_health_alerts: 2
+  removal_rule: >
+    Do not drop this recovery schema until Eric accepts the post-reset production state and closes the recovery window.
+
+legacy_auth_cleanup:
+  state: "PENDING_REAL_DEVICE_ADMIN_UAT"
+  reason: >
+    Old non-admin Auth identities were not deleted during Factory Reset because credential deletion is irreversible
+    and the available recovery snapshot does not recreate passwords. Their Partner/Staff business mappings were removed.
+  rule: >
+    Purge orphan non-admin Auth identities only after Eric verifies Admin can sign in to Admin, Partner and Staff portals.
 
 browser_uat:
-  admin_login: "PASS"
-  partner_login: "PASS"
-  staff_login: "PASS"
-  staff_qr_scan: "PASS"
-  staff_branch_restriction: "PASS"
-  staff_allowed_branch_verify: "PASS"
-  public_voucher_rendering: "PASS"
-  deliberate_redeem_performed: false
+  historical_pre_reset_admin_login: "PASS"
+  historical_pre_reset_partner_login: "PASS"
+  historical_pre_reset_staff_login: "PASS"
+  post_reset_admin_portal_admin_login: "PENDING_REAL_DEVICE"
+  post_reset_partner_portal_admin_login: "PENDING_REAL_DEVICE"
+  post_reset_staff_portal_admin_login: "PENDING_REAL_DEVICE"
+  post_reset_staff_branch_selector: "PENDING_REAL_DEVICE"
+  deliberate_redeem_performed_after_reset: false
 
 frontend_security:
   browser_key_type: "sb_publishable_"
   service_role_allowed_in_browser: false
   secrets_allowed_in_public_repo: false
+
+migrations_20260816:
+  - "20260816023454 admin_superuser_partner_portal_compatibility"
+  - "20260816023543 admin_superuser_partner_catalog_and_issue"
+  - "20260816023914 hide_internal_admin_partner_from_business_counts"
+  - "20260816023940 factory_reset_recovery_snapshot_20260816 (production operational snapshot; GitHub file is a no-op lineage marker)"
 
 intentional_hosted_drifts:
   - component: "manage-partner-staff"
@@ -65,11 +135,13 @@ startup_contract:
   - "Reverify repository, branch, Supabase project and live evidence before high-impact changes."
   - "If this file conflicts with current verified runtime evidence, runtime evidence wins and this file must be updated."
   - "Do not infer production drift is a bug until the intentional drift registry/state is checked."
+  - "Treat post-reset real-device Admin UAT as mandatory before final Auth purge or recovery-schema removal."
 
 safe_change_default:
   ui_only: "Keep backend/auth/RPC contracts unchanged; use scoped frontend/browser verification."
   backend_or_auth: "Reclassify risk and verify trusted boundaries before changing."
   migration_or_rls: "Require impact map, recovery plan and full relevant regression."
+  destructive_cleanup: "Keep a verified recovery path until real-device acceptance closes the recovery window."
 
 source_documents:
   readiness: "docs/VOUCHER-ENGINE-READINESS.md"
