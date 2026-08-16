@@ -20,26 +20,39 @@
       .partner-setup-details>summary::after{content:'›';font-size:24px;line-height:1;color:#8feaff;transform:rotate(90deg);transition:transform .18s ease}
       .partner-setup-details[open]>summary::after{transform:rotate(-90deg)}
       .partner-setup-details-body{padding:0 12px 12px}
-      #partnerControls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:start}
+
+      .partner-directory{display:block;margin-top:10px}
+      .partner-directory-group{margin:12px 0 16px}
+      .partner-directory-letter{font-size:12px;font-weight:900;letter-spacing:.14em;color:#8feaff;margin:0 0 7px;padding:0 2px}
+      .partner-directory-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+      .partner-directory-name{min-height:40px!important;padding:8px 10px!important;font-size:12px!important;text-align:left!important;border-radius:11px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .partner-directory-empty{padding:14px 4px;color:#91a2c4;font-size:12px}
+      .partner-directory-hidden{display:none!important}
+
+      #partnerControls.partner-directory-list-hidden{display:none!important}
+      #partnerControls.partner-detail-mode{display:block!important}
+      #partnerControls.partner-detail-mode>.partner{display:none!important}
+      #partnerControls.partner-detail-mode>.partner.partner-detail-active{display:block!important}
       #partnerControls>.empty{grid-column:1/-1}
-      #partnerControls .partner{padding:10px!important;margin-top:0!important;min-width:0}
+      #partnerControls .partner{padding:12px!important;margin-top:0!important;min-width:0}
       #partnerControls .partnerhead{gap:7px}
-      #partnerControls .partnerhead b{font-size:14px}
+      #partnerControls .partnerhead b{font-size:15px}
       #partnerControls .partnerhead .small{font-size:10px!important;line-height:1.3}
       #partnerControls .partnerhead .badge{font-size:9px!important;padding:4px 6px!important}
+      .partner-directory-back{width:auto!important;min-height:34px!important;padding:6px 9px!important;margin:0 0 10px!important;font-size:11px!important;border-radius:9px!important}
       .partner-control-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
-      .partner-control-tabs button{min-height:34px!important;padding:5px 7px!important;font-size:11px!important;border-radius:10px!important}
+      .partner-control-tabs button{min-height:36px!important;padding:6px 8px!important;font-size:11px!important;border-radius:10px!important}
       .partner-control-tabs button.active{border-color:rgba(101,230,181,.82)!important;background:linear-gradient(180deg,#176158,#0d3a35)!important}
       .partner-control-panel-hidden{display:none!important}
       .partner-control-panel{margin-top:8px;padding-top:8px;border-top:1px solid rgba(115,135,210,.22)}
-      .partner-inner-back{width:auto!important;min-height:32px!important;padding:5px 8px!important;margin:0 0 8px!important;font-size:11px!important;border-radius:9px!important}
       #partnerControls .partner .controls{margin-top:0!important;grid-template-columns:1fr!important}
       #partnerControls .partner .controls .wide{min-height:34px!important;margin-top:6px!important;padding:6px 8px!important;font-size:11px!important}
       #partnerControls .partner .controls input,#partnerControls .partner .controls select{min-height:38px!important;padding:8px 9px!important;font-size:12px!important}
       #partnerControls .partner .claimbox{margin-top:0!important;padding:8px!important}
       #partnerControls .partner .claimbox>button{min-height:34px!important;padding:6px 8px!important;font-size:11px!important;width:auto!important}
       #partnerControls .partner .branchgrid{grid-template-columns:1fr!important}
-      @media(max-width:430px){#partnerControls{grid-template-columns:1fr}}
+
+      @media(max-width:430px){.partner-directory-list{grid-template-columns:1fr}}
       @media(max-width:560px){
         .partner-subnav{grid-template-columns:1fr 1fr;gap:10px}
         .partner-subnav button{min-height:68px!important;padding:10px!important;font-size:13px!important}
@@ -53,7 +66,6 @@
     const setup=createCard?.querySelector('#initialVoucherSetup');
     if(!setup||setup.dataset.partnerUiCollapsed==='1')return;
     setup.dataset.partnerUiCollapsed='1';
-
     const details=document.createElement('details');
     details.className='partner-setup-details';
     details.innerHTML='<summary>Voucher & Claim Setup</summary><div class="partner-setup-details-body"></div>';
@@ -70,9 +82,7 @@
   function setPartnerControlView(partner,view){
     const panel=partner.querySelector(`.partner-control-panel[data-panel="${view}"]`);
     const button=partner.querySelector(`.partner-control-tabs [data-control-view="${view}"]`);
-    const sameOpen=!!button?.classList.contains('active');
     closePartnerPanels(partner);
-    if(sameOpen)return;
     panel?.classList.remove('partner-control-panel-hidden');
     button?.classList.add('active');
   }
@@ -81,24 +91,47 @@
     const panel=document.createElement('div');
     panel.className='partner-control-panel partner-control-panel-hidden';
     panel.dataset.panel=kind;
-    const back=document.createElement('button');
-    back.type='button';
-    back.className='partner-inner-back';
-    back.textContent='← Back';
-    back.addEventListener('click',()=>closePartnerPanels(panel.closest('.partner')));
-    panel.appendChild(back);
     panel.appendChild(node);
     return panel;
   }
 
-  function compactPartnerCard(partner){
+  function showPartnerDirectory(controlsCard){
+    const root=controlsCard?.querySelector('#partnerControls');
+    const dir=controlsCard?.querySelector('#partnerDirectory');
+    if(!root||!dir)return;
+    root.classList.remove('partner-detail-mode');
+    root.classList.add('partner-directory-list-hidden');
+    root.querySelectorAll('.partner').forEach(p=>{p.classList.remove('partner-detail-active');closePartnerPanels(p);});
+    dir.classList.remove('partner-directory-hidden');
+  }
+
+  function showPartnerDetail(controlsCard,partner){
+    const root=controlsCard?.querySelector('#partnerControls');
+    const dir=controlsCard?.querySelector('#partnerDirectory');
+    if(!root||!dir||!partner)return;
+    dir.classList.add('partner-directory-hidden');
+    root.classList.remove('partner-directory-list-hidden');
+    root.classList.add('partner-detail-mode');
+    root.querySelectorAll('.partner').forEach(p=>p.classList.toggle('partner-detail-active',p===partner));
+    closePartnerPanels(partner);
+    partner.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+
+  function compactPartnerCard(partner,controlsCard){
     if(!partner||partner.dataset.compactControlsReady==='1')return;
     const head=partner.querySelector('.partnerhead');
     const basic=partner.querySelector('.controls');
     const access=partner.querySelector('.claimbox');
     if(!head||!basic||!access)return;
-
     partner.dataset.compactControlsReady='1';
+
+    const dirBack=document.createElement('button');
+    dirBack.type='button';
+    dirBack.className='partner-directory-back';
+    dirBack.textContent='← Back to Partners';
+    dirBack.addEventListener('click',()=>showPartnerDirectory(controlsCard));
+    partner.prepend(dirBack);
+
     const tabs=document.createElement('div');
     tabs.className='partner-control-tabs';
     tabs.innerHTML='<button type="button" data-control-view="basic">Basic</button><button type="button" data-control-view="access">Access</button>';
@@ -113,8 +146,62 @@
     tabs.insertAdjacentElement('afterend',basicPanel);
   }
 
-  function compactPartnerControls(controlsCard){
-    controlsCard?.querySelectorAll('#partnerControls .partner').forEach(compactPartnerCard);
+  function partnerName(partner){return (partner.querySelector('.partnerhead b')?.textContent||'').trim();}
+  function partnerLetter(name){const c=(name||'').trim().charAt(0).toUpperCase();return /^[A-Z]$/.test(c)?c:'#';}
+
+  function rebuildPartnerDirectory(controlsCard){
+    const root=controlsCard?.querySelector('#partnerControls');
+    if(!root)return;
+    root.querySelectorAll('.partner').forEach(p=>compactPartnerCard(p,controlsCard));
+
+    let dir=controlsCard.querySelector('#partnerDirectory');
+    if(!dir){
+      dir=document.createElement('div');
+      dir.id='partnerDirectory';
+      dir.className='partner-directory';
+      root.insertAdjacentElement('beforebegin',dir);
+    }
+
+    const partners=[...root.querySelectorAll('.partner')]
+      .map((partner,index)=>({partner,index,name:partnerName(partner)}))
+      .filter(x=>x.name)
+      .sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}));
+
+    dir.innerHTML='';
+    if(!partners.length){
+      dir.innerHTML='<div class="partner-directory-empty">No Partners match the current search.</div>';
+      root.classList.add('partner-directory-list-hidden');
+      return;
+    }
+
+    const groups=new Map();
+    partners.forEach(item=>{
+      const letter=partnerLetter(item.name);
+      if(!groups.has(letter))groups.set(letter,[]);
+      groups.get(letter).push(item);
+    });
+
+    [...groups.entries()].sort((a,b)=>a[0].localeCompare(b[0])).forEach(([letter,items])=>{
+      const group=document.createElement('section');
+      group.className='partner-directory-group';
+      const title=document.createElement('div');
+      title.className='partner-directory-letter';
+      title.textContent=letter;
+      const list=document.createElement('div');
+      list.className='partner-directory-list';
+      items.forEach(item=>{
+        const btn=document.createElement('button');
+        btn.type='button';
+        btn.className='partner-directory-name';
+        btn.textContent=item.name;
+        btn.addEventListener('click',()=>showPartnerDetail(controlsCard,item.partner));
+        list.appendChild(btn);
+      });
+      group.append(title,list);
+      dir.appendChild(group);
+    });
+
+    showPartnerDirectory(controlsCard);
   }
 
   function ensureReturn(card){
@@ -145,7 +232,7 @@
     launcher()?.classList.add('partner-sub-hidden');
     createCard?.classList.toggle('partner-sub-hidden',which!=='add');
     controlsCard?.classList.toggle('partner-sub-hidden',which!=='controls');
-    if(which==='controls')compactPartnerControls(controlsCard);
+    if(which==='controls')rebuildPartnerDirectory(controlsCard);
     const target=which==='add'?createCard:controlsCard;
     target?.scrollIntoView({behavior:'smooth',block:'start'});
   }
@@ -175,12 +262,17 @@
     ensureReturn(createCard);
     ensureReturn(controlsCard);
     ensureVoucherCollapse(createCard);
-    compactPartnerControls(controlsCard);
+    rebuildPartnerDirectory(controlsCard);
 
     const partnerRoot=controlsCard.querySelector('#partnerControls');
-    if(partnerRoot&&!partnerRoot.dataset.compactObserverReady){
-      partnerRoot.dataset.compactObserverReady='1';
-      const po=new MutationObserver(()=>compactPartnerControls(controlsCard));
+    if(partnerRoot&&!partnerRoot.dataset.directoryObserverReady){
+      partnerRoot.dataset.directoryObserverReady='1';
+      let queued=false;
+      const po=new MutationObserver(()=>{
+        if(queued)return;
+        queued=true;
+        queueMicrotask(()=>{queued=false;rebuildPartnerDirectory(controlsCard);});
+      });
       po.observe(partnerRoot,{childList:true});
     }
 
