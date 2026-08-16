@@ -90,7 +90,9 @@
   function setPartnerControlView(partner,view){
     const panel=partner.querySelector(`.partner-control-panel[data-panel="${view}"]`);
     const button=partner.querySelector(`.partner-control-tabs [data-control-view="${view}"]`);
+    const isOpen=!!panel&&!panel.classList.contains('partner-control-panel-hidden');
     closePartnerPanels(partner);
+    if(isOpen)return;
     panel?.classList.remove('partner-control-panel-hidden');
     button?.classList.add('active');
   }
