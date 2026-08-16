@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07152f">
+<title>Evolution Optical • Voucher Engine</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/backend-config.js"></script>
+<style>
+:root{--ink:#f7f8ff;--muted:#aebddd;--line:rgba(115,135,210,.34);--ok:#65e6b5;--err:#ff92a5;--warn:#ffd98c;--panel:#0d1839}*{box-sizing:border-box}body{margin:0;min-height:100vh;padding:18px;background:linear-gradient(160deg,#050716,#08102b 52%,#040816);color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.shell{width:min(1120px,100%);margin:auto}.card{padding:22px;border-radius:22px;background:linear-gradient(155deg,#171746,#0b1b42 58%,#06132f);border:1px solid rgba(122,119,255,.55);box-shadow:0 20px 60px rgba(0,0,0,.28);margin-bottom:14px}h1{margin:0 0 8px;font:500 30px Georgia,serif;letter-spacing:1.5px}h2{margin:0 0 12px;font-size:19px}h3{margin:16px 0 8px;font-size:15px;color:#dce6ff}p{color:var(--muted);line-height:1.55}.top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.top a{color:#bfd0ff;text-decoration:none}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.field{margin-top:10px}label{display:block;margin-bottom:6px;font-size:12px;font-weight:800;color:#d9e3ff}input,select,textarea{width:100%;min-height:46px;padding:10px 12px;border:1px solid rgba(100,128,210,.55);border-radius:13px;outline:none;background:var(--panel);color:#fff}textarea{min-height:92px;resize:vertical}button{min-height:44px;border:1px solid rgba(122,119,255,.7);border-radius:12px;background:linear-gradient(180deg,#3549a8,#182b73 58%,#0d1c4c);color:#fff;font-weight:900;cursor:pointer;padding:9px 12px}button:disabled{opacity:.55;cursor:not-allowed}.wide{width:100%;margin-top:14px}.msg,.status{margin-top:12px;padding:11px 13px;border-radius:13px;background:#101b44;border:1px solid var(--line);font-weight:700}.ok{color:var(--ok)}.err{color:var(--err)}.warn{color:var(--warn)}.small{font-size:12px;color:#91a2c4}.hidden{display:none!important}.pill{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;background:#101b44;border:1px solid var(--line);font-size:11px;font-weight:800;color:#c9d6f5}.tableWrap{overflow:auto;border:1px solid var(--line);border-radius:14px;margin-top:12px}table{width:100%;border-collapse:collapse;min-width:760px}th,td{padding:10px 12px;text-align:left;border-bottom:1px solid rgba(115,135,210,.18);font-size:12px}th{color:#dce6ff;background:#0b1738;position:sticky;top:0}td{color:#c2d0ee}.sectionNote{padding:10px 12px;border-left:3px solid #6f87e8;background:#0c1738;border-radius:8px;color:#aebddd;font-size:12px;line-height:1.5}.split{display:grid;grid-template-columns:1fr 1fr;gap:14px}.checkline{display:flex;align-items:center;gap:8px;margin-top:12px;color:#d9e3ff;font-size:12px;font-weight:800}.checkline input{width:auto;min-height:auto}.branchList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}.branch{display:flex;gap:8px;align-items:flex-start;padding:10px;border:1px solid var(--line);border-radius:12px;background:#0a1534}.branch input{width:auto;min-height:auto;margin-top:3px}.preview{margin-top:12px;padding:13px;border-radius:14px;background:#0b1738;border:1px solid var(--line)}.preview b{display:block;margin-bottom:7px}.preview ul{margin:0;padding-left:18px;color:#c8d5f3}.preview li{margin:4px 0}.preview.zero{border-color:rgba(255,146,165,.55)}@media(max-width:760px){.grid,.grid3,.split,.branchList{grid-template-columns:1fr}.top{flex-direction:column}.card{padding:17px}h1{font-size:26px}}
+</style>
+</head>
+<body><main class="shell">
+<section class="card">
+  <div class="top"><div><h1>EVOLUTION OPTICAL</h1><p>Voucher Engine • Admin Control</p></div><a href="admin.html">Back to Admin Portal</a></div>
+  <section id="closedState"><div class="status">Production backend not configured. Voucher Engine access is disabled.</div></section>
+  <section id="loginState" class="hidden"><div class="grid"><div class="field"><label>Admin Email</label><input id="email" type="email" autocomplete="username"></div><div class="field"><label>Password</label><input id="password" type="password" autocomplete="current-password"></div></div><button id="loginBtn" class="wide">Sign In</button><div id="loginMsg"></div></section>
+  <section id="adminState" class="hidden"><div class="msg ok">Admin identity verified.</div><div id="sessionMeta" class="small"></div></section>
+</section>
+
+<section id="engineState" class="hidden">
+<div class="split">
+<section class="card">
+  <h2>1. Voucher Classification</h2>
+  <p class="small">Create a stable Voucher type. New commercial rules should be published as a new Version, not by editing an issued Version.</p>
+  <div class="grid">
+    <div class="field"><label>Code</label><input id="templateCode" placeholder="EVO-RM100"></div>
+    <div class="field"><label>Name</label><input id="templateName" placeholder="RM100 Voucher"></div>
+    <div class="field"><label>Category</label><input id="templateCategory" value="custom"></div>
+    <div class="field"><label>Base Theme</label><select id="templateTheme"><option value="classic">Classic</option><option value="birthday">Birthday</option><option value="raya">Raya</option><option value="merdeka">Merdeka</option><option value="christmas">Christmas</option></select></div>
+  </div>
+  <div class="field"><label>Description</label><textarea id="templateDescription" placeholder="Internal purpose / business meaning"></textarea></div>
+  <button id="createTemplateBtn" class="wide">Create Classification</button><div id="templateMsg"></div>
+</section>
+
+<section class="card">
+  <h2>2. Publish New Version</h2>
+  <p class="small">Published Versions are immutable. Validity, greeting and Version branch scope are frozen at publication.</p>
+  <div class="field"><label>Classification</label><select id="versionTemplate"><option value="">Select classification</option></select></div>
+  <div class="grid">
+    <div class="field"><label>Version Name</label><input id="versionName" placeholder="Current 2026"></div>
+    <div class="field"><label>Face Value (RM)</label><input id="faceValue" type="number" min="0" step="0.01" value="60"></div>
+    <div class="field"><label>Validity Rule</label><select id="validityMode"><option value="calendar_months_after_issue">Calendar months from issue</option><option value="days_after_issue">Days from issue</option></select></div>
+    <div class="field" id="monthsField"><label>Calendar Months</label><input id="validMonths" type="number" min="1" step="1" value="3"></div>
+    <div class="field hidden" id="daysField"><label>Days</label><input id="validDays" type="number" min="1" step="1" value="90"></div>
+    <div class="field"><label>Theme</label><select id="versionTheme"><option value="classic">Classic</option><option value="birthday">Birthday</option><option value="raya">Raya</option><option value="merdeka">Merdeka</option><option value="christmas">Christmas</option></select></div>
+    <div class="field"><label>Supply Limit (optional)</label><input id="supplyLimit" type="number" min="1" step="1" placeholder="Unlimited"></div>
+  </div>
+  <div class="field"><label>Occasion Greeting (optional)</label><input id="greetingText" placeholder="Happy Birthday! 🎂"></div>
+  <div class="field"><label>Terms (optional)</label><textarea id="termsText"></textarea></div>
+  <h3>Version Redemption Scope</h3>
+  <label class="checkline"><input id="versionAllBranches" type="checkbox" checked> Allow all active Evolution Optical branches</label>
+  <div id="versionBranchList" class="branchList"></div>
+  <div id="versionSelectionPreview" class="preview"><b>Version branch selection</b><div class="small">All active Evolution Optical branches</div></div>
+  <div class="sectionNote">If All Branches is off, select at least one active branch. Publication is atomic.</div>
+  <button id="publishBtn" class="wide">Publish New Version</button><div id="publishMsg"></div>
+</section>
+</div>
+
+<section class="card">
+  <h2>3. Allocate to Partner</h2>
+  <p class="small">Every allocation is a separate stock lot. The issued Voucher uses the intersection of Partner claim scope, Version scope and this Allocation scope.</p>
+  <div class="grid3">
+    <div class="field"><label>Partner</label><select id="allocationPartner"><option value="">Select Partner</option></select></div>
+    <div class="field"><label>Voucher Version</label><select id="allocationVersion"><option value="">Select active Version</option></select></div>
+    <div class="field"><label>Quantity</label><input id="allocationQty" type="number" min="1" step="1" value="100"></div>
+  </div>
+  <h3>Allocation Redemption Scope</h3>
+  <label class="checkline"><input id="allocationAllBranches" type="checkbox" checked> Allow all branches permitted by Partner + Version</label>
+  <div id="allocationBranchList" class="branchList"></div>
+  <div id="allocationSelectionPreview" class="preview"><b>Allocation branch selection</b><div class="small">All branches permitted by Partner + Version</div></div>
+  <div id="effectiveBranchPreview" class="preview"><b>Final effective redemption branches</b><div class="small">Select Partner and Voucher Version to calculate.</div></div>
+  <div class="sectionNote">Each allocation keeps its own branch scope. Partner issuance consumes the oldest valid lot with remaining stock first.</div>
+  <button id="allocateBtn" class="wide">Allocate Voucher Stock</button><div id="allocationMsg"></div>
+</section>
+
+<section class="card">
+  <div class="top"><div><h2>Current Engine Inventory</h2><p class="small">Read-only operational view from the authenticated Admin session.</p></div><button id="refreshBtn">Refresh</button></div>
+  <div class="tableWrap"><table><thead><tr><th>Classification</th><th>Version</th><th>Value</th><th>Validity</th><th>Theme</th><th>Branch Scope</th><th>Status</th></tr></thead><tbody id="inventoryBody"><tr><td colspan="7">No data loaded.</td></tr></tbody></table></div>
+</section>
+</section>
+</main>
+<script>
+(()=>{
+const cfg=window.EVOLUTION_VOUCHER_BACKEND||{},$=id=>document.getElementById(id);
+const configured=cfg.enabled===true&&/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(cfg.supabaseUrl||'')&&typeof cfg.publishableKey==='string'&&cfg.publishableKey.length>20&&typeof cfg.projectId==='string'&&cfg.projectId.length>5;
+if(!configured)return;
+$('closedState').classList.add('hidden');$('loginState').classList.remove('hidden');
+const db=window.supabase.createClient(cfg.supabaseUrl,cfg.publishableKey);let templates=[],versions=[],partners=[],branches=[],effectivePreviewCount=null,previewNonce=0;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const msg=(node,text,ok=false)=>node.innerHTML=text?`<div class="msg ${ok?'ok':'err'}">${esc(text)}</div>`:'';
+async function rpc(name,args={}){const{data,error}=await db.rpc(name,args);if(error)throw error;return data}
+function numOrNull(id){const v=$(id).value.trim();return v===''?null:Number(v)}
+function intOrNull(id){const v=$(id).value.trim();return v===''?null:Number.parseInt(v,10)}
+function validityText(v){const mode=v.validity_mode;if(mode==='calendar_months_after_issue')return `${v.valid_months||'—'} calendar month(s) from issue`;if(mode==='days_after_issue')return `${v.valid_days||'—'} day(s) from issue`;if(mode==='months')return `${v.valid_months||'—'} calendar month(s) from issue`;if(mode==='days')return `${v.valid_days||'—'} day(s) from issue`;return mode||'—'}
+function selectedCodes(cls){return [...document.querySelectorAll(`.${cls}:checked`)].map(x=>x.value)}
+function branchMarkup(cls,all){return branches.map(b=>`<label class="branch"><input class="${cls}" type="checkbox" value="${esc(b.branch_code)}" ${all?'disabled':''}><span><b>${esc(b.branch_name)}</b><br><span class="small">${esc(b.address||'')} • ${esc(b.phone||'')}</span></span></label>`).join('')||'<div class="small">No active branches.</div>'}
+function previewMarkup(title,allText,codes){const selected=branches.filter(b=>codes.includes(b.branch_code));return `<b>${esc(title)}</b>${selected.length?`<ul>${selected.map(b=>`<li>${esc(b.branch_name)} (${esc(b.branch_code)})</li>`).join('')}</ul>`:`<div class="small">${esc(allText)}</div>`}`}
+function renderVersionSelectionPreview(){const all=$('versionAllBranches').checked,codes=selectedCodes('versionBranchCheck');$('versionSelectionPreview').innerHTML=previewMarkup('Version branch selection','All active Evolution Optical branches',all?[]:codes)}
+function renderAllocationSelectionPreview(){const all=$('allocationAllBranches').checked,codes=selectedCodes('allocationBranchCheck');$('allocationSelectionPreview').innerHTML=previewMarkup('Allocation branch selection','All branches permitted by Partner + Version',all?[]:codes)}
+function bindBranchPreviewListeners(){document.querySelectorAll('.versionBranchCheck').forEach(x=>x.addEventListener('change',renderVersionSelectionPreview));document.querySelectorAll('.allocationBranchCheck').forEach(x=>x.addEventListener('change',()=>{renderAllocationSelectionPreview();refreshEffectivePreview()}))}
+function renderVersionBranches(){$('versionBranchList').innerHTML=branchMarkup('versionBranchCheck',$('versionAllBranches').checked);renderVersionSelectionPreview();bindBranchPreviewListeners()}
+function renderAllocationBranches(){$('allocationBranchList').innerHTML=branchMarkup('allocationBranchCheck',$('allocationAllBranches').checked);renderAllocationSelectionPreview();bindBranchPreviewListeners()}
+function renderSelectors(){
+  $('versionTemplate').innerHTML='<option value="">Select classification</option>'+templates.filter(t=>t.status==='active').map(t=>`<option value="${esc(t.id)}">${esc(t.template_code)} — ${esc(t.template_name)}</option>`).join('');
+  $('allocationVersion').innerHTML='<option value="">Select active Version</option>'+versions.filter(v=>v.status==='active').map(v=>{const t=templates.find(x=>x.id===v.template_id);return `<option value="${esc(v.id)}">${esc(t?.template_code||'')} v${esc(v.version_no)} — ${esc(v.version_name||t?.template_name||'Voucher')}</option>`}).join('');
+  $('allocationPartner').innerHTML='<option value="">Select Partner</option>'+partners.filter(p=>p.partner_status==='active').map(p=>`<option value="${esc(p.partner_id)}">${esc(p.partner_name)} (${esc(p.partner_code)})</option>`).join('');
+}
+function renderInventory(){
+  $('inventoryBody').innerHTML=versions.length?versions.slice().sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||''))).map(v=>{const t=templates.find(x=>x.id===v.template_id);return `<tr><td><b>${esc(t?.template_code||'')}</b><br>${esc(t?.template_name||'')}</td><td>v${esc(v.version_no)}<br>${esc(v.version_name||'')}</td><td>${v.face_value==null?'—':'RM '+esc(v.face_value)}</td><td>${esc(validityText(v))}</td><td>${esc(v.theme_override_code||t?.theme_code||'classic')}</td><td>${v.all_branches?'All active branches':'Restricted'}</td><td><span class="pill">${esc(v.status)}</span></td></tr>`}).join(''):'<tr><td colspan="7">No Voucher Versions yet.</td></tr>';
+}
+async function refreshEffectivePreview(){
+  const nonce=++previewNonce,partner=$('allocationPartner').value,version=$('allocationVersion').value,all=$('allocationAllBranches').checked,codes=selectedCodes('allocationBranchCheck');effectivePreviewCount=null;
+  if(!partner||!version){$('effectiveBranchPreview').className='preview';$('effectiveBranchPreview').innerHTML='<b>Final effective redemption branches</b><div class="small">Select Partner and Voucher Version to calculate.</div>';return}
+  if(!all&&!codes.length){$('effectiveBranchPreview').className='preview zero';$('effectiveBranchPreview').innerHTML='<b>Final effective redemption branches</b><div class="err">Select at least one Allocation branch.</div>';effectivePreviewCount=0;return}
+  $('effectiveBranchPreview').className='preview';$('effectiveBranchPreview').innerHTML='<b>Final effective redemption branches</b><div class="small">Calculating…</div>';
+  try{const rows=await rpc('admin_preview_allocation_effective_branches',{p_partner_id:partner,p_version_id:version,p_all_branches:all,p_branch_codes:all?[]:codes});if(nonce!==previewNonce)return;const list=Array.isArray(rows)?rows:[];effectivePreviewCount=list.length;if(!list.length){$('effectiveBranchPreview').className='preview zero';$('effectiveBranchPreview').innerHTML='<b>Final effective redemption branches</b><div class="err">No branch survives Partner ∩ Version ∩ Allocation. This allocation cannot be created.</div>';return}$('effectiveBranchPreview').className='preview';$('effectiveBranchPreview').innerHTML=`<b>Final effective redemption branches (${list.length})</b><ul>${list.map(b=>`<li>${esc(b.branch_name)} (${esc(b.branch_code)})</li>`).join('')}</ul>`}catch(e){if(nonce!==previewNonce)return;effectivePreviewCount=null;$('effectiveBranchPreview').className='preview zero';$('effectiveBranchPreview').innerHTML=`<b>Final effective redemption branches</b><div class="err">${esc(e.message||'Preview failed.')}</div>`}
+}
+async function loadData(){
+  const[tRes,vRes,pRes,bRes]=await Promise.all([
+    db.from('voucher_templates').select('id,template_code,template_name,voucher_category,status,theme_code,current_version_id,created_at').order('created_at',{ascending:false}),
+    db.from('voucher_versions').select('id,template_id,version_no,version_name,face_value,validity_mode,valid_days,valid_months,theme_override_code,all_branches,status,created_at').order('created_at',{ascending:false}),
+    rpc('admin_partner_directory'),rpc('admin_active_branches')
+  ]);
+  if(tRes.error)throw tRes.error;if(vRes.error)throw vRes.error;
+  templates=tRes.data||[];versions=vRes.data||[];partners=pRes||[];branches=bRes||[];renderSelectors();renderVersionBranches();renderAllocationBranches();renderInventory();await refreshEffectivePreview();
+}
+async function verifyAdmin(session){if(!session?.user)return false;const realm=await rpc('current_operational_realm');if(!realm||realm.authenticated!==true||realm.realm!=='admin'){await db.auth.signOut();throw new Error('This account is not an active Evolution Voucher Admin.')}$('loginState').classList.add('hidden');$('adminState').classList.remove('hidden');$('engineState').classList.remove('hidden');$('sessionMeta').textContent=`Signed in as ${session.user.email||session.user.id}`;await loadData();return true}
+$('loginBtn').addEventListener('click',async()=>{const email=$('email').value.trim().toLowerCase(),password=$('password').value;if(!email||!password){msg($('loginMsg'),'Enter email and password.');return}$('loginBtn').disabled=true;try{const{data,error}=await db.auth.signInWithPassword({email,password});if(error)throw error;await verifyAdmin(data.session)}catch(e){msg($('loginMsg'),e.message||'Sign in failed.')}finally{$('loginBtn').disabled=false}});
+$('validityMode').addEventListener('change',()=>{const m=$('validityMode').value;$('monthsField').classList.toggle('hidden',m!=='calendar_months_after_issue');$('daysField').classList.toggle('hidden',m!=='days_after_issue')});
+$('versionAllBranches').addEventListener('change',renderVersionBranches);
+$('allocationAllBranches').addEventListener('change',()=>{renderAllocationBranches();refreshEffectivePreview()});
+$('allocationPartner').addEventListener('change',refreshEffectivePreview);
+$('allocationVersion').addEventListener('change',refreshEffectivePreview);
+$('createTemplateBtn').addEventListener('click',async()=>{msg($('templateMsg'),'');const code=$('templateCode').value.trim(),name=$('templateName').value.trim(),category=$('templateCategory').value.trim()||'custom',description=$('templateDescription').value.trim()||null,theme=$('templateTheme').value;if(!code||!name){msg($('templateMsg'),'Code and Name are required.');return}$('createTemplateBtn').disabled=true;try{await rpc('admin_create_voucher_template_theme',{p_template_code:code,p_template_name:name,p_voucher_category:category,p_description:description,p_theme_code:theme});msg($('templateMsg'),`Classification ${code.toUpperCase()} created.`,true);$('templateCode').value='';$('templateName').value='';$('templateDescription').value='';await loadData()}catch(e){msg($('templateMsg'),e.message||'Template creation failed.')}finally{$('createTemplateBtn').disabled=false}});
+$('publishBtn').addEventListener('click',async()=>{msg($('publishMsg'),'');const template=$('versionTemplate').value,mode=$('validityMode').value,all=$('versionAllBranches').checked,codes=selectedCodes('versionBranchCheck');if(!template){msg($('publishMsg'),'Select a classification.');return}const months=mode==='calendar_months_after_issue'?intOrNull('validMonths'):null,days=mode==='days_after_issue'?intOrNull('validDays'):null;if(mode==='calendar_months_after_issue'&&(!months||months<1)){msg($('publishMsg'),'Calendar months must be at least 1.');return}if(mode==='days_after_issue'&&(!days||days<1)){msg($('publishMsg'),'Days must be at least 1.');return}if(!all&&!codes.length){msg($('publishMsg'),'Select at least one branch or enable All Branches.');return}$('publishBtn').disabled=true;try{await rpc('admin_publish_voucher_version',{p_template_id:template,p_version_name:$('versionName').value.trim()||null,p_face_value:numOrNull('faceValue'),p_discount_percent:null,p_validity_mode:mode,p_valid_days:days,p_valid_months:months,p_valid_until:null,p_min_spend:null,p_max_discount:null,p_usage_limit:1,p_transferable:true,p_terms_text:$('termsText').value.trim()||null,p_supply_limit:intOrNull('supplyLimit'),p_all_branches:all,p_branch_codes:all?[]:codes,p_theme_code:$('versionTheme').value,p_theme_config:{},p_greeting_text:$('greetingText').value.trim()||null});msg($('publishMsg'),all?'New immutable Voucher Version published for all branches.':'New immutable Voucher Version published with restricted branch scope.',true);await loadData()}catch(e){msg($('publishMsg'),e.message||'Version publish failed.')}finally{$('publishBtn').disabled=false}});
+$('allocateBtn').addEventListener('click',async()=>{msg($('allocationMsg'),'');const partner=$('allocationPartner').value,version=$('allocationVersion').value,qty=intOrNull('allocationQty'),all=$('allocationAllBranches').checked,codes=selectedCodes('allocationBranchCheck');if(!partner||!version||!qty||qty<1){msg($('allocationMsg'),'Partner, Version and positive Quantity are required.');return}if(!all&&!codes.length){msg($('allocationMsg'),'Select at least one Allocation branch or enable All Branches.');return}await refreshEffectivePreview();if(effectivePreviewCount===0){msg($('allocationMsg'),'Allocation blocked: no effective redemption branch remains after Partner ∩ Version ∩ Allocation.');return}if(effectivePreviewCount==null){msg($('allocationMsg'),'Allocation blocked: effective branch preview could not be verified.');return}$('allocateBtn').disabled=true;try{const{data,error}=await db.functions.invoke('voucher-engine',{body:{action:'allocate',partner_id:partner,version_id:version,quantity:qty,all_branches:all,branch_codes:all?[]:codes}});if(error)throw error;if(!data?.success)throw new Error(data?.error||'Allocation failed.');msg($('allocationMsg'),`Allocation lot created. Quantity: ${qty}. Final effective branches: ${effectivePreviewCount}.`,true);await loadData()}catch(e){msg($('allocationMsg'),e.message||'Allocation failed.')}finally{$('allocateBtn').disabled=false}});
+$('refreshBtn').addEventListener('click',async()=>{try{await loadData()}catch(e){alert(e.message||'Refresh failed.')}});
+db.auth.getSession().then(async({data})=>{if(data?.session){try{await verifyAdmin(data.session)}catch(e){msg($('loginMsg'),e.message||'Session verification failed.')}}});
+})();
+</script>
+</body>
+</html>
