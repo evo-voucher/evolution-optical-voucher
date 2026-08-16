@@ -35,7 +35,7 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   const link=document.createElement('link');
   link.id='partnerEntryLayoutStyle';
   link.rel='stylesheet';
-  link.href='assets/css/partner-entry-layout.css?v=2';
+  link.href='assets/css/partner-entry-layout.css?v=3';
   document.head.appendChild(link);
 })();
 
@@ -79,6 +79,6 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   if(document.getElementById('partnerManagementUiScript'))return;
   const script=document.createElement('script');
   script.id='partnerManagementUiScript';
-  script.src='assets/js/partner-management-ui.js?v=2';
+  script.src='assets/js/partner-management-ui.js?v=3';
   document.head.appendChild(script);
 })();
