@@ -37,27 +37,35 @@ serve(async (req) => {
     const caller = userData?.user;
     if (userError || !caller) return json({ success: false, error: "Unauthorized" }, 401);
 
-    const { data: me, error: meError } = await callerClient
-      .from("partner_users")
-      .select("id,user_id,partner_id,role,status,removed_at,staff_name")
-      .eq("user_id", caller.id)
-      .eq("role", "partner_admin")
-      .eq("status", "active")
-      .is("removed_at", null)
-      .maybeSingle();
-    if (meError || !me) return json({ success: false, error: "Partner Admin access required" }, 403);
+    const body = await req.json();
+    const action = typeof body.action === "string" ? body.action.trim().toLowerCase() : "";
+    const requestedPartnerId = typeof body.partner_id === "string" ? body.partner_id.trim() : "";
 
-    const { data: partner, error: partnerError } = await callerClient
+    const { data: realm, error: realmError } = await callerClient.rpc("current_operational_realm");
+    if (realmError || !realm?.authenticated) return json({ success: false, error: "Authorization check failed" }, 403);
+
+    let partnerId = "";
+    if (realm.realm === "partner" && realm.role === "partner_admin") {
+      partnerId = typeof realm.partner_id === "string" ? realm.partner_id : "";
+      if (!partnerId) return json({ success: false, error: "Partner context unavailable" }, 403);
+      if (requestedPartnerId && requestedPartnerId !== partnerId) {
+        return json({ success: false, error: "Partner context access denied" }, 403);
+      }
+    } else if (realm.realm === "admin") {
+      if (!requestedPartnerId) return json({ success: false, error: "Admin must select a Partner" }, 400);
+      partnerId = requestedPartnerId;
+    } else {
+      return json({ success: false, error: "Partner Admin or Admin access required" }, 403);
+    }
+
+    const { data: partner, error: partnerError } = await server
       .from("partners")
       .select("id,partner_code,partner_name,status,staff_limit,staff_access_enabled")
-      .eq("id", me.partner_id)
+      .eq("id", partnerId)
       .maybeSingle();
     if (partnerError || !partner || partner.status !== "active") {
       return json({ success: false, error: "Partner is not active" }, 403);
     }
-
-    const body = await req.json();
-    const action = typeof body.action === "string" ? body.action.trim().toLowerCase() : "";
 
     if (action === "create") {
       const staff_name = typeof body.staff_name === "string" ? body.staff_name.trim() : "";
@@ -82,6 +90,7 @@ serve(async (req) => {
         p_staff_name: staff_name,
         p_login_email: email,
         p_actor_user_id: caller.id,
+        p_partner_id: partnerId,
       });
       if (provisionError || !provisioned?.success) {
         try { await server.auth.admin.deleteUser(newUser.id); } catch (_) {}
@@ -89,13 +98,13 @@ serve(async (req) => {
         const status = /limit reached/i.test(message) ? 409 : 500;
         return json({ success: false, error: "Failed to create Partner Staff profile", details: message }, status);
       }
-      return json({ success: true, staff: provisioned.staff }, 201);
+      return json({ success: true, staff: provisioned.staff, actor_realm: provisioned.actor_realm }, 201);
     }
 
     const staffId = typeof body.staff_id === "string" ? body.staff_id.trim() : "";
     if (!staffId) return json({ success: false, error: "staff_id is required" }, 400);
 
-    const { data: target, error: targetError } = await callerClient
+    const { data: target, error: targetError } = await server
       .from("partner_users")
       .select("id,user_id,partner_id,role,status,staff_name,login_email,removed_at")
       .eq("id", staffId)
@@ -120,6 +129,7 @@ serve(async (req) => {
       const { data: recorded, error: recordError } = await server.rpc("partner_record_staff_password_reset", {
         p_staff_id: target.id,
         p_actor_user_id: caller.id,
+        p_partner_id: partnerId,
       });
       if (recordError || !recorded?.success) {
         return json({ success: false, error: "Password changed but audit recording failed", details: recordError?.message }, 500);
@@ -128,6 +138,7 @@ serve(async (req) => {
         success: true,
         staff_id: target.id,
         staff_name: target.staff_name,
+        actor_realm: recorded.actor_realm,
         message: "Staff password reset successfully. Existing Staff sessions were signed out.",
       });
     }
@@ -143,6 +154,7 @@ serve(async (req) => {
       p_action: action,
       p_staff_name: staffName,
       p_actor_user_id: caller.id,
+      p_partner_id: partnerId,
     });
     if (mutationError || !mutated?.success) {
       return json({ success: false, error: "Unable to update Staff", details: mutationError?.message }, 409);
@@ -151,7 +163,7 @@ serve(async (req) => {
     if (action === "suspend" || action === "remove") {
       try { await server.auth.admin.signOut(target.user_id, "global"); } catch (_) {}
     }
-    return json({ success: true, staff: mutated.staff });
+    return json({ success: true, staff: mutated.staff, actor_realm: mutated.actor_realm });
   } catch (e) {
     return json({ success: false, error: "Unexpected error", details: e instanceof Error ? e.message : String(e) }, 500);
   }
