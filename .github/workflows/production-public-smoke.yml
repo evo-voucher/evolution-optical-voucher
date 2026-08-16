@@ -9,6 +9,7 @@ on:
       - 'admin.html'
       - 'partner.html'
       - 'staff.html'
+      - 'voucher.html'
       - 'assets/js/backend-config.js'
       - '.github/workflows/production-public-smoke.yml'
 
@@ -27,7 +28,7 @@ jobs:
 
           base='https://evo-voucher.github.io/evolution-optical-voucher'
 
-          for path in '/' '/admin.html' '/partner.html' '/staff.html' '/assets/js/backend-config.js'; do
+          for path in '/' '/admin.html' '/partner.html' '/staff.html' '/voucher.html' '/assets/js/backend-config.js'; do
             code="$(curl --silent --show-error --location --output /tmp/page --write-out '%{http_code}' "${base}${path}")"
             if [[ "$code" != '200' ]]; then
               echo "Public page failed: ${path} -> HTTP ${code}" >&2
@@ -44,8 +45,8 @@ jobs:
 
           grep -Eq "enabled:[[:space:]]*true" /tmp/backend-config.js || { echo 'Deployed config is not enabled' >&2; exit 1; }
           grep -Eq "environment:[[:space:]]*'production'" /tmp/backend-config.js || { echo 'Deployed config is not production' >&2; exit 1; }
-          grep -Fq "projectId: 'hukihbcyyqhanaqrizvm'" /tmp/backend-config.js || { echo 'Deployed projectId mismatch' >&2; exit 1; }
-          grep -Fq "supabaseUrl: 'https://hukihbcyyqhanaqrizvm.supabase.co'" /tmp/backend-config.js || { echo 'Deployed Supabase URL mismatch' >&2; exit 1; }
+          grep -Fq "projectId: 'xfivcfwexcxsyiylgryn'" /tmp/backend-config.js || { echo 'Deployed projectId mismatch' >&2; exit 1; }
+          grep -Fq "supabaseUrl: 'https://xfivcfwexcxsyiylgryn.supabase.co'" /tmp/backend-config.js || { echo 'Deployed Supabase URL mismatch' >&2; exit 1; }
           grep -Eq "publishableKey:[[:space:]]*'sb_publishable_[^']+'" /tmp/backend-config.js || { echo 'Deployed publishable key missing or wrong type' >&2; exit 1; }
           grep -Fq "siteBase: 'https://evo-voucher.github.io/evolution-optical-voucher/'" /tmp/backend-config.js || { echo 'Deployed siteBase mismatch' >&2; exit 1; }
 

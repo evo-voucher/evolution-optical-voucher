@@ -50,28 +50,31 @@ serve(async (req) => {
       const partnerId = typeof body.partner_id === "string" ? body.partner_id.trim() : "";
       const versionId = typeof body.version_id === "string" ? body.version_id.trim() : "";
       const quantity = Number(body.quantity);
+      const allBranches = body.all_branches !== false;
+      const branchCodes = Array.isArray(body.branch_codes)
+        ? body.branch_codes.filter((x: unknown) => typeof x === "string").map((x: string) => x.trim().toUpperCase()).filter(Boolean)
+        : [];
+      const validityAnchor = typeof body.validity_anchor === "string" ? body.validity_anchor.trim().toLowerCase() : "issue";
+      const allocationValidDays = body.allocation_valid_days == null ? null : Number(body.allocation_valid_days);
+
       if (!partnerId || !versionId || !Number.isInteger(quantity) || quantity <= 0) {
         return json({ success: false, error: "Valid partner_id, version_id and positive quantity are required" }, 400);
       }
+      if (!allBranches && branchCodes.length === 0) {
+        return json({ success: false, error: "Select at least one Allocation branch" }, 400);
+      }
+      if (validityAnchor === "allocation" && (!Number.isInteger(allocationValidDays) || Number(allocationValidDays) < 1)) {
+        return json({ success: false, error: "Allocation validity days must be at least 1" }, 400);
+      }
+
       const { data, error } = await server.rpc("admin_engine_allocate", {
         p_partner_id: partnerId,
         p_version_id: versionId,
         p_quantity: quantity,
-        p_actor_user_id: caller.id,
-      });
-      if (error) return json({ success: false, error: error.message }, 409);
-      return json({ success: true, result: data });
-    }
-
-    if (action === "allocate_all") {
-      const versionId = typeof body.version_id === "string" ? body.version_id.trim() : "";
-      const quantity = Number(body.quantity);
-      if (!versionId || !Number.isInteger(quantity) || quantity <= 0) {
-        return json({ success: false, error: "Valid version_id and positive quantity are required" }, 400);
-      }
-      const { data, error } = await server.rpc("admin_engine_allocate_all", {
-        p_version_id: versionId,
-        p_quantity: quantity,
+        p_validity_anchor: validityAnchor,
+        p_allocation_valid_days: allocationValidDays,
+        p_all_branches: allBranches,
+        p_branch_codes: allBranches ? [] : branchCodes,
         p_actor_user_id: caller.id,
       });
       if (error) return json({ success: false, error: error.message }, 409);

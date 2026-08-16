@@ -40,6 +40,13 @@ serve(async (req) => {
     if (password.length < 8) return json({ success: false, error: "Password must be at least 8 characters" }, 400);
     if (setupCode.length < 24) return json({ success: false, error: "Valid Setup Code is required" }, 400);
 
+    const { data: validCode, error: codeError } = await server.rpc("service_validate_admin_bootstrap_code", {
+      p_setup_code: setupCode,
+    });
+    if (codeError || validCode !== true) {
+      return json({ success: false, error: "Invalid Setup Code" }, 403);
+    }
+
     const { data: created, error: createError } = await server.auth.admin.createUser({
       email,
       password,
@@ -52,7 +59,7 @@ serve(async (req) => {
 
     const { data: provisioned, error: provisionError } = await server.rpc("service_bootstrap_first_admin", {
       p_user_id: user.id,
-      p_login_email: email,
+      p_display_name: "Evolution Optical Admin",
       p_setup_code: setupCode,
     });
 
