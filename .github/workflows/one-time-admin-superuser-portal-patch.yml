@@ -23,12 +23,12 @@ jobs:
 
           patches = {
             'staff.html': (
-              "if(!data||data.authenticated!==true||data.realm!=='staff'){await db.auth.signOut();throw new Error('This account is not an active Evolution Staff account.')}",
-              "if(!data||data.authenticated!==true||!['staff','admin'].includes(data.realm)){await db.auth.signOut();throw new Error('This account is not an active Evolution Staff or Admin account.')}"
+              "if(!data||data.authenticated!==true||data.realm!=='staff'){await db.auth.signOut();throw new Error('This account is not an active Evolution Staff account.');}",
+              "if(!data||data.authenticated!==true||!['staff','admin'].includes(data.realm)){await db.auth.signOut();throw new Error('This account is not an active Evolution Staff or Admin account.');}"
             ),
             'partner.html': (
-              "if(!data||data.authenticated!==true||data.realm!=='partner'){await db.auth.signOut();throw new Error('This account is not an active Partner account.')}",
-              "if(!data||data.authenticated!==true||!['partner','admin'].includes(data.realm)){await db.auth.signOut();throw new Error('This account is not an active Partner or Admin account.')}"
+              "if(!data||data.authenticated!==true||data.realm!=='partner'){await db.auth.signOut();throw new Error('This account is not an active Partner account.');}",
+              "if(!data||data.authenticated!==true||!['partner','admin'].includes(data.realm)){await db.auth.signOut();throw new Error('This account is not an active Partner or Admin account.');}"
             )
           }
 
