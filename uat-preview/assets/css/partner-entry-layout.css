@@ -1,13 +1,31 @@
-/* Partner Management stage sizing only.
-   View switching is handled inside one fixed stage; no body/viewport locking. */
-#partnerManagementStage{
-  height:520px;
-  min-height:520px;
+/* Partner Management entrance layout only.
+   Fixed dimensions prevent the launcher from stretching or shifting vertically. */
+#partnerSubnavCard{
+  height:280px;
+  min-height:280px;
+  display:block;
+}
+
+#partnerSubnavCard .partner-subnav{
+  margin-top:12px;
+  padding-bottom:0;
+  align-items:stretch;
+}
+
+#partnerSubnavCard .partner-subnav button{
+  height:112px!important;
+  min-height:112px!important;
+  padding:16px 14px!important;
+  align-self:auto;
 }
 
 @media(max-width:560px){
-  #partnerManagementStage{
-    height:500px;
-    min-height:500px;
+  #partnerSubnavCard{
+    height:280px;
+    min-height:280px;
+  }
+  #partnerSubnavCard .partner-subnav button{
+    height:112px!important;
+    min-height:112px!important;
   }
 }
