@@ -4,13 +4,27 @@
   const db=window.supabase.createClient(cfg.supabaseUrl,cfg.publishableKey,{auth:{persistSession:true}});
   const SECTIONS={
     home:{title:'Admin Dashboard',sub:'Overview and quick access.'},
-    partners:{title:'Partner Management',sub:'Create Partners, manage status, limits, claim access and passwords.'},
+    partners:{title:'Partner Management',sub:'Create Partners, manage status, staff, claim access and passwords.'},
     vouchers:{title:'Voucher Management',sub:'Voucher Engine, allocation and voucher activity.'},
     operations:{title:'Branch & Staff',sub:'Manage Evolution branches and Staff access.'},
     reports:{title:'Redeem & Reports',sub:'Redemption history, reversals, performance and exports.'},
     settings:{title:'System Settings',sub:'Administrative tools and system shortcuts.'}
   };
   let currentSection='home';
+
+  function retireVoucherLimitUI(){
+    const createInput=document.getElementById('newPartnerVoucherLimit');
+    if(createInput){
+      createInput.value='0';
+      createInput.type='hidden';
+      const field=createInput.closest('.field');
+      if(field)field.style.display='none';
+    }
+    document.querySelectorAll('#partnerControls .field').forEach(field=>{
+      const label=(field.querySelector('label')?.textContent||'').trim();
+      if(label==='Voucher Limit')field.remove();
+    });
+  }
 
   function ensureSettingsCard(){
     if(document.getElementById('adminSettingsCard'))return document.getElementById('adminSettingsCard');
@@ -35,7 +49,7 @@
     if(!hub){
       hub=document.createElement('section');hub.id='adminHubCard';hub.className='card admin-hub-card';hub.dataset.adminSection='home';
       hub.innerHTML=`<h2>Management</h2><div class="admin-hub-grid">
-        <button type="button" data-admin-open="partners" class="admin-hub-btn"><span class="admin-hub-icon">◎</span><span><b>Partner Management</b><small>Create Partner, claim access, limits & password.</small></span><span class="admin-hub-arrow">›</span></button>
+        <button type="button" data-admin-open="partners" class="admin-hub-btn"><span class="admin-hub-icon">◎</span><span><b>Partner Management</b><small>Create Partner, claim access, staff & password.</small></span><span class="admin-hub-arrow">›</span></button>
         <button type="button" data-admin-open="vouchers" class="admin-hub-btn"><span class="admin-hub-icon">▣</span><span><b>Voucher Management</b><small>Engine, allocation & voucher records.</small></span><span class="admin-hub-arrow">›</span></button>
         <button type="button" data-admin-open="operations" class="admin-hub-btn"><span class="admin-hub-icon">◇</span><span><b>Branch & Staff</b><small>Branches and Evolution Staff accounts.</small></span><span class="admin-hub-arrow">›</span></button>
         <button type="button" data-admin-open="reports" class="admin-hub-btn"><span class="admin-hub-icon">▥</span><span><b>Redeem & Reports</b><small>Redemptions, reversals, performance & export.</small></span><span class="admin-hub-arrow">›</span></button>
@@ -72,6 +86,7 @@
       if(!card.classList?.contains('card'))return;
       const section=classify(card);if(section)card.dataset.adminSection=section;
     });
+    retireVoucherLimitUI();
     navigate(currentSection,false);
   }
 
@@ -104,11 +119,13 @@
     try{
       const {data,error}=await db.rpc('current_operational_realm');if(error)return;
       if(data?.authenticated===true&&data?.realm==='admin'){
-        ensureSettingsCard();ensureHub();installClaimSaveFeedback();
+        ensureSettingsCard();ensureHub();installClaimSaveFeedback();retireVoucherLimitUI();
         try{currentSection=sessionStorage.getItem('evo-admin-section')||'home'}catch(_){currentSection='home'}
         applySections();
         const dash=document.getElementById('dashboardState');
         if(dash&&!dash.__adminHubObserved){const o=new MutationObserver(()=>applySections());o.observe(dash,{childList:true,subtree:false});dash.__adminHubObserved=true;}
+        const pc=document.getElementById('partnerControls');
+        if(pc&&!pc.__voucherLimitObserved){const o2=new MutationObserver(()=>retireVoucherLimitUI());o2.observe(pc,{childList:true,subtree:true});pc.__voucherLimitObserved=true;}
         setTimeout(applySections,450);
       }
     }catch(_){ }
