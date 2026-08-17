@@ -69,7 +69,26 @@ NO_AUTH="$(curl -sS -o /tmp/edge-no-auth.json -w '%{http_code}' "$API_URL/functi
   -H "apikey: $ANON_KEY" -H 'Content-Type: application/json' -d '{}')"
 [[ "$NO_AUTH" == "401" ]] || { cat /tmp/edge-no-auth.json >&2; echo "Expected create-partner 401 without bearer, got $NO_AUTH" >&2; exit 1; }
 
-CREATE_RAW="$(edge_post create-partner "$ADMIN_TOKEN" "{\"partner_code\":\"$PARTNER_CODE\",\"partner_name\":\"Edge Partner\",\"contact_person\":\"Edge Admin\",\"contact_phone\":\"0120000000\",\"email\":\"$PARTNER_EMAIL\",\"password\":\"$password\",\"voucher_limit\":0,\"staff_limit\":3}")"
+# Canonical Partner provisioning now requires at least one Initial Voucher.
+# Seed a dedicated active Version so this boundary test exercises the current contract
+# without coupling the later Voucher Engine allocation assertion to the same Version.
+psql "$DB_URL" -v ON_ERROR_STOP=1 <<'SQL'
+begin;
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+insert into public.voucher_templates(template_code,template_name,voucher_category,status,theme_code)
+values ('EDGE-INITIAL','Edge Initial Voucher','test','active','default');
+insert into public.voucher_versions(template_id,version_no,version_name,face_value,validity_mode,valid_days,usage_limit,supply_limit,all_branches,status,effective_from)
+select id,1,'Edge Initial v1',60,'days',30,1,20,true,'active',now()
+from public.voucher_templates where template_code='EDGE-INITIAL';
+update public.voucher_templates vt set current_version_id=vv.id
+from public.voucher_versions vv
+where vv.template_id=vt.id and vt.template_code='EDGE-INITIAL' and vv.version_no=1;
+commit;
+SQL
+INITIAL_VERSION_ID="$(psql "$DB_URL" -Atqc "select vv.id from public.voucher_versions vv join public.voucher_templates vt on vt.id=vv.template_id where vt.template_code='EDGE-INITIAL' and vv.version_no=1")"
+[[ -n "$INITIAL_VERSION_ID" ]] || { echo 'Initial Voucher fixture missing' >&2; exit 1; }
+
+CREATE_RAW="$(edge_post create-partner "$ADMIN_TOKEN" "{\"partner_code\":\"$PARTNER_CODE\",\"partner_name\":\"Edge Partner\",\"contact_person\":\"Edge Admin\",\"contact_phone\":\"0120000000\",\"email\":\"$PARTNER_EMAIL\",\"password\":\"$password\",\"staff_limit\":3,\"all_branches\":true,\"allocations\":[{\"version_id\":\"$INITIAL_VERSION_ID\",\"quantity\":1,\"validity_anchor\":\"issue\",\"validity_value\":30,\"validity_unit\":\"days\"}]}")"
 CREATE_STATUS="$(tail -n1 <<<"$CREATE_RAW")"
 CREATE_BODY="$(sed '$d' <<<"$CREATE_RAW")"
 [[ "$CREATE_STATUS" == "201" ]] || { echo "create-partner failed ($CREATE_STATUS): $CREATE_BODY" >&2; exit 1; }
@@ -80,6 +99,9 @@ PARTNER_UID="$(jq -r '.user_id' <<<"$CREATE_BODY")"
 
 DB_LINK_COUNT="$(psql "$DB_URL" -Atqc "select count(*) from public.partner_users where user_id='$PARTNER_UID'::uuid and partner_id='$PARTNER_ID'::uuid and role='partner_admin' and status='active' and removed_at is null")"
 [[ "$DB_LINK_COUNT" == "1" ]] || { echo 'create-partner did not create canonical Partner Admin linkage' >&2; exit 1; }
+
+INITIAL_ALLOC_QTY="$(psql "$DB_URL" -Atqc "select quantity_allocated from public.partner_voucher_allocations where partner_id='$PARTNER_ID'::uuid and version_id='$INITIAL_VERSION_ID'::uuid and status='active'")"
+[[ "$INITIAL_ALLOC_QTY" == "1" ]] || { echo "Initial Partner allocation did not persist expected quantity: $INITIAL_ALLOC_QTY" >&2; exit 1; }
 
 PARTNER_LOGIN="$(login "$PARTNER_EMAIL")"
 PARTNER_TOKEN="$(jq -r '.access_token' <<<"$PARTNER_LOGIN")"
