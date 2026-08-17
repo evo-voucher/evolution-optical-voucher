@@ -50,29 +50,41 @@ serve(async (req) => {
       const partnerId = typeof body.partner_id === "string" ? body.partner_id.trim() : "";
       const versionId = typeof body.version_id === "string" ? body.version_id.trim() : "";
       const quantity = Number(body.quantity);
+      const allBranches = body.all_branches !== false;
+      const branchCodes = Array.isArray(body.branch_codes)
+        ? body.branch_codes.filter((x: unknown) => typeof x === "string").map((x: string) => x.trim().toUpperCase()).filter(Boolean)
+        : [];
+      const validityAnchor = typeof body.validity_anchor === "string" ? body.validity_anchor.trim().toLowerCase() : "issue";
+      const validityValue = Number(body.validity_value ?? 0);
+      const validityUnit = typeof body.validity_unit === "string" ? body.validity_unit.trim().toLowerCase() : "";
+
       if (!partnerId || !versionId || !Number.isInteger(quantity) || quantity <= 0) {
         return json({ success: false, error: "Valid partner_id, version_id and positive quantity are required" }, 400);
       }
+      if (!allBranches && branchCodes.length === 0) {
+        return json({ success: false, error: "Select at least one Allocation branch" }, 400);
+      }
+      if (!["issue", "allocation"].includes(validityAnchor)) {
+        return json({ success: false, error: "Validity Start must be Issue Date or Allocation Date" }, 400);
+      }
+      if (!Number.isInteger(validityValue) || validityValue < 1) {
+        return json({ success: false, error: "Validity value must be a whole number of at least 1" }, 400);
+      }
+      if (!["days", "months"].includes(validityUnit)) {
+        return json({ success: false, error: "Validity Unit must be Days or Months" }, 400);
+      }
+
       const { data, error } = await server.rpc("admin_engine_allocate", {
         p_partner_id: partnerId,
         p_version_id: versionId,
         p_quantity: quantity,
+        p_validity_anchor: validityAnchor,
+        p_allocation_valid_days: null,
+        p_all_branches: allBranches,
+        p_branch_codes: allBranches ? [] : branchCodes,
         p_actor_user_id: caller.id,
-      });
-      if (error) return json({ success: false, error: error.message }, 409);
-      return json({ success: true, result: data });
-    }
-
-    if (action === "allocate_all") {
-      const versionId = typeof body.version_id === "string" ? body.version_id.trim() : "";
-      const quantity = Number(body.quantity);
-      if (!versionId || !Number.isInteger(quantity) || quantity <= 0) {
-        return json({ success: false, error: "Valid version_id and positive quantity are required" }, 400);
-      }
-      const { data, error } = await server.rpc("admin_engine_allocate_all", {
-        p_version_id: versionId,
-        p_quantity: quantity,
-        p_actor_user_id: caller.id,
+        p_validity_value: validityValue,
+        p_validity_unit: validityUnit,
       });
       if (error) return json({ success: false, error: error.message }, 409);
       return json({ success: true, result: data });
