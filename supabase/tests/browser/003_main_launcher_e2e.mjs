@@ -13,6 +13,12 @@ function writeConfig(config){
   fs.writeFileSync(path.join(root,'assets','js','backend-config.js'),`window.EVOLUTION_VOUCHER_BACKEND=Object.freeze(${JSON.stringify(config)});\n`);
 }
 
+function assertLauncherContract(file,target){
+  const source=fs.readFileSync(file,'utf8');
+  const targetPattern=new RegExp(`location\\.replace\\(\\\`${target.replace('.','\\.')}\\?v=\\\\\$\\\\\{Date\\.now\\\\\(\\\\\)\\\\\}\\\`\\)`);
+  if(!targetPattern.test(source)) throw new Error(`${file} does not cache-bust into ${target}`);
+}
+
 writeConfig({enabled:false,environment:'reconstruction',projectId:'',supabaseUrl:'',publishableKey:''});
 const server=spawn('python3',['-m','http.server','4175','--bind','127.0.0.1'],{cwd:root,stdio:['ignore','ignore','inherit']});
 let browser;
@@ -27,15 +33,19 @@ try{
 
   const hrefs=await page.$$eval('a',els=>Object.fromEntries(els.map(el=>[el.id,el.getAttribute('href')])));
   const expected={
-    adminPortalLink:'admin.html',
-    partnerPortalLink:'partner.html',
-    staffPortalLink:'staff.html',
+    adminPortalLink:'admin-launch.html',
+    partnerPortalLink:'partner-launch.html',
+    staffPortalLink:'staff-launch.html',
     adminStaffLink:'admin-staff.html',
     adminPartnerPasswordLink:'admin-partner-password.html'
   };
   for(const [id,href] of Object.entries(expected)){
     if(hrefs[id]!==href) throw new Error(`Launcher route ${id} expected ${href}, got ${hrefs[id]}`);
   }
+
+  assertLauncherContract('admin-launch.html','admin.html');
+  assertLauncherContract('partner-launch.html','partner.html');
+  assertLauncherContract('staff-launch.html','staff.html');
 
   writeConfig({
     enabled:true,
@@ -50,7 +60,7 @@ try{
   if(!enabledStatus.includes('configured')) throw new Error(`Launcher did not reflect enabled backend: ${enabledStatus}`);
   if(!enabledMeta.includes('local-launcher-test')) throw new Error(`Launcher did not expose configured project identity metadata: ${enabledMeta}`);
 
-  console.log('Main launcher E2E passed for fail-closed and configured states with stable role/admin routes.');
+  console.log('Main launcher E2E passed for fail-closed/configured states and cache-busting stable role routes.');
 } finally {
   if(browser) await browser.close();
   server.kill('SIGTERM');
