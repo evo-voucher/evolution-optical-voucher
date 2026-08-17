@@ -63,7 +63,7 @@ const configured=cfg.enabled===true&&/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.tes
 if(!configured)return;
 $('closedState').classList.add('hidden');$('loginState').classList.remove('hidden');
 const db=window.supabase.createClient(cfg.supabaseUrl,cfg.publishableKey);let templates=[],versions=[],partners=[],branches=[],effectivePreviewCount=null,previewNonce=0;
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const msg=(node,text,ok=false)=>node.innerHTML=text?`<div class="msg ${ok?'ok':'err'}">${esc(text)}</div>`:'';
 async function rpc(name,args={}){const{data,error}=await db.rpc(name,args);if(error)throw error;return data}
 function numOrNull(id){const v=$(id).value.trim();return v===''?null:Number(v)}
