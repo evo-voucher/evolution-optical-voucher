@@ -85,15 +85,52 @@
 
   function mountEngine(){
     installStyle();
+
+    async function syncValidityFromSelectedVersion(force=false){
+      const wrap=document.getElementById('engineValidityControls');
+      const versionId=document.getElementById('allocationVersion')?.value||'';
+      if(!wrap||!versionId)return;
+      if(!force&&wrap.dataset.validityDirty==='1')return;
+      const {data,error}=await db.from('voucher_versions').select('validity_mode,valid_days,valid_months,status').eq('id',versionId).eq('status','active').maybeSingle();
+      if(error||!data)return;
+      const anchor=document.getElementById('allocationValidityAnchor');
+      const value=document.getElementById('allocationValidityValue');
+      const unit=document.getElementById('allocationValidityUnit');
+      if(!anchor||!value||!unit)return;
+      anchor.value='issue';
+      if(data.validity_mode==='days'&&Number.isInteger(data.valid_days)&&data.valid_days>0){
+        value.value=String(data.valid_days);unit.value='days';
+      }else if(data.validity_mode==='months'&&Number.isInteger(data.valid_months)&&data.valid_months>0){
+        value.value=String(data.valid_months);unit.value='months';
+      }else return;
+      wrap.dataset.validityDirty='0';
+      wrap.dataset.validitySource='version';
+      const note=wrap.querySelector('.validity-note');
+      if(note)note.textContent='Defaults from the selected Voucher Version. Change them only when this allocation lot needs an intentional override.';
+    }
+
     const tryMount=()=>{
       const qty=document.getElementById('allocationQty');if(!qty||document.getElementById('engineValidityControls'))return false;
       const grid=qty.closest('.grid3');if(!grid)return false;
-      const wrap=document.createElement('div');wrap.id='engineValidityControls';wrap.className='allocation-validity-grid';wrap.innerHTML=`
+      const wrap=document.createElement('div');wrap.id='engineValidityControls';wrap.className='allocation-validity-grid';wrap.dataset.validityDirty='0';wrap.innerHTML=`
         <div class="field"><label>Validity Start</label><select id="allocationValidityAnchor"><option value="issue">From Issue Date</option><option value="allocation">From Allocation Date</option></select></div>
         <div class="field"><label>Validity Value</label><input id="allocationValidityValue" type="number" min="1" step="1" value="3"></div>
         <div class="field"><label>Validity Unit</label><select id="allocationValidityUnit"><option value="months">Months</option><option value="days">Days</option></select></div>
-        <div class="validity-note">This rule belongs to this allocation lot only. The same Voucher can be allocated again later with a different validity rule.</div>`;
-      grid.insertAdjacentElement('afterend',wrap);return true;
+        <div class="validity-note">Defaults from the selected Voucher Version. Change them only when this allocation lot needs an intentional override.</div>`;
+      grid.insertAdjacentElement('afterend',wrap);
+
+      ['allocationValidityAnchor','allocationValidityValue','allocationValidityUnit'].forEach(id=>{
+        const el=document.getElementById(id);if(!el)return;
+        const markDirty=()=>{wrap.dataset.validityDirty='1';wrap.dataset.validitySource='override';};
+        el.addEventListener('change',markDirty);
+        if(id==='allocationValidityValue')el.addEventListener('input',markDirty);
+      });
+      const versionSelect=document.getElementById('allocationVersion');
+      if(versionSelect){
+        versionSelect.addEventListener('change',()=>{wrap.dataset.validityDirty='0';syncValidityFromSelectedVersion(true);});
+        if(versionSelect.value)syncValidityFromSelectedVersion(true);
+      }
+      return true;
     };
     if(!tryMount()){const mo=new MutationObserver(()=>{if(tryMount())mo.disconnect()});mo.observe(document.documentElement,{childList:true,subtree:true});}
 
