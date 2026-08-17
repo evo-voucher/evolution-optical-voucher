@@ -17,8 +17,8 @@
 <p id="backendNote" class="small">Operational portals remain fail-closed unless the verified backend is explicitly enabled.</p>
 <h2>Role Portals</h2>
 <div class="grid">
-<a id="adminPortalLink" href="admin.html">Admin Portal</a>
-<a id="partnerPortalLink" href="partner.html">Partner Portal</a>
+<a id="adminPortalLink" href="admin-launch.html">Admin Portal</a>
+<a id="partnerPortalLink" href="partner-launch.html">Partner Portal</a>
 <a id="staffPortalLink" href="staff-launch.html">Staff Portal</a>
 </div>
 <h2>Admin Management</h2>
@@ -38,17 +38,8 @@
   const status=document.getElementById('backendStatus');
   const note=document.getElementById('backendNote');
   const meta=document.getElementById('backendMeta');
-  if(configured){
-    status.className='status ok';
-    status.textContent='Reconstructed backend configured.';
-    note.textContent='Each portal still verifies its own authenticated operational realm before exposing business functions.';
-    meta.textContent=`Environment: ${cfg.environment||'configured'} • Project: ${cfg.projectId}`;
-  }else{
-    status.className='status warn';
-    status.textContent='New backend not configured. Operational access remains disabled for safety.';
-    note.textContent='The links are stable entry points, but each operational portal stays fail-closed until the verified reconstructed backend is explicitly enabled.';
-    meta.textContent=`Environment: ${cfg.environment||'unconfigured'} • backend enabled: ${cfg.enabled===true?'true':'false'}`;
-  }
+  if(configured){status.className='status ok';status.textContent='Reconstructed backend configured.';note.textContent='Each portal still verifies its own authenticated operational realm before exposing business functions.';meta.textContent=`Environment: ${cfg.environment||'configured'} • Project: ${cfg.projectId}`;}
+  else{status.className='status warn';status.textContent='New backend not configured. Operational access remains disabled for safety.';note.textContent='The links are stable entry points, but each operational portal stays fail-closed until the verified reconstructed backend is explicitly enabled.';meta.textContent=`Environment: ${cfg.environment||'unconfigured'} • backend enabled: ${cfg.enabled===true?'true':'false'}`;}
 })();
 </script>
 </body>
