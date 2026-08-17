@@ -9,12 +9,22 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   siteBase: 'https://evo-voucher.github.io/evolution-optical-voucher/'
 });
 
-// System-wide browser auth recovery for protected Edge Functions.
-// Keeps authorization fail-closed: never disables JWT verification and retries at most once.
-(function installResilientSupabaseClient(){
+// System-wide browser auth isolation + recovery for protected Edge Functions.
+// Admin / Partner / Staff sessions use separate storage namespaces so one portal cannot
+// overwrite another portal's browser session. Authorization remains fail-closed and
+// protected Edge Function requests retry at most once after an auth refresh.
+(function installPortalAuthNamespaceAndRecovery(){
   const supabase=window.supabase;
-  if(!supabase||typeof supabase.createClient!=='function'||supabase.__evolutionResilientClient)return;
+  if(!supabase||typeof supabase.createClient!=='function'||supabase.__evolutionPortalAuthInstalled)return;
   const originalCreateClient=supabase.createClient.bind(supabase);
+  const path=String(window.location?.pathname||'').toLowerCase();
+
+  function resolveStorageKey(){
+    if(path.includes('admin')||path.includes('voucher-engine'))return 'evolution-voucher-auth-admin';
+    if(path.includes('partner'))return 'evolution-voucher-auth-partner';
+    if(path.includes('staff'))return 'evolution-voucher-auth-staff';
+    return 'evolution-voucher-auth-default';
+  }
 
   function errorStatus(error){
     const direct=Number(error?.status||error?.statusCode||0);
@@ -46,15 +56,15 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
       let refreshed=false;
       try{refreshed=await refreshIfPossible(client,true)}catch(_){refreshed=false}
       if(!refreshed)return result;
-      result=await originalInvoke(name,options);
-      return result;
+      return originalInvoke(name,options);
     };
     Object.defineProperty(client,'__evolutionAuthRecovery',{value:true,enumerable:false});
     return client;
   }
 
-  supabase.createClient=function createResilientClient(url,key,options={}){
-    return wrapClient(originalCreateClient(url,key,options));
+  supabase.createClient=function createPortalClient(url,key,options={}){
+    const auth={...(options.auth||{}),storageKey:options.auth?.storageKey||resolveStorageKey()};
+    return wrapClient(originalCreateClient(url,key,{...options,auth}));
   };
-  Object.defineProperty(supabase,'__evolutionResilientClient',{value:true,enumerable:false});
+  Object.defineProperty(supabase,'__evolutionPortalAuthInstalled',{value:true,enumerable:false});
 })();
