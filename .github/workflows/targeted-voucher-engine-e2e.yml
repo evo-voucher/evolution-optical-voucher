@@ -3,11 +3,12 @@ name: Targeted Voucher Engine E2E
 on:
   push:
     paths:
-      - 'voucher-engine.html'
+      - 'uat-preview/voucher-engine.html'
+      - 'uat-preview/assets/js/allocation-validity-ui.js'
       - 'supabase/tests/browser/007_admin_voucher_engine_e2e.mjs'
       - '.github/workflows/targeted-voucher-engine-e2e.yml'
       - 'supabase/migrations/**'
-      - 'supabase/functions/voucher-engine-admin/**'
+      - 'supabase/functions/voucher-engine/**'
   workflow_dispatch:
 
 jobs:
