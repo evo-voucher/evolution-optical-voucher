@@ -26,6 +26,12 @@ async function signup(email,pw){
 function lit(v){return `'${String(v).replaceAll("'","''")}'`;}
 function runSql(sql){execFileSync('psql',[DB_URL,'-v','ON_ERROR_STOP=1'],{input:sql,stdio:['pipe','inherit','inherit']});}
 function scalar(sql){return execFileSync('psql',[DB_URL,'-At','-v','ON_ERROR_STOP=1','-c',sql],{encoding:'utf8'}).trim();}
+async function waitForMessage(page,selector,label,timeout=15000){
+  await page.waitForFunction(sel=>{const el=document.querySelector(sel);return !!el&&(el.classList.contains('ok')||el.classList.contains('err'));},{timeout},`${selector} .msg`);
+  const state=await page.$eval(`${selector} .msg`,el=>({text:(el.textContent||'').trim(),ok:el.classList.contains('ok'),err:el.classList.contains('err')}));
+  if(!state.ok) throw new Error(`${label} failed: ${state.text||'unknown UI error'}`);
+  return state.text;
+}
 
 const adminUid=await signup(adminEmail,password);
 runSql(`
@@ -53,6 +59,8 @@ try{
   await new Promise(r=>setTimeout(r,500));
   browser=await puppeteer.launch({headless:true,executablePath:process.env.CHROME_PATH||'/usr/bin/google-chrome',args:['--no-sandbox','--disable-dev-shm-usage']});
   const page=await browser.newPage();
+  page.on('console',msg=>console.log(`[browser:${msg.type()}] ${msg.text()}`));
+  page.on('pageerror',err=>console.error(`[browser:pageerror] ${err.message}`));
   await page.goto(`${WEB_URL}/voucher-engine.html`,{waitUntil:'networkidle0'});
   await page.type('#email',adminEmail);
   await page.type('#password',password);
@@ -63,7 +71,7 @@ try{
   await page.type('#templateName','RM60 Birthday Voucher');
   await page.select('#templateTheme','birthday');
   await page.click('#createTemplateBtn');
-  await page.waitForSelector('#templateMsg .ok',{visible:true,timeout:15000});
+  await waitForMessage(page,'#templateMsg','Create classification');
 
   const templateId=await page.$eval('#versionTemplate',(el,code)=>[...el.options].find(o=>o.textContent?.startsWith(code+' —'))?.value||'',templateCode);
   if(!templateId) throw new Error('New Voucher classification not available for Version publish');
@@ -83,7 +91,7 @@ try{
     await box.click();
   }
   await page.click('#publishBtn');
-  await page.waitForSelector('#publishMsg .ok',{visible:true,timeout:15000});
+  await waitForMessage(page,'#publishMsg','Publish version');
 
   const partnerId=await page.$eval('#allocationPartner',(el,code)=>[...el.options].find(o=>o.textContent?.includes(`(${code})`))?.value||'',partnerCode);
   if(!partnerId) throw new Error('Test Partner not available in allocation selector');
@@ -102,7 +110,7 @@ try{
   if(!mines) throw new Error('MINES Allocation branch checkbox not rendered');
   await mines.click();
   await page.click('#allocateBtn');
-  await page.waitForSelector('#allocationMsg .ok',{visible:true,timeout:15000});
+  await waitForMessage(page,'#allocationMsg','Allocate voucher stock');
 
   const versionCheck=scalar(`select concat(vv.validity_mode,'|',vv.valid_months,'|',coalesce(vv.theme_override_code,''),'|',coalesce(vv.greeting_text,''),'|',vv.all_branches) from public.voucher_versions vv where vv.id=${lit(versionId)}::uuid`);
   if(versionCheck!==`months|3|birthday|Happy Birthday! 🎂|f`) throw new Error(`Published Version mismatch: ${versionCheck}`);
