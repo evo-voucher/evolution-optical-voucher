@@ -10,8 +10,9 @@
 <body><div class="loading">Loading Admin Dashboard…</div>
 <script>
 (async()=>{
+  const dashboardUrl='admin-dashboard.html?v=20260818-05';
   try{
-    const res=await fetch('admin.html?source=20260818-04',{cache:'no-store'});
+    const res=await fetch('admin.html?source=20260818-05',{cache:'no-store'});
     if(!res.ok)throw new Error(`Admin source unavailable (${res.status})`);
     let html=await res.text();
     html=html.replace('assets/js/backend-config.js?v=20260818-02','assets/js/backend-config.js?v=20260818-03');
@@ -29,12 +30,17 @@
   }
   window.addEventListener('focus',refreshWhenActive);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshWhenActive();});
+  window.addEventListener('load',()=>{
+    try{history.replaceState(null,'','${dashboardUrl}');}catch(_){}
+  },{once:true});
 })();
 <\/script></body>`);
+    try{history.replaceState(null,'','admin.html?dashboard=20260818-05');}catch(_){}
     document.open();
     document.write(html);
     document.close();
   }catch(e){
+    try{history.replaceState(null,'',dashboardUrl);}catch(_){}
     document.body.innerHTML=`<div style="max-width:680px;padding:22px;border:1px solid #6c3bf2;border-radius:18px;background:#101c43">Unable to load Admin Dashboard.<br><small>${String(e?.message||e)}</small></div>`;
   }
 })();
