@@ -54,14 +54,16 @@ function prepareWebRoot(){
   return root;
 }
 
+async function isVisible(page,selector){
+  return page.$eval(selector,el=>!!(el.offsetWidth||el.offsetHeight||el.getClientRects().length)).catch(()=>false);
+}
+
 async function loginPage(page,file,email,readySelector,loginPassword=password){
   await page.goto(`${WEB_URL}/${file}`,{waitUntil:'networkidle0'});
-  const loginVisible=await page.$eval('#loginState',el=>!el.classList.contains('hidden')).catch(()=>false);
-  if(!loginVisible){
-    const logoutVisible=await page.$eval('#logoutBtn',el=>!el.classList.contains('hidden')).catch(()=>false);
-    if(!logoutVisible) throw new Error(`Neither login nor authenticated logout state is available on ${file}`);
+  if(!await isVisible(page,'#loginBtn')){
+    if(!await isVisible(page,'#logoutBtn')) throw new Error(`Neither visible login nor authenticated logout state is available on ${file}`);
     await page.click('#logoutBtn');
-    await page.waitForSelector('#loginState:not(.hidden)',{visible:true,timeout:15000});
+    await page.waitForSelector('#loginBtn',{visible:true,timeout:15000});
   }
   await page.type('#email',email);
   await page.type('#password',loginPassword);
@@ -224,12 +226,7 @@ try{
   if(!createdPartnerSessionText.includes('role: partner_admin')) throw new Error(`Admin-created Partner login did not resolve to partner_admin realm: ${createdPartnerSessionText}`);
 
   const adminCreatedStaffPage=await browser.newPage();
-  await adminCreatedStaffPage.goto(`${WEB_URL}/staff.html`,{waitUntil:'networkidle0'});
-  await adminCreatedStaffPage.waitForSelector('#loginState:not(.hidden)',{visible:true,timeout:15000});
-  await adminCreatedStaffPage.type('#email',adminCreatedStaffEmail);
-  await adminCreatedStaffPage.type('#password',adminCreatedStaffPassword);
-  await adminCreatedStaffPage.click('#loginBtn');
-  await adminCreatedStaffPage.waitForSelector('#operationState:not(.hidden)',{visible:true,timeout:15000});
+  await loginPage(adminCreatedStaffPage,'staff.html',adminCreatedStaffEmail,'#operationState:not(.hidden)',adminCreatedStaffPassword);
 
   console.log(`Browser portal core E2E passed for ${voucherCode}, including Partner Staff creation ${partnerStaffEmail}, Admin Partner provisioning ${adminCreatedPartnerEmail}, and Admin Staff provisioning ${adminCreatedStaffEmail}.`);
 } finally {
