@@ -5,7 +5,7 @@
 
   const db=window.supabase.createClient(cfg.supabaseUrl,cfg.publishableKey,{auth:{persistSession:true}});
   const siteBase=String(cfg.siteBase||'').replace(/\/?$/,'/');
-  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const partnerUrl=`${siteBase}partner.html`;
   const staffUrl=`${siteBase}staff.html`;
   const EMAILS={
