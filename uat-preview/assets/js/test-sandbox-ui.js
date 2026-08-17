@@ -5,7 +5,7 @@
 
   const db=window.supabase.createClient(cfg.supabaseUrl,cfg.publishableKey,{auth:{persistSession:true}});
   const siteBase=String(cfg.siteBase||'').replace(/\/?$/,'/');
-  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
   const partnerUrl=`${siteBase}partner.html`;
   const staffUrl=`${siteBase}staff.html`;
   const EMAILS={
@@ -23,14 +23,13 @@
 
   async function expireLocalSession(message='Admin session expired. Please sign in again.'){
     try{await db.auth.signOut({scope:'local'});}catch(_){}
-    setTimeout(()=>window.location.reload(),0);
     throw new Error(message);
   }
 
   async function ensureLiveSession(){
     const {data:sessionData,error:sessionError}=await db.auth.getSession();
     if(sessionError&&isTerminalAuthError(sessionError))return expireLocalSession();
-    if(!sessionData?.session)return expireLocalSession();
+    if(!sessionData?.session)throw new Error('Admin sign-in required.');
 
     const {data:userData,error:userError}=await db.auth.getUser();
     if(!userError&&userData?.user)return sessionData.session;
@@ -118,6 +117,11 @@
   async function load(){
     const box=document.getElementById('testSandboxBox');
     if(!box)return;
+    const {data:sessionData}=await db.auth.getSession();
+    if(!sessionData?.session){
+      box.innerHTML='<h3>Test Sandbox</h3><div class="sandbox-note">Sign in as Admin to use the Test Sandbox.</div>';
+      return;
+    }
     try{
       const data=await invoke('status');
       if(data?.sandbox?.configured===true)renderReady(box,data.sandbox);else renderSetup(box);
@@ -129,8 +133,10 @@
     if(!card)return false;
     if(document.getElementById('testSandboxBox'))return true;
     ensureStyle();
-    const box=document.createElement('div');box.id='testSandboxBox';box.className='sandbox-box';box.innerHTML='<h3>Test Sandbox</h3><div class="sandbox-note">Loading…</div>';
-    card.appendChild(box);load();return true;
+    const box=document.createElement('div');box.id='testSandboxBox';box.className='sandbox-box';box.innerHTML='<h3>Test Sandbox</h3><div class="sandbox-note">Sign in as Admin to use the Test Sandbox.</div>';
+    card.appendChild(box);
+    db.auth.getSession().then(({data})=>{if(data?.session)load();});
+    return true;
   }
 
   db.auth.onAuthStateChange((event,session)=>{
