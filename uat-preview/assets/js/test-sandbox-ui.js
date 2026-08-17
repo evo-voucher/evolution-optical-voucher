@@ -5,7 +5,7 @@
 
   const db=window.supabase.createClient(cfg.supabaseUrl,cfg.publishableKey,{auth:{persistSession:true}});
   const siteBase=String(cfg.siteBase||'').replace(/\/?$/,'/');
-  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
   const partnerUrl=`${siteBase}partner.html`;
   const staffUrl=`${siteBase}staff.html`;
   const EMAILS={
@@ -22,6 +22,18 @@
     document.head.appendChild(style);
   }
 
+  function canonicalSettingsCard(){
+    const existing=document.getElementById('adminSettingsCard');
+    if(existing)return existing;
+    const dash=document.getElementById('dashboardState');
+    if(!dash)return null;
+    const card=[...dash.children].find(el=>el.classList?.contains('card')&&(el.querySelector('h2')?.textContent||'').trim()==='Admin Tools');
+    if(!card)return null;
+    card.id='adminSettingsCard';
+    card.dataset.adminSection='settings';
+    return card;
+  }
+
   async function invoke(action,extra={}){
     const {data,error}=await db.functions.invoke('admin-test-sandbox',{body:{action,...extra}});
     if(error)throw error;
@@ -30,7 +42,7 @@
   }
 
   function renderReady(box,sandbox){
-    box.innerHTML=`<h3>Test Sandbox</h3><div class="sandbox-note">Admin-only reusable test environment. Reset clears the registered Sandbox business data and restores a clean baseline for the next test.</div><div class="sandbox-grid"><div class="sandbox-account"><b>Test Partner</b><span>${esc(EMAILS.partner)}</span></div><div class="sandbox-account"><b>Test Partner Staff</b><span>${esc(EMAILS.partnerStaff)}</span></div><div class="sandbox-account"><b>Test Evolution Staff</b><span>${esc(EMAILS.evolutionStaff)}</span></div><div class="sandbox-account"><b>Baseline</b><span>${esc(sandbox?.baseline_quantity||20)} vouchers • MINES • Staff Access ON</span></div></div><div class="sandbox-actions"><a href="${esc(partnerUrl)}" target="_blank" rel="noopener">Open Partner Portal</a><a href="${esc(staffUrl)}" target="_blank" rel="noopener">Open Staff Portal</a><button id="sandboxResetBtn" type="button" class="sandbox-danger">Reset Test Data</button></div><div id="sandboxMsg" class="sandbox-msg"></div>`;
+    box.innerHTML=`<h3>Test Sandbox</h3><div class="sandbox-note">Admin-only reusable test environment. Reset clears only the registered Test Partner business data and restores a clean baseline for the next test.</div><div class="sandbox-grid"><div class="sandbox-account"><b>Test Partner</b><span>${esc(EMAILS.partner)}</span></div><div class="sandbox-account"><b>Test Partner Staff</b><span>${esc(EMAILS.partnerStaff)}</span></div><div class="sandbox-account"><b>Test Evolution Staff</b><span>${esc(EMAILS.evolutionStaff)}</span></div><div class="sandbox-account"><b>Baseline</b><span>${esc(sandbox?.baseline_quantity||20)} vouchers • MINES • Staff Access ON</span></div></div><div class="sandbox-actions"><a href="${esc(partnerUrl)}" target="_blank" rel="noopener">Open Partner Portal</a><a href="${esc(staffUrl)}" target="_blank" rel="noopener">Open Staff Portal</a><button id="sandboxResetBtn" type="button" class="sandbox-danger">Reset Test Data</button></div><div id="sandboxMsg" class="sandbox-msg"></div>`;
     document.getElementById('sandboxResetBtn').onclick=async()=>{
       if(!confirm('Reset all Test Sandbox business data back to the clean baseline? Real Partner data will not be touched.'))return;
       const btn=document.getElementById('sandboxResetBtn'),msg=document.getElementById('sandboxMsg');
@@ -72,7 +84,7 @@
   }
 
   function mount(){
-    const card=document.getElementById('adminSettingsCard');
+    const card=canonicalSettingsCard();
     if(!card)return false;
     if(document.getElementById('testSandboxBox'))return true;
     ensureStyle();
