@@ -50,12 +50,19 @@ function prepareWebRoot(){
     if(!html.includes('const configured=cfg.enabled===true;if(!configured)return;')) throw new Error(`Unable to patch local test config guard in ${name}`);
     fs.writeFileSync(path.join(root,name),html);
   }
-  fs.writeFileSync(path.join(root,'assets','js','backend-config.js'),`window.EVOLUTION_VOUCHER_BACKEND=Object.freeze({enabled:true,environment:'test',projectId:'local-browser-test',supabaseUrl:'${API_URL}',publishableKey:'${anonKey}',siteBase:'${WEB_URL}/'});\n`);
+  fs.writeFileSync(path.join(root,'assets','js','backend-config.js'),`window.EVOLUTION_VOUCHER_BACKEND=Object.freeze({enabled:true,environment:'test',projectId:'local-browser-test',supabaseUrl:'${API_URL}',publishableKey:'${anonKey}',siteBase:'${WEB_URL}/'});\n(function(){const s=window.supabase;if(!s||typeof s.createClient!=='function')return;const original=s.createClient.bind(s);const path=String(window.location?.pathname||'').toLowerCase();const storageKey=path.includes('admin')||path.includes('voucher-engine')?'evolution-voucher-auth-admin':path.includes('partner')?'evolution-voucher-auth-partner':path.includes('staff')?'evolution-voucher-auth-staff':'evolution-voucher-auth-default';s.createClient=function(url,key,options={}){return original(url,key,{...options,auth:{...(options.auth||{}),storageKey:options.auth?.storageKey||storageKey}})};})();\n`);
   return root;
 }
 
 async function loginPage(page,file,email,readySelector,loginPassword=password){
   await page.goto(`${WEB_URL}/${file}`,{waitUntil:'networkidle0'});
+  const loginVisible=await page.$eval('#loginState',el=>!el.classList.contains('hidden')).catch(()=>false);
+  if(!loginVisible){
+    const logoutVisible=await page.$eval('#logoutBtn',el=>!el.classList.contains('hidden')).catch(()=>false);
+    if(!logoutVisible) throw new Error(`Neither login nor authenticated logout state is available on ${file}`);
+    await page.click('#logoutBtn');
+    await page.waitForSelector('#loginState:not(.hidden)',{visible:true,timeout:15000});
+  }
   await page.type('#email',email);
   await page.type('#password',loginPassword);
   await page.click('#loginBtn');
