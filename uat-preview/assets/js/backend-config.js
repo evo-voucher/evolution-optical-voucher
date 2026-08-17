@@ -1,7 +1,7 @@
 // Evolution Voucher UAT Preview backend configuration.
 // Isolated preview: canonical reconstructed Supabase backend + preview-local customer links.
 // Browser clients use the Supabase publishable key only. Never place service_role here.
-const EVOLUTION_ASSET_VERSION='20260817-11';
+const EVOLUTION_ASSET_VERSION='20260817-12';
 window.EVOLUTION_ASSET_VERSION=EVOLUTION_ASSET_VERSION;
 const evolutionAsset=path=>`${path}?v=${encodeURIComponent(EVOLUTION_ASSET_VERSION)}`;
 
@@ -63,24 +63,64 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   document.head.appendChild(link);
 })();
 
-(function installPortalAuthNamespace() {
+(function installPortalAuthNamespaceAndRecovery() {
   const supabase = window.supabase;
   if (!supabase || typeof supabase.createClient !== 'function' || supabase.__evolutionAuthNamespaced) return;
   const originalCreateClient = supabase.createClient.bind(supabase);
   const path = String(window.location?.pathname || '').toLowerCase();
+
   function resolveStorageKey() {
     if (path.includes('admin') || path.includes('voucher-engine')) return 'evolution-voucher-auth-admin';
     if (path.includes('partner')) return 'evolution-voucher-auth-partner';
     if (path.includes('staff')) return 'evolution-voucher-auth-staff';
     return 'evolution-voucher-auth-default';
   }
+
+  function errorStatus(error) {
+    const direct=Number(error?.status||error?.statusCode||0);
+    if(direct)return direct;
+    const context=error?.context;
+    const fromContext=Number(context?.status||context?.statusCode||0);
+    if(fromContext)return fromContext;
+    return /\b401\b|unauthorized/i.test(String(error?.message||''))?401:0;
+  }
+
+  async function refreshIfPossible(client,force=false) {
+    const {data}=await client.auth.getSession();
+    const session=data?.session;
+    if(!session)return false;
+    const expiresAt=Number(session.expires_at||0);
+    const nearExpiry=expiresAt>0&&expiresAt*1000<=Date.now()+90000;
+    if(!force&&!nearExpiry)return true;
+    const {data:refreshed,error}=await client.auth.refreshSession();
+    return !error&&!!refreshed?.session;
+  }
+
+  function wrapClient(client) {
+    if(!client?.functions||client.__evolutionAuthRecovery)return client;
+    const originalInvoke=client.functions.invoke.bind(client.functions);
+    client.functions.invoke=async function resilientInvoke(name,options){
+      try{await refreshIfPossible(client,false)}catch(_){/* normal invoke remains authoritative */}
+      let result=await originalInvoke(name,options);
+      if(errorStatus(result?.error)!==401)return result;
+      let refreshed=false;
+      try{refreshed=await refreshIfPossible(client,true)}catch(_){refreshed=false}
+      if(!refreshed)return result;
+      result=await originalInvoke(name,options);
+      return result;
+    };
+    Object.defineProperty(client,'__evolutionAuthRecovery',{value:true,enumerable:false});
+    return client;
+  }
+
   const portalStorageKey = resolveStorageKey();
   supabase.createClient = function createNamespacedClient(url, key, options = {}) {
     const authOptions = options?.auth || {};
-    return originalCreateClient(url, key, {
+    const client=originalCreateClient(url, key, {
       ...options,
       auth: { ...authOptions, storageKey: authOptions.storageKey || portalStorageKey }
     });
+    return wrapClient(client);
   };
   Object.defineProperty(supabase, '__evolutionAuthNamespaced', {
     value: true, configurable: false, enumerable: false, writable: false
