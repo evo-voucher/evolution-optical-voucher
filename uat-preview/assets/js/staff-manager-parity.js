@@ -1,4 +1,23 @@
 (()=>{
+  const mobileStyle=document.createElement('style');
+  mobileStyle.id='staffMobileLayoutFix';
+  mobileStyle.textContent=`
+    @media(max-width:680px){
+      .toprow{flex-direction:column!important;align-items:stretch!important}
+      .toprow>div:first-child{max-width:100%!important;width:100%!important}
+      .toprow button{width:100%!important;min-width:0!important}
+      .stats{grid-template-columns:1fr!important}
+      .actions{flex-direction:column!important;flex-wrap:nowrap!important}
+      .actions button{width:100%!important;flex:1 1 auto!important}
+      .tablewrap{overflow:visible!important}
+    }
+    @media(hover:none) and (pointer:coarse){
+      button:hover:not(:disabled){transform:none!important}
+      button:active:not(:disabled){transform:translateY(1px)!important}
+    }
+  `;
+  if(!document.getElementById(mobileStyle.id))document.head.appendChild(mobileStyle);
+
   const cfg=window.EVOLUTION_VOUCHER_BACKEND||{};
   if(!(cfg.enabled===true&&cfg.supabaseUrl&&cfg.publishableKey&&window.supabase))return;
   const db=window.supabase.createClient(cfg.supabaseUrl,cfg.publishableKey,{auth:{persistSession:true}});
