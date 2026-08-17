@@ -1,0 +1,52 @@
+name: Targeted Edge Boundary E2E
+
+on:
+  push:
+    paths:
+      - 'supabase/tests/http/002_edge_function_boundary_e2e.sh'
+      - 'supabase/functions/create-partner/**'
+      - 'supabase/functions/create-staff/**'
+      - 'supabase/functions/voucher-engine/**'
+      - 'supabase/migrations/**'
+      - '.github/workflows/targeted-edge-boundary-e2e.yml'
+  workflow_dispatch:
+
+jobs:
+  edge-boundary-e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+      - name: Start local Supabase
+        run: supabase start
+      - name: Rebuild local database
+        run: supabase db reset
+      - name: Serve local Edge Functions
+        run: |
+          set -euo pipefail
+          supabase functions serve > /tmp/evolution-edge-functions.log 2>&1 &
+          echo $! > /tmp/evolution-edge-functions.pid
+          for i in $(seq 1 30); do
+            code="$(curl -s -o /tmp/edge-ready.json -w '%{http_code}' -X POST http://127.0.0.1:54321/functions/v1/create-partner -H 'Content-Type: application/json' -d '{}' || true)"
+            if [[ "$code" == "401" ]]; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/evolution-edge-functions.log >&2 || true
+          exit 1
+      - name: Run targeted Edge trusted-boundary E2E
+        run: bash supabase/tests/http/002_edge_function_boundary_e2e.sh
+      - name: Show Edge logs on failure
+        if: failure()
+        run: cat /tmp/evolution-edge-functions.log || true
+      - name: Stop local Supabase
+        if: always()
+        run: |
+          if [[ -f /tmp/evolution-edge-functions.pid ]]; then kill "$(cat /tmp/evolution-edge-functions.pid)" 2>/dev/null || true; fi
+          supabase stop --no-backup
