@@ -11,10 +11,26 @@
 <script>
 (async()=>{
   try{
-    const res=await fetch('admin.html?source=20260818-03',{cache:'no-store'});
+    const res=await fetch('admin.html?source=20260818-04',{cache:'no-store'});
     if(!res.ok)throw new Error(`Admin source unavailable (${res.status})`);
     let html=await res.text();
     html=html.replace('assets/js/backend-config.js?v=20260818-02','assets/js/backend-config.js?v=20260818-03');
+    html=html.replace('async function verifyAdmin(session){','window.__EVOLUTION_ADMIN_REFRESH__=loadAdminData;\nasync function verifyAdmin(session){');
+    html=html.replace('</body>',`<script>
+(()=>{
+  let lastRefresh=0;
+  async function refreshWhenActive(){
+    const dashboard=document.getElementById('dashboardState');
+    if(!dashboard||dashboard.classList.contains('hidden')||typeof window.__EVOLUTION_ADMIN_REFRESH__!=='function')return;
+    const now=Date.now();
+    if(now-lastRefresh<1500)return;
+    lastRefresh=now;
+    try{await window.__EVOLUTION_ADMIN_REFRESH__();}catch(_){}
+  }
+  window.addEventListener('focus',refreshWhenActive);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshWhenActive();});
+})();
+<\/script></body>`);
     document.open();
     document.write(html);
     document.close();
