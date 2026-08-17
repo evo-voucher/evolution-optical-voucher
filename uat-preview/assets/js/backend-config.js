@@ -1,7 +1,7 @@
 // Evolution Voucher UAT Preview backend configuration.
 // Isolated preview: canonical reconstructed Supabase backend + preview-local customer links.
 // Browser clients use the Supabase publishable key only. Never place service_role here.
-const EVOLUTION_ASSET_VERSION='20260817-7';
+const EVOLUTION_ASSET_VERSION='20260817-8';
 window.EVOLUTION_ASSET_VERSION=EVOLUTION_ASSET_VERSION;
 const evolutionAsset=path=>`${path}?v=${encodeURIComponent(EVOLUTION_ASSET_VERSION)}`;
 
@@ -13,6 +13,22 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   publishableKey: 'sb_publishable_uu1Qyx-M3dldpZn9jq7jXw_RLTHOMh_',
   siteBase: 'https://evo-voucher.github.io/evolution-optical-voucher/uat-preview/'
 });
+
+(function registerCanonicalAdminSettingsCard(){
+  const path=String(window.location?.pathname||'').toLowerCase();
+  if(!path.endsWith('/admin.html'))return;
+  const register=()=>{
+    if(document.getElementById('adminSettingsCard'))return;
+    const dash=document.getElementById('dashboardState');
+    if(!dash)return;
+    const card=[...dash.children].find(el=>el.classList?.contains('card')&&(el.querySelector('h2')?.textContent||'').trim()==='Admin Tools');
+    if(!card)return;
+    card.id='adminSettingsCard';
+    card.dataset.adminSection='settings';
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',register,{once:true});
+  else register();
+})();
 
 (function installEvolutionTheme(){
   if(document.getElementById('evolutionCommercialTheme')) return;
