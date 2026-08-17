@@ -10,7 +10,20 @@
 <script src="assets/js/backend-config.js"></script>
 <style>
 :root{--ink:#f7f8ff;--muted:#bcc7e3;--line:rgba(115,135,210,.34);--ok:#65e6b5;--err:#ff92a5;--warn:#ffd78f}
-*{box-sizing:border-box}body{margin:0;min-height:100vh;padding:18px;background:linear-gradient(160deg,#050716,#08102b 52%,#040816);color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.shell{width:min(900px,100%);margin:auto}.card{padding:22px;border-radius:22px;background:linear-gradient(155deg,#171746,#0b1b42 58%,#06132f);border:1px solid rgba(122,119,255,.55);box-shadow:0 20px 60px rgba(0,0,0,.28);margin-bottom:14px}h1{margin:0 0 8px;font:500 30px Georgia,serif;letter-spacing:1.5px}h2{margin:0 0 12px;font-size:19px}p{color:var(--muted);line-height:1.55}.field{margin-top:12px}label{display:block;margin-bottom:6px;font-size:12px;font-weight:800;color:#d9e3ff}input,select,textarea{width:100%;min-height:46px;padding:10px 12px;border:1px solid rgba(100,128,210,.55);border-radius:14px;outline:none;background:linear-gradient(180deg,#101942,#07132f);color:#fff}textarea{min-height:76px;resize:vertical}button{min-height:46px;border:1px solid rgba(122,119,255,.7);border-radius:14px;background:linear-gradient(180deg,#3549a8,#182b73 58%,#0d1c4c);color:#fff;font-weight:900;cursor:pointer;padding:10px 14px}button:disabled{opacity:.5;cursor:not-allowed}.wide{width:100%;margin-top:14px}.secondary{background:linear-gradient(180deg,#1c2b63,#111f4e 58%,#0b1739)}.status,.msg{margin-top:14px;padding:12px 14px;border-radius:14px;background:#101b44;border:1px solid var(--line);font-weight:700}.ok{color:var(--ok)}.err{color:var(--err)}.warn{color:var(--warn)}.small,.meta{font-size:12px;color:#91a2c4}.hidden{display:none!important}.toprow{display:flex;gap:12px;align-items:center}.toprow>div{flex:1}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.voucher{margin-top:14px;padding:15px;border:1px solid var(--line);border-radius:16px;background:#0e1a42}.voucher b{display:block;font-size:18px}.voucher span{display:block;margin-top:5px;color:#a9b8d9;font-size:12px}.actions{display:flex;gap:10px;margin-top:12px}.actions button{flex:1}.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.stat{padding:14px;border-radius:16px;background:#0e1a42;border:1px solid var(--line)}.stat span{display:block;color:#99a9ce;font-size:11px}.stat b{display:block;font-size:24px;margin-top:4px}.tablewrap{overflow:auto}.list{width:100%;border-collapse:collapse;font-size:12px}.list th,.list td{text-align:left;padding:10px 8px;border-bottom:1px solid rgba(115,135,210,.22);white-space:nowrap}.list th{color:#9fb1d9;font-size:10px;text-transform:uppercase}.empty{color:#91a2c4;font-size:12px;padding:8px 0}.scanner{margin-top:14px;padding:14px;border-radius:16px;background:#091633;border:1px solid var(--line)}#qrReader{width:100%;overflow:hidden;border-radius:14px;background:#000}.scannerHint{margin:10px 0 0;font-size:12px;color:#a9b8d9;text-align:center}@media(max-width:680px){.grid,.stats{grid-template-columns:1fr}.toprow{flex-direction:column;align-items:flex-start}.toprow button{width:100%}.actions{flex-direction:column}}
+*{box-sizing:border-box}
+html,body{width:100%;max-width:100%;overflow-x:hidden}
+body{margin:0;min-height:100vh;padding:18px;background:linear-gradient(160deg,#050716,#08102b 52%,#040816);color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.shell{width:100%;max-width:900px;margin:0 auto;min-width:0}
+.card{width:100%;min-width:0;padding:22px;border-radius:22px;background:linear-gradient(155deg,#171746,#0b1b42 58%,#06132f);border:1px solid rgba(122,119,255,.55);box-shadow:0 20px 60px rgba(0,0,0,.28);margin-bottom:14px}
+h1{margin:0 0 8px;font:500 30px Georgia,serif;letter-spacing:1.5px;overflow-wrap:anywhere}h2{margin:0 0 12px;font-size:19px}p{color:var(--muted);line-height:1.55}.field{margin-top:12px}label{display:block;margin-bottom:6px;font-size:12px;font-weight:800;color:#d9e3ff}
+input,select,textarea{display:block;width:100%;max-width:100%;min-width:0;min-height:46px;padding:10px 12px;border:1px solid rgba(100,128,210,.55);border-radius:14px;outline:none;background:linear-gradient(180deg,#101942,#07132f);color:#fff;font-size:16px;line-height:1.35}
+textarea{min-height:76px;resize:vertical}
+button{max-width:100%;min-height:46px;border:1px solid rgba(122,119,255,.7);border-radius:14px;background:linear-gradient(180deg,#3549a8,#182b73 58%,#0d1c4c);color:#fff;font-weight:900;cursor:pointer;padding:10px 14px;box-shadow:0 6px 14px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.10);transform:translateY(0) scale(1);transform-origin:center;transition:transform 90ms ease,box-shadow 90ms ease,filter 90ms ease,border-color 90ms ease;-webkit-tap-highlight-color:transparent;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+button:active:not(:disabled){transform:translateY(2px) scale(.992);box-shadow:0 2px 5px rgba(0,0,0,.22),inset 0 1px 4px rgba(0,0,0,.22);filter:brightness(.92);border-color:rgba(145,143,255,.82)}
+button:focus-visible{outline:2px solid rgba(145,173,255,.9);outline-offset:2px}
+button:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;filter:none}.wide{width:100%;margin-top:14px}.secondary{background:linear-gradient(180deg,#1c2b63,#111f4e 58%,#0b1739)}.status,.msg{margin-top:14px;padding:12px 14px;border-radius:14px;background:#101b44;border:1px solid var(--line);font-weight:700;overflow-wrap:anywhere}.ok{color:var(--ok)}.err{color:var(--err)}.warn{color:var(--warn)}.small,.meta{font-size:12px;color:#91a2c4;overflow-wrap:anywhere}.hidden{display:none!important}.toprow{display:flex;gap:12px;align-items:center;min-width:0}.toprow>div{flex:1;min-width:0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.voucher{margin-top:14px;padding:15px;border:1px solid var(--line);border-radius:16px;background:#0e1a42;overflow-wrap:anywhere}.voucher b{display:block;font-size:18px}.voucher span{display:block;margin-top:5px;color:#a9b8d9;font-size:12px}.actions{display:flex;gap:10px;margin-top:12px}.actions button{flex:1}.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.stat{min-width:0;padding:14px;border-radius:16px;background:#0e1a42;border:1px solid var(--line)}.stat span{display:block;color:#99a9ce;font-size:11px}.stat b{display:block;font-size:24px;margin-top:4px;overflow-wrap:anywhere}.tablewrap{max-width:100%;overflow:auto;-webkit-overflow-scrolling:touch}.list{width:100%;border-collapse:collapse;font-size:12px}.list th,.list td{text-align:left;padding:10px 8px;border-bottom:1px solid rgba(115,135,210,.22);white-space:nowrap}.list th{color:#9fb1d9;font-size:10px;text-transform:uppercase}.historyCards{display:none}.historyItem{padding:14px;border:1px solid var(--line);border-radius:16px;background:#0e1a42}.historyItem+.historyItem{margin-top:10px}.historyCode{font-size:15px;font-weight:900;color:#fff;overflow-wrap:anywhere}.historyGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.historyCell{min-width:0}.historyLabel{display:block;font-size:10px;font-weight:800;color:#91a2c4;text-transform:uppercase;letter-spacing:.5px}.historyValue{display:block;margin-top:3px;font-size:13px;color:#eef2ff;overflow-wrap:anywhere}.empty{color:#91a2c4;font-size:12px;padding:8px 0}.scanner{margin-top:14px;padding:14px;border-radius:16px;background:#091633;border:1px solid var(--line);max-width:100%;overflow:hidden}#qrReader{width:100%;max-width:100%;overflow:hidden;border-radius:14px;background:#000}.scannerHint{margin:10px 0 0;font-size:12px;color:#a9b8d9;text-align:center}.redeem-inline{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+@media(max-width:680px){body{padding:12px}.card{padding:18px;border-radius:20px}.grid,.stats{grid-template-columns:1fr}.toprow{flex-direction:column;align-items:stretch}.toprow button{width:100%}.actions{flex-direction:column}.voucher{padding:14px}h1{font-size:28px;letter-spacing:1px}.historyTable{display:none}.historyCards{display:block}.tablewrap{overflow:visible}.historyGrid{grid-template-columns:1fr 1fr}}
+@media(max-width:420px){.historyGrid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -42,15 +55,15 @@
     <button id="verifyBtn" class="wide">Verify Voucher</button>
     <div id="verifyMsg"></div>
     <div id="verifiedVoucher"></div>
-  </section>
 
-  <section id="redeemCard" class="card hidden">
-    <h2>Redeem</h2>
-    <div class="field"><label>Notes (optional)</label><textarea id="notes" maxlength="500" placeholder="Optional note"></textarea></div>
-    <div class="actions"><button id="redeemBtn">Confirm Redeem</button><button id="cancelRedeemBtn">Cancel</button></div>
-    <p class="small">Staff redemption cannot be undone here. Any approved reversal is an Admin action and preserves the original redemption history.</p>
+    <section id="redeemCard" class="redeem-inline hidden">
+      <h2>Redeem</h2>
+      <div class="field"><label>Notes (optional)</label><textarea id="notes" maxlength="500" placeholder="Optional note"></textarea></div>
+      <div class="actions"><button id="redeemBtn">Confirm Redeem</button><button id="cancelRedeemBtn">Cancel</button></div>
+      <p class="small">Staff redemption cannot be undone here. Any approved reversal is an Admin action and preserves the original redemption history.</p>
+    </section>
+    <div id="redeemMsg"></div>
   </section>
-  <div id="redeemMsg"></div>
 
   <section class="card">
     <h2>Recent Redemption History</h2>
@@ -65,7 +78,7 @@
   if(!configured)return;
   $('closedState').classList.add('hidden');$('loginState').classList.remove('hidden');
   const db=window.supabase.createClient(cfg.supabaseUrl,cfg.publishableKey);
-  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
   const show=(node,text,type='err')=>node.innerHTML=text?`<div class="msg ${type}">${esc(text)}</div>`:'';
   const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   let staffContext=null, verified=null, verificationMethod=null, qrScanner=null, scannerRunning=false, scanBusy=false;
@@ -73,11 +86,13 @@
   function selectedBranchCode(){return staffContext?.branch_selection_required?$('branchCode').value:(staffContext?.branches?.[0]?.branch_code||null);}
   function clearVerified(){verified=null;verificationMethod=null;$('verifiedVoucher').innerHTML='';$('redeemCard').classList.add('hidden');}
   function renderContext(c){
+    const previousBranch=$('branchCode').value;
     staffContext=c;
     const branches=Array.isArray(c.branches)?c.branches:[];
     if(c.branch_selection_required){
       $('branchField').classList.remove('hidden');
       $('branchCode').innerHTML='<option value="">Select branch</option>'+branches.map(b=>`<option value="${esc(b.branch_code)}">${esc(b.branch_name)} (${esc(b.branch_code)})</option>`).join('');
+      if(previousBranch&&branches.some(b=>String(b.branch_code)===previousBranch))$('branchCode').value=previousBranch;
     }else $('branchField').classList.add('hidden');
   }
   function renderToday(d){
@@ -86,7 +101,9 @@
   }
   function renderHistory(rows){
     if(!rows?.length){$('history').innerHTML='<div class="empty">No redemption history in your permitted scope.</div>';return;}
-    $('history').innerHTML=`<table class="list"><thead><tr><th>Voucher</th><th>Customer</th><th>Partner</th><th>Branch</th><th>Staff</th><th>Status</th><th>Redeemed</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.voucher_code)}</td><td>${esc(r.customer_name)}</td><td>${esc(r.partner_name)}</td><td>${esc(r.branch_name)}</td><td>${esc(r.staff_name)}</td><td>${esc(r.redemption_status)}</td><td>${esc(r.redeemed_at?new Date(r.redeemed_at).toLocaleString():'—')}</td></tr>`).join('')}</tbody></table>`;
+    const table=`<div class="historyTable"><table class="list"><thead><tr><th>Voucher</th><th>Customer</th><th>Partner</th><th>Branch</th><th>Staff</th><th>Status</th><th>Redeemed</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.voucher_code)}</td><td>${esc(r.customer_name)}</td><td>${esc(r.partner_name)}</td><td>${esc(r.branch_name)}</td><td>${esc(r.staff_name)}</td><td>${esc(r.redemption_status)}</td><td>${esc(r.redeemed_at?new Date(r.redeemed_at).toLocaleString():'—')}</td></tr>`).join('')}</tbody></table></div>`;
+    const cards=`<div class="historyCards">${rows.map(r=>`<article class="historyItem"><div class="historyCode">${esc(r.voucher_code)}</div><div class="historyGrid"><div class="historyCell"><span class="historyLabel">Customer</span><span class="historyValue">${esc(r.customer_name||'—')}</span></div><div class="historyCell"><span class="historyLabel">Partner</span><span class="historyValue">${esc(r.partner_name||'—')}</span></div><div class="historyCell"><span class="historyLabel">Branch</span><span class="historyValue">${esc(r.branch_name||'—')}</span></div><div class="historyCell"><span class="historyLabel">Staff</span><span class="historyValue">${esc(r.staff_name||'—')}</span></div><div class="historyCell"><span class="historyLabel">Status</span><span class="historyValue">${esc(r.redemption_status||'—')}</span></div><div class="historyCell"><span class="historyLabel">Redeemed</span><span class="historyValue">${esc(r.redeemed_at?new Date(r.redeemed_at).toLocaleString():'—')}</span></div></div></article>`).join('')}</div>`;
+    $('history').innerHTML=table+cards;
   }
   function renderVerified(v){
     const state=v.can_redeem?'ok':(v.status==='expired'||v.status==='redeemed'||v.status==='revoked'?'err':'warn');
