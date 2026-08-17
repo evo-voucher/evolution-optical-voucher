@@ -130,9 +130,10 @@ try{
   await partnerPage.type('#staffPassword',partnerStaffPassword);
   await partnerPage.click('#createStaffBtn');
   await partnerPage.waitForSelector('#staffMsg .ok',{visible:true,timeout:15000});
-  await partnerPage.waitForFunction(email=>(document.querySelector('#staffDirectory')?.textContent||'').includes(email),{},partnerStaffEmail);
   const partnerStaffCount=queryScalar(`select count(*) from public.partner_users where login_email=${sqlLiteral(partnerStaffEmail)} and role='partner_staff' and status='active' and removed_at is null`);
   if(partnerStaffCount!=='1') throw new Error(`Partner Staff browser creation did not persist canonical active membership. Got ${partnerStaffCount}`);
+  const staffDirectoryText=await partnerPage.$eval('#staffDirectory',el=>el.textContent||'');
+  if(!staffDirectoryText.includes(partnerStaffEmail)) throw new Error(`Partner Staff directory did not render created login email ${partnerStaffEmail}. DOM: ${staffDirectoryText}`);
 
   await partnerPage.waitForFunction(()=>document.querySelectorAll('#issueVersion option').length>1,{timeout:15000});
   await partnerPage.select('#issueVersion',await partnerPage.$eval('#issueVersion',el=>[...el.options].find(o=>o.value)?.value||''));
