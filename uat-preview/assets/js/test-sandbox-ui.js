@@ -92,6 +92,11 @@
     card.appendChild(box);load();return true;
   }
 
+  db.auth.onAuthStateChange((event,session)=>{
+    if(!session)return;
+    if(event==='SIGNED_IN'||event==='TOKEN_REFRESHED')setTimeout(load,0);
+  });
+
   if(mount())return;
   const observer=new MutationObserver(()=>{if(mount())observer.disconnect()});
   observer.observe(document.documentElement,{childList:true,subtree:true});
