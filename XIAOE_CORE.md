@@ -1,6 +1,6 @@
 # XiaoE Core Engineering Protocol
 
-Version: 1.0
+Version: 1.1
 Status: Active
 Scope: Evolution Voucher and future XiaoE-managed engineering work in this repository.
 
@@ -13,9 +13,10 @@ Default execution behavior:
 1. Read the current engineering state and identify the active task.
 2. Prefer evidence over assumptions. Never present a guess as a verified fact.
 3. If Eric reports a specific fault, enter **Targeted Root Debug** immediately.
-4. Work autonomously through diagnosis, repair, and verification when the action is free, reversible, in-scope, and does not weaken security.
-5. Do not interrupt Eric with step-by-step confirmations for routine reversible work.
-6. Report only the final verified result, unresolved blockers, or decisions that genuinely require Eric.
+4. Use the **Fast Root Debug Engine** as the default verification strategy.
+5. Work autonomously through diagnosis, repair, and verification when the action is free, reversible, in-scope, and does not weaken security.
+6. Do not interrupt Eric with step-by-step confirmations for routine reversible work.
+7. Report only the final verified result, unresolved blockers, or decisions that genuinely require Eric.
 
 ## Core Principle: Root Before Flower
 
@@ -57,6 +58,81 @@ For a reported issue such as "this button cannot be pressed", "Redeem has no rec
 6. **Stop when the path is proven**
    - Do not automatically run full regression for every local bug.
 
+## Fast Root Debug Engine
+
+Core rule:
+
+> Do not use a heavy test to discover a light error.
+
+GitHub Actions is primarily a final proof layer, not the first diagnostic layer.
+
+Default flow:
+
+`Fault -> Lock path -> L1 Source/Contract Check -> L2 Local Logic Test -> L3 Targeted E2E -> PASS -> Stop`
+
+Escalate to L4 only when justified.
+
+### L1 — Instant Source / Contract Check
+
+Target: usually seconds, no Supabase boot unless required.
+
+Check the smallest source-of-truth chain first, for example:
+
+`Frontend call -> function/RPC name -> argument names -> migration/function signature -> expected return contract`
+
+Use L1 for:
+- wrong selector or element id,
+- wrong function/RPC/Edge name,
+- missing or extra arguments,
+- frontend/backend contract drift,
+- stale test expectations,
+- syntax/static logic errors,
+- file/path/launcher mismatches.
+
+If L1 proves the fault, repair it directly before any heavy runtime test.
+
+### L2 — Local Logic / Contract Test
+
+Run only the affected module or business path logic.
+
+Examples:
+- Create Partner: `UI payload -> create-partner Edge -> provisioning RPC -> initial allocation contract`
+- Redeem: `Staff input -> verify/redeem RPC -> redemption record -> response`
+- Share: `Voucher record -> share RPC/data -> WhatsApp link`
+
+Prefer lightweight mocks, static contract checks, SQL contract tests, or direct function tests when they can prove the issue reliably.
+
+Do not start the full browser suite or full Supabase runtime merely to detect a local parameter/contract error.
+
+### L3 — Targeted E2E
+
+Run only after L1/L2 are clean or when real runtime behavior is required.
+
+Start the minimum runtime needed and execute the complete affected business path once.
+
+Important efficiency rule:
+- One runtime boot should test the whole affected path.
+- Do not restart Supabase for every minor failure if the same bounded path can be diagnosed from the existing evidence.
+- After a fix, rerun the same targeted path first.
+
+Examples:
+- `Template -> Publish Version -> Create Partner -> Allocate -> Partner Issue`
+- `Partner Login -> Voucher List -> Share -> WhatsApp Link`
+- `Staff Login -> Verify -> Redeem -> Admin Record`
+
+### L4 — Full Regression
+
+Full regression is a release/safety net, not the default debugging tool.
+
+Use only when:
+- preparing for production release or cutover,
+- core Auth/RLS/security boundaries changed,
+- core schema or migrations changed materially,
+- shared RPC/session/infrastructure affects multiple portals,
+- the same repair path failed twice,
+- a major migration/rebuild occurred,
+- Eric explicitly asks for full-system verification.
+
 ## Test Escalation Funnel
 
 Use the smallest test sufficient to prove correctness.
@@ -83,6 +159,16 @@ Use only when:
 - Eric explicitly requests a full-system audit.
 
 Do not rebuild local Supabase or run every SQL/browser suite for a simple UI-path bug unless escalation criteria are met.
+
+## GitHub CI Role
+
+Default principle:
+
+`XiaoE diagnosis -> source/contract verification -> targeted repair -> targeted E2E -> GitHub CI final proof`
+
+Do not use GitHub Actions as the default first place to discover trivial source mismatches when XiaoE can detect them directly from current GitHub/Supabase evidence.
+
+Create or use targeted workflows for bounded paths when useful. Full Runtime Smoke remains the final safety net for justified high-impact changes.
 
 ## Autonomous Repair Rules
 
