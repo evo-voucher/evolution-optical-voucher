@@ -15,8 +15,8 @@ function writeConfig(config){
 
 function assertLauncherContract(file,target){
   const source=fs.readFileSync(file,'utf8');
-  const targetPattern=new RegExp(`location\\.replace\\(\\\`${target.replace('.','\\.')}\\?v=\\\\\$\\\\\{Date\\.now\\\\\(\\\\\)\\\\\}\\\`\\)`);
-  if(!targetPattern.test(source)) throw new Error(`${file} does not cache-bust into ${target}`);
+  const expected=`location.replace(\`${target}?v=\${Date.now()}\`)`;
+  if(!source.includes(expected)) throw new Error(`${file} does not cache-bust into ${target}`);
 }
 
 writeConfig({enabled:false,environment:'reconstruction',projectId:'',supabaseUrl:'',publishableKey:''});
