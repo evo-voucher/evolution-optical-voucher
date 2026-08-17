@@ -30,15 +30,15 @@
   }
 
   function renderReady(box,sandbox){
-    box.innerHTML=`<h3>Test Sandbox</h3><div class="sandbox-note">Admin-only reusable test environment. Reset clears only the registered Test Partner transactions and restores the baseline for the next test.</div><div class="sandbox-grid"><div class="sandbox-account"><b>Test Partner</b><span>${esc(EMAILS.partner)}</span></div><div class="sandbox-account"><b>Test Partner Staff</b><span>${esc(EMAILS.partnerStaff)}</span></div><div class="sandbox-account"><b>Test Evolution Staff</b><span>${esc(EMAILS.evolutionStaff)}</span></div><div class="sandbox-account"><b>Baseline</b><span>${esc(sandbox?.baseline_quantity||100)} vouchers • MINES • Staff Access ON</span></div></div><div class="sandbox-actions"><a href="${esc(partnerUrl)}" target="_blank" rel="noopener">Open Partner Portal</a><a href="${esc(staffUrl)}" target="_blank" rel="noopener">Open Staff Portal</a><button id="sandboxResetBtn" type="button" class="sandbox-danger">Reset Test Data</button></div><div id="sandboxMsg" class="sandbox-msg"></div>`;
+    box.innerHTML=`<h3>Test Sandbox</h3><div class="sandbox-note">Admin-only reusable test environment. Reset clears the registered Sandbox business data and restores a clean baseline for the next test.</div><div class="sandbox-grid"><div class="sandbox-account"><b>Test Partner</b><span>${esc(EMAILS.partner)}</span></div><div class="sandbox-account"><b>Test Partner Staff</b><span>${esc(EMAILS.partnerStaff)}</span></div><div class="sandbox-account"><b>Test Evolution Staff</b><span>${esc(EMAILS.evolutionStaff)}</span></div><div class="sandbox-account"><b>Baseline</b><span>${esc(sandbox?.baseline_quantity||20)} vouchers • MINES • Staff Access ON</span></div></div><div class="sandbox-actions"><a href="${esc(partnerUrl)}" target="_blank" rel="noopener">Open Partner Portal</a><a href="${esc(staffUrl)}" target="_blank" rel="noopener">Open Staff Portal</a><button id="sandboxResetBtn" type="button" class="sandbox-danger">Reset Test Data</button></div><div id="sandboxMsg" class="sandbox-msg"></div>`;
     document.getElementById('sandboxResetBtn').onclick=async()=>{
-      if(!confirm('Reset all Test Sandbox vouchers, redemptions and allocation data back to the baseline? Real Partner data will not be touched.'))return;
+      if(!confirm('Reset all Test Sandbox business data back to the clean baseline? Real Partner data will not be touched.'))return;
       const btn=document.getElementById('sandboxResetBtn'),msg=document.getElementById('sandboxMsg');
       btn.disabled=true;msg.className='sandbox-msg';msg.textContent='Resetting Test Sandbox…';
       try{
         const res=await invoke('reset');
         msg.className='sandbox-msg ok';
-        msg.textContent=`Reset complete. Cleared ${res.reset?.cleared_vouchers||0} voucher(s) and ${res.reset?.cleared_redemptions||0} redemption(s). Baseline restored to ${res.reset?.baseline_quantity||100}.`;
+        msg.textContent=`Reset complete. Clean baseline restored to ${res.reset?.baseline_quantity||20} vouchers.`;
       }catch(e){msg.className='sandbox-msg err';msg.textContent=e?.message||'Reset failed.'}
       finally{btn.disabled=false}
     };
