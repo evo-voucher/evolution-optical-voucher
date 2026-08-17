@@ -1,0 +1,24 @@
+name: Fast RPC Contract Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**/*.html'
+      - '**/*.js'
+      - '**/*.mjs'
+      - 'supabase/migrations/**'
+      - 'scripts/check-rpc-contracts.mjs'
+      - '.github/workflows/fast-rpc-contract-check.yml'
+  workflow_dispatch:
+
+jobs:
+  rpc-contract-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run fast RPC contract check
+        run: node scripts/check-rpc-contracts.mjs
