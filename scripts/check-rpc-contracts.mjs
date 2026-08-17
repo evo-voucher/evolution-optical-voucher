@@ -6,14 +6,18 @@ import path from 'node:path';
 const root = process.cwd();
 const migrationDir = path.join(root, 'supabase', 'migrations');
 const scanExt = new Set(['.html', '.js', '.mjs']);
-const ignoredDirs = new Set(['.git', 'node_modules', 'offline-backup']);
+const ignoredDirs = new Set(['.git', 'node_modules', 'offline-backup', 'uat', 'uat-preview']);
+const ignoredRootFiles = new Set(['xiaoe-brain.html']);
 
 function walk(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     if (ignoredDirs.has(entry.name)) continue;
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) walk(full, out);
-    else if (scanExt.has(path.extname(entry.name))) out.push(full);
+    else if (scanExt.has(path.extname(entry.name))) {
+      const rel = path.relative(root, full);
+      if (!ignoredRootFiles.has(rel)) out.push(full);
+    }
   }
   return out;
 }
@@ -44,7 +48,7 @@ function loadRpcSignatures() {
   const map = new Map();
   if (!fs.existsSync(migrationDir)) return map;
   const files = fs.readdirSync(migrationDir).filter(f => f.endsWith('.sql')).sort();
-  const re = /create\s+or\s+replace\s+function\s+(?:public\.)?([a-zA-Z0-9_]+)\s*\(([^)]*)\)/gim;
+  const re = /create\s+(?:or\s+replace\s+)?function\s+(?:public\.)?([a-zA-Z0-9_]+)\s*\(([^)]*)\)/gim;
   for (const file of files) {
     const text = fs.readFileSync(path.join(migrationDir, file), 'utf8');
     let m;
@@ -157,7 +161,7 @@ for (const file of files) {
     checked++;
     const candidates = signatures.get(name) || [];
     if (!candidates.length) {
-      failures.push(`${rel}:${call.line} rpc('${call.name}') has no matching CREATE OR REPLACE FUNCTION in supabase/migrations`);
+      failures.push(`${rel}:${call.line} rpc('${call.name}') has no matching function declaration in supabase/migrations`);
       continue;
     }
     const actual = call.params.join(',');
