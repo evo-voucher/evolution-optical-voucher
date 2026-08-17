@@ -1,7 +1,7 @@
 // Evolution Voucher UAT Preview backend configuration.
 // Isolated preview: canonical reconstructed Supabase backend + preview-local customer links.
 // Browser clients use the Supabase publishable key only. Never place service_role here.
-const EVOLUTION_ASSET_VERSION='20260818-04';
+const EVOLUTION_ASSET_VERSION='20260818-05';
 window.EVOLUTION_ASSET_VERSION=EVOLUTION_ASSET_VERSION;
 const evolutionAsset=path=>`${path}?v=${encodeURIComponent(EVOLUTION_ASSET_VERSION)}`;
 
@@ -69,10 +69,9 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   const originalCreateClient = supabase.createClient.bind(supabase);
   const path = String(window.location?.pathname || '').toLowerCase();
   const clientCache = new Map();
-  let terminalReloadQueued = false;
 
   function resolveStorageKey() {
-    if (path.includes('admin') || path.includes('voucher-engine')) return 'evolution-voucher-auth-admin';
+    if (path.includes('admin') || path.includes('voucher-engine')) return 'evolution-voucher-auth-admin-v2';
     if (path.includes('partner')) return 'evolution-voucher-auth-partner';
     if (path.includes('staff')) return 'evolution-voucher-auth-staff';
     return 'evolution-voucher-auth-default';
@@ -93,13 +92,17 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
     return code==='refresh_token_not_found'||code==='session_not_found'||/refresh token not found|session not found/.test(message);
   }
 
+  const portalStorageKey = resolveStorageKey();
+  if(portalStorageKey==='evolution-voucher-auth-admin-v2'){
+    try{localStorage.removeItem('evolution-voucher-auth-admin');}catch(_){}
+    try{sessionStorage.removeItem('evolution-voucher-auth-admin');}catch(_){}
+  }
+
   async function clearTerminalSession(client,error) {
     if(!isTerminalSessionError(error))return false;
+    try{localStorage.removeItem(portalStorageKey);}catch(_){}
+    try{sessionStorage.removeItem(portalStorageKey);}catch(_){}
     try{await client.auth.signOut({scope:'local'});}catch(_){}
-    if(!terminalReloadQueued){
-      terminalReloadQueued=true;
-      setTimeout(()=>window.location.reload(),0);
-    }
     return true;
   }
 
@@ -135,7 +138,6 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
     return client;
   }
 
-  const portalStorageKey = resolveStorageKey();
   supabase.createClient = function createNamespacedClient(url, key, options = {}) {
     const authOptions = options?.auth || {};
     const storageKey = authOptions.storageKey || portalStorageKey;
