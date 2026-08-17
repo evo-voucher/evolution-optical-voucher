@@ -14,7 +14,7 @@
 
   function validityMarkup(prefix='initial'){
     return `<div class="allocation-validity-grid">
-      <div class="field"><label>Validity Start</label><select class="${prefix}-validity-anchor"><option value="issue">From Issue Date</option><option value="allocation">From Allocation Date</option></select></div>
+      <div class="field"><label>Validity Start</label><select class="${prefix}-validity-anchor"><option value="issue">From Issue Date</option><option value="allocation">Valid From</option></select></div>
       <div class="field"><label>Validity Value</label><input class="${prefix}-validity-value" type="number" min="1" step="1" value="3"></div>
       <div class="field"><label>Validity Unit</label><select class="${prefix}-validity-unit"><option value="months">Months</option><option value="days">Days</option></select></div>
       <div class="validity-note">Each allocation lot keeps its own validity rule.</div>
@@ -113,7 +113,7 @@
       const qty=document.getElementById('allocationQty');if(!qty||document.getElementById('engineValidityControls'))return false;
       const grid=qty.closest('.grid3');if(!grid)return false;
       const wrap=document.createElement('div');wrap.id='engineValidityControls';wrap.className='allocation-validity-grid';wrap.dataset.validityDirty='0';wrap.innerHTML=`
-        <div class="field"><label>Validity Start</label><select id="allocationValidityAnchor"><option value="issue">From Issue Date</option><option value="allocation">From Allocation Date</option></select></div>
+        <div class="field"><label>Validity Start</label><select id="allocationValidityAnchor"><option value="issue">From Issue Date</option><option value="allocation">Valid From</option></select></div>
         <div class="field"><label>Validity Value</label><input id="allocationValidityValue" type="number" min="1" step="1" value="3"></div>
         <div class="field"><label>Validity Unit</label><select id="allocationValidityUnit"><option value="months">Months</option><option value="days">Days</option></select></div>
         <div class="validity-note">Defaults from the selected Voucher Version. Change them only when this allocation lot needs an intentional override.</div>`;
@@ -157,7 +157,7 @@
         if(previewError)throw previewError;if(!Array.isArray(preview)||preview.length===0)throw new Error('No effective redemption branch remains after Partner ∩ Version ∩ Allocation.');
         const {data,error}=await db.functions.invoke('voucher-engine',{body:{action:'allocate',partner_id:partner,version_id:version,quantity:qty,all_branches:all,branch_codes:all?[]:branch_codes,validity_anchor,validity_value,validity_unit}});
         if(error)throw error;if(!data?.success)throw new Error(data?.error||'Allocation failed.');
-        show(`Allocation created: ${qty} Voucher(s), ${validity_value} ${validity_unit} from ${validity_anchor==='issue'?'Issue Date':'Allocation Date'}.`,true);
+        show(`Allocation created: ${qty} Voucher(s), ${validity_value} ${validity_unit} · ${validity_anchor==='issue'?'From Issue Date':'Valid From'}.`,true);
         document.getElementById('refreshBtn')?.click();
       }catch(err){show(err?.message||'Allocation failed.');}
       finally{btn.disabled=false;btn.textContent='Allocate Voucher Stock';}
