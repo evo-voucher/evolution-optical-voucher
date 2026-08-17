@@ -1,0 +1,53 @@
+name: Targeted Voucher Engine E2E
+
+on:
+  push:
+    paths:
+      - 'voucher-engine.html'
+      - 'supabase/tests/browser/007_admin_voucher_engine_e2e.mjs'
+      - '.github/workflows/targeted-voucher-engine-e2e.yml'
+      - 'supabase/migrations/**'
+      - 'supabase/functions/voucher-engine-admin/**'
+  workflow_dispatch:
+
+jobs:
+  voucher-engine-e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+      - name: Start local Supabase
+        run: supabase start
+      - name: Rebuild local database
+        run: supabase db reset
+      - name: Serve local Edge Functions
+        run: |
+          set -euo pipefail
+          supabase functions serve > /tmp/evolution-edge-functions.log 2>&1 &
+          echo $! > /tmp/evolution-edge-functions.pid
+          for i in $(seq 1 30); do
+            code="$(curl -s -o /tmp/edge-ready.json -w '%{http_code}' -X POST http://127.0.0.1:54321/functions/v1/create-partner -H 'Content-Type: application/json' -d '{}' || true)"
+            if [[ "$code" == "401" ]]; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/evolution-edge-functions.log >&2 || true
+          exit 1
+      - name: Install browser test driver
+        run: npm install --no-save puppeteer-core@24
+      - name: Run targeted Voucher Engine browser E2E
+        run: node supabase/tests/browser/007_admin_voucher_engine_e2e.mjs
+      - name: Show Edge logs on failure
+        if: failure()
+        run: cat /tmp/evolution-edge-functions.log || true
+      - name: Stop local Supabase
+        if: always()
+        run: |
+          if [[ -f /tmp/evolution-edge-functions.pid ]]; then kill "$(cat /tmp/evolution-edge-functions.pid)" 2>/dev/null || true; fi
+          supabase stop --no-backup
