@@ -8,42 +8,17 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Admin</title>
   <style>
-    html,body{margin:0;width:100%;height:100%;overflow:hidden;
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-      background:radial-gradient(circle at 50% 40%,#182660 0,#08122f 42%,#020611 100%);}
-    .wrap{height:100%;display:grid;place-items:center;position:relative}
-    .halo{position:absolute;width:230px;height:230px;border-radius:50%;
-      background:radial-gradient(circle,rgba(112,74,255,.32),rgba(23,183,255,.08) 48%,transparent 72%);
-      filter:blur(4px);animation:pulse 1.15s ease-in-out infinite alternate}
-    img{width:132px;height:132px;border-radius:29px;position:relative;z-index:2;
-      box-shadow:0 20px 60px rgba(0,0,0,.38);animation:pop .55s cubic-bezier(.2,.8,.2,1)}
-    .name{position:absolute;bottom:11vh;color:#dfe8ff;font-size:15px;font-weight:700;
-      letter-spacing:.08em;opacity:.82}
-    .bar{position:absolute;bottom:7.5vh;width:90px;height:3px;border-radius:99px;
-      background:rgba(255,255,255,.12);overflow:hidden}
-    .bar:after{content:"";display:block;height:100%;width:55%;
-      background:linear-gradient(90deg,#8d5cff,#18c8ff);
-      animation:load .7s ease-in-out forwards}
-    @keyframes pop{from{transform:scale(.84);opacity:0}to{transform:scale(1);opacity:1}}
-    @keyframes pulse{from{transform:scale(.92);opacity:.65}to{transform:scale(1.08);opacity:1}}
-    @keyframes load{from{transform:translateX(-120%)}to{transform:translateX(90%)}}
-    @media (prefers-reduced-motion: reduce){
-      .halo,img,.bar:after{animation:none}
-    }
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at 50% 40%,#182660 0,#08122f 42%,#020611 100%);}
+    .wrap{height:100%;display:grid;place-items:center;position:relative}.halo{position:absolute;width:230px;height:230px;border-radius:50%;background:radial-gradient(circle,rgba(112,74,255,.32),rgba(23,183,255,.08) 48%,transparent 72%);filter:blur(4px);animation:pulse 1.15s ease-in-out infinite alternate}
+    img{width:132px;height:132px;border-radius:29px;position:relative;z-index:2;box-shadow:0 20px 60px rgba(0,0,0,.38);animation:pop .55s cubic-bezier(.2,.8,.2,1)}.name{position:absolute;bottom:11vh;color:#dfe8ff;font-size:15px;font-weight:700;letter-spacing:.08em;opacity:.82}.bar{position:absolute;bottom:7.5vh;width:90px;height:3px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden}.bar:after{content:"";display:block;height:100%;width:55%;background:linear-gradient(90deg,#8d5cff,#18c8ff);animation:load .7s ease-in-out forwards}
+    @keyframes pop{from{transform:scale(.84);opacity:0}to{transform:scale(1);opacity:1}}@keyframes pulse{from{transform:scale(.92);opacity:.65}to{transform:scale(1.08);opacity:1}}@keyframes load{from{transform:translateX(-120%)}to{transform:translateX(90%)}}@media (prefers-reduced-motion: reduce){.halo,img,.bar:after{animation:none}}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="halo"></div>
-    <img src="admin-icon-180.png" alt="Admin">
-    <div class="name">EVOLUTION OPTICAL · ADMIN</div>
-    <div class="bar"></div>
-  </div>
+  <div class="wrap"><div class="halo"></div><img src="admin-icon-180.png" alt="Admin"><div class="name">EVOLUTION OPTICAL · ADMIN</div><div class="bar"></div></div>
   <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./service-worker.js').catch(() => {});
-    }
-    setTimeout(() => location.replace('admin.html'), 650);
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+    setTimeout(() => location.replace(`admin.html?v=${Date.now()}`), 650);
   </script>
 </body>
 </html>
