@@ -82,9 +82,9 @@
         shell.innerHTML='';
         const img=document.createElement('img');img.className='voucherCardPreview';img.alt=`Voucher ${data.voucher_code||''}`;img.src=rendered.url;shell.appendChild(img);
         const actions=document.createElement('div');actions.className='voucherCardActions';
-        const copy=document.createElement('button');copy.type='button';copy.textContent='Copy Image';
-        const share=document.createElement('button');share.type='button';share.textContent='Share Image';
-        const download=document.createElement('button');download.type='button';download.textContent='Download Image';
+        const copy=document.createElement('button');copy.type='button';copy.textContent='Copy';
+        const share=document.createElement('button');share.type='button';share.textContent='Share';
+        const download=document.createElement('button');download.type='button';download.textContent='Download';
         actions.append(copy,share,download);shell.appendChild(actions);
         const note=document.createElement('div');note.className='voucherCardStatus';note.textContent='Customer receives the greeting together with the voucher image. QR keeps the secure voucher link inside the card.';shell.appendChild(note);
         copy.addEventListener('click',async()=>{copy.disabled=true;try{await renderer.copy(rendered.blob);status(note,'Voucher image copied.',false)}catch(e){status(note,e.message||'Unable to copy image.',true)}finally{copy.disabled=false}});
