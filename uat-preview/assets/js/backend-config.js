@@ -1,7 +1,7 @@
 // Evolution Voucher UAT Preview backend configuration.
 // Isolated preview: canonical reconstructed Supabase backend + preview-local customer links.
 // Browser clients use the Supabase publishable key only. Never place service_role here.
-const EVOLUTION_ASSET_VERSION='20260818-02';
+const EVOLUTION_ASSET_VERSION='20260818-03';
 window.EVOLUTION_ASSET_VERSION=EVOLUTION_ASSET_VERSION;
 const evolutionAsset=path=>`${path}?v=${encodeURIComponent(EVOLUTION_ASSET_VERSION)}`;
 
@@ -152,6 +152,16 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   Object.defineProperty(supabase, '__evolutionAuthNamespaced', {
     value: true, configurable: false, enumerable: false, writable: false
   });
+})();
+
+(function loadAdminMobileFocus(){
+  const path=String(window.location?.pathname||'').toLowerCase();
+  if(!path.endsWith('/admin.html'))return;
+  if(document.getElementById('adminMobileFocusScript'))return;
+  const script=document.createElement('script');
+  script.id='adminMobileFocusScript';
+  script.src=evolutionAsset('assets/js/admin-mobile-focus.js');
+  document.head.appendChild(script);
 })();
 
 (function loadAllocationValidityUI(){
