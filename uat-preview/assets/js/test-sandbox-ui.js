@@ -13,6 +13,46 @@
     partnerStaff:'test.partner.staff@evolution-optical.test',
     evolutionStaff:'test.evolution.staff@evolution-optical.test'
   };
+  let authRecoveryBusy=false;
+
+  function isTerminalAuthError(error){
+    const code=String(error?.code||error?.error_code||'').toLowerCase();
+    const message=String(error?.message||error||'').toLowerCase();
+    return code==='refresh_token_not_found'||code==='session_not_found'||/refresh token not found|session not found/.test(message);
+  }
+
+  async function expireLocalSession(message='Admin session expired. Please sign in again.'){
+    try{await db.auth.signOut({scope:'local'});}catch(_){}
+    setTimeout(()=>window.location.reload(),0);
+    throw new Error(message);
+  }
+
+  async function ensureLiveSession(){
+    const {data:sessionData,error:sessionError}=await db.auth.getSession();
+    if(sessionError&&isTerminalAuthError(sessionError))return expireLocalSession();
+    if(!sessionData?.session)return expireLocalSession();
+
+    const {data:userData,error:userError}=await db.auth.getUser();
+    if(!userError&&userData?.user)return sessionData.session;
+
+    if(authRecoveryBusy)throw userError||new Error('Admin session recovery is already in progress.');
+    authRecoveryBusy=true;
+    try{
+      const {data:refreshData,error:refreshError}=await db.auth.refreshSession();
+      if(refreshError||!refreshData?.session){
+        if(isTerminalAuthError(refreshError)||isTerminalAuthError(userError))return expireLocalSession();
+        throw refreshError||userError||new Error('Unable to refresh Admin session.');
+      }
+      const {data:verified,error:verifyError}=await db.auth.getUser();
+      if(verifyError||!verified?.user){
+        if(isTerminalAuthError(verifyError))return expireLocalSession();
+        throw verifyError||new Error('Unable to verify refreshed Admin session.');
+      }
+      return refreshData.session;
+    }finally{
+      authRecoveryBusy=false;
+    }
+  }
 
   function ensureStyle(){
     if(document.getElementById('testSandboxStyle'))return;
@@ -35,6 +75,7 @@
   }
 
   async function invoke(action,extra={}){
+    await ensureLiveSession();
     const {data,error}=await db.functions.invoke('admin-test-sandbox',{body:{action,...extra}});
     if(error)throw error;
     if(!data?.success)throw new Error(data?.details||data?.error||'Test Sandbox request failed');
