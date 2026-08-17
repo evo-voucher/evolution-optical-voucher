@@ -73,7 +73,7 @@
   const canvasToBlob=canvas=>new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Unable to create voucher image')),'image/png',1));
   async function create(data){const canvas=await render(data);const blob=await canvasToBlob(canvas);const filename=`${String(data.voucher_code||'voucher').replace(/[^a-z0-9_-]+/gi,'_')}.png`;return{canvas,blob,filename,url:URL.createObjectURL(blob)}}
   async function copy(blob){if(!navigator.clipboard||typeof ClipboardItem==='undefined')throw new Error('Copy Image is not supported on this device/browser.');await navigator.clipboard.write([new ClipboardItem({'image/png':blob})])}
-  async function share(blob,filename){const file=new File([blob],filename,{type:'image/png'});if(!navigator.share||!navigator.canShare?.({files:[file]}))throw new Error('Image sharing is not supported on this device/browser.');await navigator.share({files:[file],title:'Evolution Optical Voucher'})}
+  async function share(blob,filename,shareText=''){const file=new File([blob],filename,{type:'image/png'});if(!navigator.share||!navigator.canShare?.({files:[file]}))throw new Error('Image sharing is not supported on this device/browser.');const payload={files:[file],title:'Evolution Optical Voucher'};if(String(shareText||'').trim())payload.text=String(shareText).trim();await navigator.share(payload)}
   function download(blob,filename){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
   window.EvolutionVoucherCard=Object.freeze({create,copy,share,download,branchGrid});
 })();
