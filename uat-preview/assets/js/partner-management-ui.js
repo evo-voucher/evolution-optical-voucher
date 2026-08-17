@@ -47,12 +47,14 @@
       .partner-status-actions button{min-height:36px!important;padding:6px 8px!important;font-size:11px!important;border-radius:10px!important}
       .partner-status-actions button.active-state{border-color:rgba(101,230,181,.82)!important;background:linear-gradient(180deg,#176158,#0d3a35)!important}
       .partner-status-actions button.suspended-state{border-color:rgba(255,146,165,.82)!important;background:linear-gradient(180deg,#6f3141,#4a1d2a)!important}
-      .partner-control-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+      .partner-control-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px}
       .partner-control-tabs button{min-height:36px!important;padding:6px 8px!important;font-size:11px!important;border-radius:10px!important}
       .partner-control-tabs button.active{border-color:rgba(101,230,181,.82)!important;background:linear-gradient(180deg,#176158,#0d3a35)!important}
       .partner-control-panel-hidden{display:none!important}
       .partner-control-panel{margin-top:8px;padding-top:8px;border-top:1px solid rgba(115,135,210,.22)}
       .partner-legacy-status-control{display:none!important}
+      .partner-password-note{margin:0 0 8px;color:#91a2c4;font-size:11px;line-height:1.45}
+      .partner-password-action{display:block;width:100%;text-align:center;text-decoration:none;color:#fff;min-height:38px;padding:9px 10px;border:1px solid rgba(122,119,255,.7);border-radius:10px;background:linear-gradient(180deg,#3549a8,#182b73 58%,#0d1c4c);font-size:11px;font-weight:900}
       #partnerControls .partner .controls{margin-top:0!important;grid-template-columns:1fr!important}
       #partnerControls .partner .controls .wide{min-height:34px!important;margin-top:6px!important;padding:6px 8px!important;font-size:11px!important}
       #partnerControls .partner .controls input,#partnerControls .partner .controls select{min-height:38px!important;padding:8px 9px!important;font-size:12px!important}
@@ -181,14 +183,21 @@
 
     const tabs=document.createElement('div');
     tabs.className='partner-control-tabs';
-    tabs.innerHTML='<button type="button" data-control-view="basic">Basic</button><button type="button" data-control-view="access">Access</button>';
+    tabs.innerHTML='<button type="button" data-control-view="basic">Basic</button><button type="button" data-control-view="access">Access</button><button type="button" data-control-view="password">Password</button>';
     tabs.addEventListener('click',e=>{
       const btn=e.target.closest('[data-control-view]');
       if(btn)setPartnerControlView(partner,btn.dataset.controlView);
     });
     statusActions.insertAdjacentElement('afterend',tabs);
+
+    const passwordBody=document.createElement('div');
+    const id=partnerId(partner);
+    passwordBody.innerHTML=`<p class="partner-password-note">Reset this Partner Administrator password through the trusted Admin password-reset flow.</p><a class="partner-password-action" href="admin-partner-password.html${id?`?partner_id=${encodeURIComponent(id)}`:''}">Reset Partner Password</a>`;
+
     const basicPanel=buildPanel('basic',basic);
     const accessPanel=buildPanel('access',access);
+    const passwordPanel=buildPanel('password',passwordBody);
+    tabs.insertAdjacentElement('afterend',passwordPanel);
     tabs.insertAdjacentElement('afterend',accessPanel);
     tabs.insertAdjacentElement('afterend',basicPanel);
   }
