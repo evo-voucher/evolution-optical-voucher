@@ -8,7 +8,14 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="assets/js/backend-config.js"></script>
 <style>
-:root{--ink:#f7f8ff;--muted:#aebddd;--line:rgba(115,135,210,.34);--ok:#65e6b5;--err:#ff92a5;--warn:#ffd98c;--panel:#0d1839}*{box-sizing:border-box}body{margin:0;min-height:100vh;padding:18px;background:linear-gradient(160deg,#050716,#08102b 52%,#040816);color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.shell{width:min(1120px,100%);margin:auto}.card{padding:22px;border-radius:22px;background:linear-gradient(155deg,#171746,#0b1b42 58%,#06132f);border:1px solid rgba(122,119,255,.55);box-shadow:0 20px 60px rgba(0,0,0,.28);margin-bottom:14px}h1{margin:0 0 8px;font:500 30px Georgia,serif;letter-spacing:1.5px}h2{margin:0 0 12px;font-size:19px}h3{margin:16px 0 8px;font-size:15px;color:#dce6ff}p{color:var(--muted);line-height:1.55}.top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.top a{color:#bfd0ff;text-decoration:none}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.field{margin-top:10px}label{display:block;margin-bottom:6px;font-size:12px;font-weight:800;color:#d9e3ff}input,select,textarea{width:100%;min-height:46px;padding:10px 12px;border:1px solid rgba(100,128,210,.55);border-radius:13px;outline:none;background:var(--panel);color:#fff}textarea{min-height:92px;resize:vertical}button{min-height:44px;border:1px solid rgba(122,119,255,.7);border-radius:12px;background:linear-gradient(180deg,#3549a8,#182b73 58%,#0d1c4c);color:#fff;font-weight:900;cursor:pointer;padding:9px 12px}button:disabled{opacity:.55;cursor:not-allowed}.wide{width:100%;margin-top:14px}.msg,.status{margin-top:12px;padding:11px 13px;border-radius:13px;background:#101b44;border:1px solid var(--line);font-weight:700}.ok{color:var(--ok)}.err{color:var(--err)}.warn{color:var(--warn)}.small{font-size:12px;color:#91a2c4}.hidden{display:none!important}.pill{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;background:#101b44;border:1px solid var(--line);font-size:11px;font-weight:800;color:#c9d6f5}.tableWrap{overflow:auto;border:1px solid var(--line);border-radius:14px;margin-top:12px}table{width:100%;border-collapse:collapse;min-width:760px}th,td{padding:10px 12px;text-align:left;border-bottom:1px solid rgba(115,135,210,.18);font-size:12px}th{color:#dce6ff;background:#0b1738;position:sticky;top:0}td{color:#c2d0ee}.sectionNote{padding:10px 12px;border-left:3px solid #6f87e8;background:#0c1738;border-radius:8px;color:#aebddd;font-size:12px;line-height:1.5}.split{display:grid;grid-template-columns:1fr 1fr;gap:14px}.checkline{display:flex;align-items:center;gap:8px;margin-top:12px;color:#d9e3ff;font-size:12px;font-weight:800}.checkline input{width:auto;min-height:auto}.branchList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}.branch{display:flex;gap:8px;align-items:flex-start;padding:10px;border:1px solid var(--line);border-radius:12px;background:#0a1534}.branch input{width:auto;min-height:auto;margin-top:3px}.preview{margin-top:12px;padding:13px;border-radius:14px;background:#0b1738;border:1px solid var(--line)}.preview b{display:block;margin-bottom:7px}.preview ul{margin:0;padding-left:18px;color:#c8d5f3}.preview li{margin:4px 0}.preview.zero{border-color:rgba(255,146,165,.55)}@media(max-width:760px){.grid,.grid3,.split,.branchList{grid-template-columns:1fr}.top{flex-direction:column}.card{padding:17px}h1{font-size:26px}}
+:root{--ink:#f7f8ff;--muted:#aebddd;--line:rgba(115,135,210,.34);--ok:#65e6b5;--err:#ff92a5;--warn:#ffd98c;--panel:#0d1839}
+*{box-sizing:border-box}
+html,body{width:100%;max-width:100%;overflow-x:hidden}
+body{margin:0;min-height:100vh;padding:18px;background:linear-gradient(160deg,#050716,#08102b 52%,#040816);color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.shell{width:min(1120px,100%);margin:auto;min-width:0}.card{width:100%;min-width:0;padding:22px;border-radius:22px;background:linear-gradient(155deg,#171746,#0b1b42 58%,#06132f);border:1px solid rgba(122,119,255,.55);box-shadow:0 20px 60px rgba(0,0,0,.28);margin-bottom:14px}
+h1{margin:0 0 8px;font:500 30px Georgia,serif;letter-spacing:1.5px;overflow-wrap:anywhere}h2{margin:0 0 12px;font-size:19px}h3{margin:16px 0 8px;font-size:15px;color:#dce6ff}p{color:var(--muted);line-height:1.55}.top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;min-width:0}.top>div{min-width:0}.top a{color:#bfd0ff;text-decoration:none}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.field{margin-top:10px}label{display:block;margin-bottom:6px;font-size:12px;font-weight:800;color:#d9e3ff}input,select,textarea{display:block;width:100%;max-width:100%;min-width:0;min-height:46px;padding:10px 12px;border:1px solid rgba(100,128,210,.55);border-radius:13px;outline:none;background:var(--panel);color:#fff;font-size:16px}textarea{min-height:92px;resize:vertical}button{max-width:100%;min-height:44px;border:1px solid rgba(122,119,255,.7);border-radius:12px;background:linear-gradient(180deg,#3549a8,#182b73 58%,#0d1c4c);color:#fff;font-weight:900;cursor:pointer;padding:9px 12px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}button:disabled{opacity:.55;cursor:not-allowed}.wide{width:100%;margin-top:14px}.msg,.status{margin-top:12px;padding:11px 13px;border-radius:13px;background:#101b44;border:1px solid var(--line);font-weight:700;overflow-wrap:anywhere}.ok{color:var(--ok)}.err{color:var(--err)}.warn{color:var(--warn)}.small{font-size:12px;color:#91a2c4;overflow-wrap:anywhere}.hidden{display:none!important}.pill{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;background:#101b44;border:1px solid var(--line);font-size:11px;font-weight:800;color:#c9d6f5}.tableWrap{max-width:100%;overflow:auto;border:1px solid var(--line);border-radius:14px;margin-top:12px;-webkit-overflow-scrolling:touch}table{width:100%;border-collapse:collapse;min-width:760px}th,td{padding:10px 12px;text-align:left;border-bottom:1px solid rgba(115,135,210,.18);font-size:12px}th{color:#dce6ff;background:#0b1738;position:sticky;top:0}td{color:#c2d0ee}.sectionNote{padding:10px 12px;border-left:3px solid #6f87e8;background:#0c1738;border-radius:8px;color:#aebddd;font-size:12px;line-height:1.5}.checkline{display:flex;align-items:center;gap:8px;margin-top:12px;color:#d9e3ff;font-size:12px;font-weight:800}.checkline input{width:auto;min-height:auto}.branchList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}.branch{display:flex;gap:8px;align-items:flex-start;padding:10px;border:1px solid var(--line);border-radius:12px;background:#0a1534}.branch input{width:auto;min-height:auto;margin-top:3px}.preview{margin-top:12px;padding:13px;border-radius:14px;background:#0b1738;border:1px solid var(--line)}.preview b{display:block;margin-bottom:7px}.preview ul{margin:0;padding-left:18px;color:#c8d5f3}.preview li{margin:4px 0}.preview.zero{border-color:rgba(255,146,165,.55)}
+.engineMenu{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.engineMenuBtn{width:100%;min-height:112px;padding:18px;text-align:left;border-radius:18px;background:linear-gradient(155deg,#1b225f,#102453 62%,#0a1737);box-shadow:0 12px 28px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.08)}.engineMenuBtn b{display:block;font-size:17px;margin-bottom:7px}.engineMenuBtn span{display:block;color:#aebddd;font-size:12px;line-height:1.45;font-weight:600}.moduleHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.returnBtn{background:linear-gradient(180deg,#1c2b63,#111f4e 58%,#0b1739);white-space:nowrap}.modulePage{width:100%;min-width:0}
+@media(max-width:760px){body{padding:12px}.grid,.grid3,.branchList,.engineMenu{grid-template-columns:1fr}.top,.moduleHeader{flex-direction:column;align-items:stretch}.card{padding:17px}h1{font-size:26px}.returnBtn{width:100%}.engineMenuBtn{min-height:96px}.tableWrap{border-radius:12px}}
 </style>
 </head>
 <body><main class="shell">
@@ -20,65 +27,80 @@
 </section>
 
 <section id="engineState" class="hidden">
-<div class="split">
-<section class="card">
-  <h2>1. Voucher Classification</h2>
-  <p class="small">Create a stable Voucher type. New commercial rules should be published as a new Version, not by editing an issued Version.</p>
-  <div class="grid">
-    <div class="field"><label>Code</label><input id="templateCode" placeholder="EVO-RM100"></div>
-    <div class="field"><label>Name</label><input id="templateName" placeholder="RM100 Voucher"></div>
-    <div class="field"><label>Category</label><input id="templateCategory" value="custom"></div>
-    <div class="field"><label>Base Theme</label><select id="templateTheme"><option value="classic">Classic</option><option value="birthday">Birthday</option><option value="raya">Raya</option><option value="merdeka">Merdeka</option><option value="christmas">Christmas</option></select></div>
-  </div>
-  <div class="field"><label>Description</label><textarea id="templateDescription" placeholder="Internal purpose / business meaning"></textarea></div>
-  <button id="createTemplateBtn" class="wide">Create Classification</button><div id="templateMsg"></div>
-</section>
+  <section id="engineHome" class="card">
+    <h2>Voucher Engine</h2>
+    <p class="small">Choose one function to continue.</p>
+    <div class="engineMenu">
+      <button class="engineMenuBtn" data-engine-page="classification"><b>Voucher Classification</b><span>Create and manage the stable Voucher type.</span></button>
+      <button class="engineMenuBtn" data-engine-page="version"><b>Publish New Version</b><span>Publish immutable commercial rules, validity, theme and branch scope.</span></button>
+      <button class="engineMenuBtn" data-engine-page="allocation"><b>Partner Allocation</b><span>Allocate Voucher stock lots and redemption scope to Partners.</span></button>
+      <button class="engineMenuBtn" data-engine-page="inventory"><b>Inventory & Allocation</b><span>Review current Voucher Engine inventory and active Versions.</span></button>
+    </div>
+  </section>
 
-<section class="card">
-  <h2>2. Publish New Version</h2>
-  <p class="small">Published Versions are immutable. Validity, greeting and Version branch scope are frozen at publication.</p>
-  <div class="field"><label>Classification</label><select id="versionTemplate"><option value="">Select classification</option></select></div>
-  <div class="grid">
-    <div class="field"><label>Version Name</label><input id="versionName" placeholder="Current 2026"></div>
-    <div class="field"><label>Face Value (RM)</label><input id="faceValue" type="number" min="0" step="0.01" value="60"></div>
-    <div class="field"><label>Validity Rule</label><select id="validityMode"><option value="calendar_months_after_issue">Calendar months from issue</option><option value="days_after_issue">Days from issue</option></select></div>
-    <div class="field" id="monthsField"><label>Calendar Months</label><input id="validMonths" type="number" min="1" step="1" value="3"></div>
-    <div class="field hidden" id="daysField"><label>Days</label><input id="validDays" type="number" min="1" step="1" value="90"></div>
-    <div class="field"><label>Theme</label><select id="versionTheme"><option value="classic">Classic</option><option value="birthday">Birthday</option><option value="raya">Raya</option><option value="merdeka">Merdeka</option><option value="christmas">Christmas</option></select></div>
-    <div class="field"><label>Supply Limit (optional)</label><input id="supplyLimit" type="number" min="1" step="1" placeholder="Unlimited"></div>
-  </div>
-  <div class="field"><label>Occasion Greeting (optional)</label><input id="greetingText" placeholder="Happy Birthday! 🎂"></div>
-  <div class="field"><label>Terms (optional)</label><textarea id="termsText"></textarea></div>
-  <h3>Version Redemption Scope</h3>
-  <label class="checkline"><input id="versionAllBranches" type="checkbox" checked> Allow all active Evolution Optical branches</label>
-  <div id="versionBranchList" class="branchList"></div>
-  <div id="versionSelectionPreview" class="preview"><b>Version branch selection</b><div class="small">All active Evolution Optical branches</div></div>
-  <div class="sectionNote">If All Branches is off, select at least one active branch. Publication is atomic.</div>
-  <button id="publishBtn" class="wide">Publish New Version</button><div id="publishMsg"></div>
-</section>
-</div>
+  <section id="page-classification" class="modulePage hidden">
+    <section class="card">
+      <div class="moduleHeader"><div><h2>Voucher Classification</h2><p class="small">Create a stable Voucher type. New commercial rules should be published as a new Version, not by editing an issued Version.</p></div><button class="returnBtn" data-engine-return>← Return to Voucher Engine</button></div>
+      <div class="grid">
+        <div class="field"><label>Code</label><input id="templateCode" placeholder="EVO-RM100"></div>
+        <div class="field"><label>Name</label><input id="templateName" placeholder="RM100 Voucher"></div>
+        <div class="field"><label>Category</label><input id="templateCategory" value="custom"></div>
+        <div class="field"><label>Base Theme</label><select id="templateTheme"><option value="classic">Classic</option><option value="birthday">Birthday</option><option value="raya">Raya</option><option value="merdeka">Merdeka</option><option value="christmas">Christmas</option></select></div>
+      </div>
+      <div class="field"><label>Description</label><textarea id="templateDescription" placeholder="Internal purpose / business meaning"></textarea></div>
+      <button id="createTemplateBtn" class="wide">Create Classification</button><div id="templateMsg"></div>
+    </section>
+  </section>
 
-<section class="card">
-  <h2>3. Allocate to Partner</h2>
-  <p class="small">Every allocation is a separate stock lot. The issued Voucher uses the intersection of Partner claim scope, Version scope and this Allocation scope.</p>
-  <div class="grid3">
-    <div class="field"><label>Partner</label><select id="allocationPartner"><option value="">Select Partner</option></select></div>
-    <div class="field"><label>Voucher Version</label><select id="allocationVersion"><option value="">Select active Version</option></select></div>
-    <div class="field"><label>Quantity</label><input id="allocationQty" type="number" min="1" step="1" value="100"></div>
-  </div>
-  <h3>Allocation Redemption Scope</h3>
-  <label class="checkline"><input id="allocationAllBranches" type="checkbox" checked> Allow all branches permitted by Partner + Version</label>
-  <div id="allocationBranchList" class="branchList"></div>
-  <div id="allocationSelectionPreview" class="preview"><b>Allocation branch selection</b><div class="small">All branches permitted by Partner + Version</div></div>
-  <div id="effectiveBranchPreview" class="preview"><b>Final effective redemption branches</b><div class="small">Select Partner and Voucher Version to calculate.</div></div>
-  <div class="sectionNote">Each allocation keeps its own branch scope. Partner issuance consumes the oldest valid lot with remaining stock first.</div>
-  <button id="allocateBtn" class="wide">Allocate Voucher Stock</button><div id="allocationMsg"></div>
-</section>
+  <section id="page-version" class="modulePage hidden">
+    <section class="card">
+      <div class="moduleHeader"><div><h2>Publish New Version</h2><p class="small">Published Versions are immutable. Validity, greeting and Version branch scope are frozen at publication.</p></div><button class="returnBtn" data-engine-return>← Return to Voucher Engine</button></div>
+      <div class="field"><label>Classification</label><select id="versionTemplate"><option value="">Select classification</option></select></div>
+      <div class="grid">
+        <div class="field"><label>Version Name</label><input id="versionName" placeholder="Current 2026"></div>
+        <div class="field"><label>Face Value (RM)</label><input id="faceValue" type="number" min="0" step="0.01" value="60"></div>
+        <div class="field"><label>Validity Rule</label><select id="validityMode"><option value="calendar_months_after_issue">Calendar months from issue</option><option value="days_after_issue">Days from issue</option></select></div>
+        <div class="field" id="monthsField"><label>Calendar Months</label><input id="validMonths" type="number" min="1" step="1" value="3"></div>
+        <div class="field hidden" id="daysField"><label>Days</label><input id="validDays" type="number" min="1" step="1" value="90"></div>
+        <div class="field"><label>Theme</label><select id="versionTheme"><option value="classic">Classic</option><option value="birthday">Birthday</option><option value="raya">Raya</option><option value="merdeka">Merdeka</option><option value="christmas">Christmas</option></select></div>
+        <div class="field"><label>Supply Limit (optional)</label><input id="supplyLimit" type="number" min="1" step="1" placeholder="Unlimited"></div>
+      </div>
+      <div class="field"><label>Occasion Greeting (optional)</label><input id="greetingText" placeholder="Happy Birthday! 🎂"></div>
+      <div class="field"><label>Terms (optional)</label><textarea id="termsText"></textarea></div>
+      <h3>Version Redemption Scope</h3>
+      <label class="checkline"><input id="versionAllBranches" type="checkbox" checked> Allow all active Evolution Optical branches</label>
+      <div id="versionBranchList" class="branchList"></div>
+      <div id="versionSelectionPreview" class="preview"><b>Version branch selection</b><div class="small">All active Evolution Optical branches</div></div>
+      <div class="sectionNote">If All Branches is off, select at least one active branch. Publication is atomic.</div>
+      <button id="publishBtn" class="wide">Publish New Version</button><div id="publishMsg"></div>
+    </section>
+  </section>
 
-<section class="card">
-  <div class="top"><div><h2>Current Engine Inventory</h2><p class="small">Read-only operational view from the authenticated Admin session.</p></div><button id="refreshBtn">Refresh</button></div>
-  <div class="tableWrap"><table><thead><tr><th>Classification</th><th>Version</th><th>Value</th><th>Validity</th><th>Theme</th><th>Branch Scope</th><th>Status</th></tr></thead><tbody id="inventoryBody"><tr><td colspan="7">No data loaded.</td></tr></tbody></table></div>
-</section>
+  <section id="page-allocation" class="modulePage hidden">
+    <section class="card">
+      <div class="moduleHeader"><div><h2>Partner Allocation</h2><p class="small">Every allocation is a separate stock lot. The issued Voucher uses the intersection of Partner claim scope, Version scope and this Allocation scope.</p></div><button class="returnBtn" data-engine-return>← Return to Voucher Engine</button></div>
+      <div class="grid3">
+        <div class="field"><label>Partner</label><select id="allocationPartner"><option value="">Select Partner</option></select></div>
+        <div class="field"><label>Voucher Version</label><select id="allocationVersion"><option value="">Select active Version</option></select></div>
+        <div class="field"><label>Quantity</label><input id="allocationQty" type="number" min="1" step="1" value="100"></div>
+      </div>
+      <h3>Allocation Redemption Scope</h3>
+      <label class="checkline"><input id="allocationAllBranches" type="checkbox" checked> Allow all branches permitted by Partner + Version</label>
+      <div id="allocationBranchList" class="branchList"></div>
+      <div id="allocationSelectionPreview" class="preview"><b>Allocation branch selection</b><div class="small">All branches permitted by Partner + Version</div></div>
+      <div id="effectiveBranchPreview" class="preview"><b>Final effective redemption branches</b><div class="small">Select Partner and Voucher Version to calculate.</div></div>
+      <div class="sectionNote">Each allocation keeps its own branch scope. Partner issuance consumes the oldest valid lot with remaining stock first.</div>
+      <button id="allocateBtn" class="wide">Allocate Voucher Stock</button><div id="allocationMsg"></div>
+    </section>
+  </section>
+
+  <section id="page-inventory" class="modulePage hidden">
+    <section class="card">
+      <div class="moduleHeader"><div><h2>Inventory & Allocation</h2><p class="small">Read-only operational view from the authenticated Admin session.</p></div><button class="returnBtn" data-engine-return>← Return to Voucher Engine</button></div>
+      <button id="refreshBtn">Refresh</button>
+      <div class="tableWrap"><table><thead><tr><th>Classification</th><th>Version</th><th>Value</th><th>Validity</th><th>Theme</th><th>Branch Scope</th><th>Status</th></tr></thead><tbody id="inventoryBody"><tr><td colspan="7">No data loaded.</td></tr></tbody></table></div>
+    </section>
+  </section>
 </section>
 </main>
 <script>
@@ -110,6 +132,14 @@ function renderSelectors(){
 function renderInventory(){
   $('inventoryBody').innerHTML=versions.length?versions.slice().sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||''))).map(v=>{const t=templates.find(x=>x.id===v.template_id);return `<tr><td><b>${esc(t?.template_code||'')}</b><br>${esc(t?.template_name||'')}</td><td>v${esc(v.version_no)}<br>${esc(v.version_name||'')}</td><td>${v.face_value==null?'—':'RM '+esc(v.face_value)}</td><td>${esc(validityText(v))}</td><td>${esc(v.theme_override_code||t?.theme_code||'classic')}</td><td>${v.all_branches?'All active branches':'Restricted'}</td><td><span class="pill">${esc(v.status)}</span></td></tr>`}).join(''):'<tr><td colspan="7">No Voucher Versions yet.</td></tr>';
 }
+function showEnginePage(name){
+  $('engineHome').classList.add('hidden');
+  document.querySelectorAll('.modulePage').forEach(x=>x.classList.add('hidden'));
+  const page=$(`page-${name}`);if(page){page.classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
+}
+function showEngineHome(){document.querySelectorAll('.modulePage').forEach(x=>x.classList.add('hidden'));$('engineHome').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
+document.querySelectorAll('[data-engine-page]').forEach(btn=>btn.addEventListener('click',()=>showEnginePage(btn.dataset.enginePage)));
+document.querySelectorAll('[data-engine-return]').forEach(btn=>btn.addEventListener('click',showEngineHome));
 async function refreshEffectivePreview(){
   const nonce=++previewNonce,partner=$('allocationPartner').value,version=$('allocationVersion').value,all=$('allocationAllBranches').checked,codes=selectedCodes('allocationBranchCheck');effectivePreviewCount=null;
   if(!partner||!version){$('effectiveBranchPreview').className='preview';$('effectiveBranchPreview').innerHTML='<b>Final effective redemption branches</b><div class="small">Select Partner and Voucher Version to calculate.</div>';return}
@@ -126,7 +156,7 @@ async function loadData(){
   if(tRes.error)throw tRes.error;if(vRes.error)throw vRes.error;
   templates=tRes.data||[];versions=vRes.data||[];partners=pRes||[];branches=bRes||[];renderSelectors();renderVersionBranches();renderAllocationBranches();renderInventory();await refreshEffectivePreview();
 }
-async function verifyAdmin(session){if(!session?.user)return false;const realm=await rpc('current_operational_realm');if(!realm||realm.authenticated!==true||realm.realm!=='admin'){await db.auth.signOut();throw new Error('This account is not an active Evolution Voucher Admin.')}$('loginState').classList.add('hidden');$('adminState').classList.remove('hidden');$('engineState').classList.remove('hidden');$('sessionMeta').textContent=`Signed in as ${session.user.email||session.user.id}`;await loadData();return true}
+async function verifyAdmin(session){if(!session?.user)return false;const realm=await rpc('current_operational_realm');if(!realm||realm.authenticated!==true||realm.realm!=='admin'){await db.auth.signOut();throw new Error('This account is not an active Evolution Voucher Admin.')}$('loginState').classList.add('hidden');$('adminState').classList.remove('hidden');$('engineState').classList.remove('hidden');$('sessionMeta').textContent=`Signed in as ${session.user.email||session.user.id}`;showEngineHome();await loadData();return true}
 $('loginBtn').addEventListener('click',async()=>{const email=$('email').value.trim().toLowerCase(),password=$('password').value;if(!email||!password){msg($('loginMsg'),'Enter email and password.');return}$('loginBtn').disabled=true;try{const{data,error}=await db.auth.signInWithPassword({email,password});if(error)throw error;await verifyAdmin(data.session)}catch(e){msg($('loginMsg'),e.message||'Sign in failed.')}finally{$('loginBtn').disabled=false}});
 $('validityMode').addEventListener('change',()=>{const m=$('validityMode').value;$('monthsField').classList.toggle('hidden',m!=='calendar_months_after_issue');$('daysField').classList.toggle('hidden',m!=='days_after_issue')});
 $('versionAllBranches').addEventListener('change',renderVersionBranches);
