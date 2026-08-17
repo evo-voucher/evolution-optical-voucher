@@ -1,0 +1,156 @@
+version: "1.0"
+name: "XiaoE Test Efficiency Protocol"
+status: "canonical-for-this-system"
+purpose: >
+  Make XiaoE verification faster without sacrificing evidence, root-cause discipline,
+  security, rollback safety or system-wide confidence. Testing expands with risk instead
+  of defaulting to a full rebuild for every change.
+
+core_rule: "Run the smallest test set that can prove the current change correct; expand only when risk, scope, failure evidence or release stage requires it."
+
+modes:
+  fast_check:
+    target_time: "about 30 seconds when practical"
+    use_for:
+      - "single-file frontend changes"
+      - "copy, styling or presentation changes"
+      - "small isolated logic changes"
+      - "first-pass diagnosis"
+    checks:
+      - "syntax / parse validity"
+      - "changed-file contract checks"
+      - "direct dependency checks"
+      - "static security and secret checks when relevant"
+      - "targeted RPC / function signature checks when relevant"
+    stop_rule: "If Fast Check fails, fix before running broader tests."
+
+  targeted_test:
+    target_time: "about 1-3 minutes when practical"
+    use_for:
+      - "normal bug fixes"
+      - "single portal or feature changes"
+      - "auth recovery changes"
+      - "one RPC / Edge Function / business flow change"
+    routing_examples:
+      partner:
+        - "login"
+        - "dashboard"
+        - "staff management if touched"
+        - "issue voucher"
+        - "share/public voucher if touched"
+      staff:
+        - "login"
+        - "verify voucher"
+        - "redeem"
+        - "recent redemption history"
+      admin:
+        - "login"
+        - "affected admin control"
+        - "report/update path if touched"
+      auth:
+        - "valid session"
+        - "401 path"
+        - "refresh"
+        - "single retry"
+        - "fail closed"
+      voucher_engine:
+        - "catalog"
+        - "allocation/capacity"
+        - "issue"
+        - "public voucher"
+    rule: "Do not rebuild unrelated subsystems merely because a targeted test is available."
+
+  core_smoke:
+    target_time: "few minutes"
+    use_for:
+      - "shared frontend client changes"
+      - "Auth / RLS changes"
+      - "database business-rule changes"
+      - "Voucher Engine changes"
+      - "shared Edge Function infrastructure"
+      - "changes with multi-portal blast radius"
+    required_flow:
+      - "Admin access"
+      - "Partner access"
+      - "Issue Voucher"
+      - "Public Voucher"
+      - "Staff Verify"
+      - "Redeem"
+      - "Admin Redemption Record"
+    rule: "Core Smoke is the default proof for shared-system changes; Full Regression is not."
+
+  full_regression:
+    use_only_when:
+      - "before production release / formal cutover"
+      - "bottom-layer architecture changes"
+      - "migration lineage changes"
+      - "security boundary changes with broad blast radius"
+      - "same path fails twice"
+      - "patch consolidation changes authoritative ownership"
+      - "important XiaoE shutdown checkpoint when release confidence is required"
+      - "Eric explicitly requests a full-system audit"
+    includes:
+      - "fresh migration rebuild"
+      - "all SQL contracts"
+      - "runtime E2E"
+      - "Auth / GoTrue E2E"
+      - "Edge Function boundary E2E"
+      - "Partner Staff lifecycle E2E"
+      - "Admin controls E2E"
+      - "Browser E2E"
+      - "deployment/public smoke when applicable"
+    rule: "Full Regression is a release gate, not the default debugging loop."
+
+adaptive_test_router:
+  rules:
+    - "Map changed files/functions to the smallest owning module first."
+    - "Run Fast Check before expensive tests."
+    - "If Fast Check passes, run only targeted tests for the affected module."
+    - "Escalate to Core Smoke when the change affects shared clients, Auth, RLS, data model, voucher issuance/redeem semantics or multiple portals."
+    - "Escalate to Full Regression only when its trigger conditions are met."
+    - "If a targeted test exposes an unexpected cross-module dependency, expand one level rather than jumping immediately to full rebuild."
+    - "If the same repair path fails twice, stop repetition and reopen root-cause / architectural analysis."
+
+ci_efficiency:
+  principles:
+    - "Avoid repeatedly downloading and rebuilding the same local Supabase environment when unnecessary."
+    - "Use path-based or module-based workflow triggers where practical."
+    - "Reuse cached dependencies and test drivers where GitHub Actions safely supports it."
+    - "Frontend-only changes should not automatically require a full database rebuild unless their contract depends on database semantics."
+    - "Database/Auth/RLS migrations must still get fresh rebuild coverage before release."
+    - "Keep security checks independent from performance shortcuts."
+
+xiaoe_online_behavior:
+  on_start:
+    - "Identify current project and latest unfinished engineering checkpoint."
+    - "Classify current change scope and risk."
+    - "Choose Fast Check, Targeted Test, Core Smoke or Full Regression automatically."
+    - "Do not ask Eric to choose the test level unless a real business/risk decision is required."
+  autonomous_loop:
+    - "test"
+    - "diagnose root cause"
+    - "repair if free, reversible and in delegated scope"
+    - "rerun the smallest sufficient test"
+    - "expand test scope only if evidence requires it"
+    - "report only the final verified result or a genuine user-only blocker"
+  communication_rule: >
+    Do not narrate every intermediate CI step to Eric. Keep working autonomously and report
+    when the relevant verification has reached a stable conclusion, unless a paid action,
+    destructive/high-risk production change, identity/MFA step or physical-device action is required.
+
+safety_guards:
+  - "Speed never permits guessing."
+  - "Speed never permits weakening RLS, JWT verification or least privilege."
+  - "Speed never permits skipping rollback/recovery for risky changes."
+  - "Speed never permits declaring PASS without evidence."
+  - "Speed never permits using production business data for destructive tests when sandbox/local evidence is sufficient."
+  - "Paid actions still require Eric's explicit approval."
+
+success_metric:
+  normal_bug_fix: "Fast Check + Targeted Test, typically tens of seconds to a few minutes"
+  shared_core_change: "Fast Check + Core Smoke"
+  release_or_architecture_change: "Full Regression"
+
+formula:
+  english: "Test narrow first. Expand with risk. Full regression only when it earns its cost."
+  chinese: "先小测，按风险扩；日常不重建，关键才全测；快，但不猜、不降安全、不假装PASS。"
