@@ -1,7 +1,7 @@
 // Evolution Voucher UAT Preview backend configuration.
 // Isolated preview: canonical reconstructed Supabase backend + preview-local customer links.
 // Browser clients use the Supabase publishable key only. Never place service_role here.
-const EVOLUTION_ASSET_VERSION='20260818-01';
+const EVOLUTION_ASSET_VERSION='20260818-02';
 window.EVOLUTION_ASSET_VERSION=EVOLUTION_ASSET_VERSION;
 const evolutionAsset=path=>`${path}?v=${encodeURIComponent(EVOLUTION_ASSET_VERSION)}`;
 
@@ -161,6 +161,16 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   const script=document.createElement('script');
   script.id='allocationValidityUiScript';
   script.src=evolutionAsset('assets/js/allocation-validity-ui.js');
+  document.head.appendChild(script);
+})();
+
+(function loadAllocationManagementUI(){
+  const path=String(window.location?.pathname||'').toLowerCase();
+  if(!path.includes('voucher-engine'))return;
+  if(document.getElementById('allocationManagementUiScript'))return;
+  const script=document.createElement('script');
+  script.id='allocationManagementUiScript';
+  script.src=evolutionAsset('assets/js/allocation-management-ui.js');
   document.head.appendChild(script);
 })();
 
