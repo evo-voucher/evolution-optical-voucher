@@ -1,7 +1,7 @@
 // Evolution Voucher UAT Preview backend configuration.
 // Isolated preview: canonical reconstructed Supabase backend + preview-local customer links.
 // Browser clients use the Supabase publishable key only. Never place service_role here.
-const EVOLUTION_ASSET_VERSION='20260817-9';
+const EVOLUTION_ASSET_VERSION='20260817-10';
 window.EVOLUTION_ASSET_VERSION=EVOLUTION_ASSET_VERSION;
 const evolutionAsset=path=>`${path}?v=${encodeURIComponent(EVOLUTION_ASSET_VERSION)}`;
 
@@ -125,4 +125,21 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   script.id='testSandboxUiScript';
   script.src=evolutionAsset('assets/js/test-sandbox-ui.js');
   document.head.appendChild(script);
+})();
+
+(function loadVoucherCardImageUI(){
+  const path=String(window.location?.pathname||'').toLowerCase();
+  if(!path.endsWith('/partner.html'))return;
+  if(document.getElementById('voucherCardRendererScript'))return;
+  const renderer=document.createElement('script');
+  renderer.id='voucherCardRendererScript';
+  renderer.src=evolutionAsset('assets/js/voucher-card-renderer.js');
+  renderer.onload=()=>{
+    if(document.getElementById('voucherCardShareUiScript'))return;
+    const share=document.createElement('script');
+    share.id='voucherCardShareUiScript';
+    share.src=evolutionAsset('assets/js/voucher-card-share-ui.js');
+    document.head.appendChild(share);
+  };
+  document.head.appendChild(renderer);
 })();
