@@ -41,7 +41,7 @@
       if(!realm||realm.authenticated!==true||realm.realm!=='admin'){
         await db.auth.signOut({scope:'local'});throw new Error('This account is not an active Evolution Voucher Admin.');
       }
-      location.replace('admin.html?v=20260818-03');
+      location.replace('admin-dashboard.html?v=20260818-03');
     }catch(e){show(e?.message||'Sign in failed.');btn.disabled=false;btn.classList.remove('loading');}
   });
 })();
