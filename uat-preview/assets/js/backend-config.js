@@ -1,7 +1,7 @@
 // Evolution Voucher UAT Preview backend configuration.
 // Isolated preview: canonical reconstructed Supabase backend + preview-local customer links.
 // Browser clients use the Supabase publishable key only. Never place service_role here.
-const EVOLUTION_ASSET_VERSION='20260817-8';
+const EVOLUTION_ASSET_VERSION='20260817-9';
 window.EVOLUTION_ASSET_VERSION=EVOLUTION_ASSET_VERSION;
 const evolutionAsset=path=>`${path}?v=${encodeURIComponent(EVOLUTION_ASSET_VERSION)}`;
 
@@ -25,6 +25,10 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
     if(!card)return;
     card.id='adminSettingsCard';
     card.dataset.adminSection='settings';
+    const heading=card.querySelector('h2');
+    if(heading)heading.textContent='System Settings';
+    const toolgrid=card.querySelector('.toolgrid');
+    if(toolgrid)toolgrid.remove();
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',register,{once:true});
   else register();
