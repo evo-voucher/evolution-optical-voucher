@@ -1,4 +1,4 @@
-version: "1.0"
+version: "1.1"
 name: "XiaoE Test Efficiency Protocol"
 status: "canonical-for-this-system"
 purpose: >
@@ -101,8 +101,42 @@ modes:
       - "deployment/public smoke when applicable"
     rule: "Full Regression is a release gate, not the default debugging loop."
 
+targeted_root_debug:
+  status: "default-for-reported-bugs"
+  trigger_examples:
+    - "a button cannot be pressed"
+    - "a page cannot be used"
+    - "a portal cannot sign in"
+    - "Share / Issue / Verify / Redeem does not work"
+    - "a record does not update or display"
+  default_flow:
+    - "lock the reported failure path"
+    - "reproduce the exact user experience quickly"
+    - "identify the first broken point"
+    - "trace only the related chain: UI -> state -> Auth -> RPC/Edge/API -> database -> response -> UI"
+    - "diagnose root cause before changing code"
+    - "repair the smallest root cause that restores the whole path"
+    - "rerun the complete affected path end-to-end"
+    - "stop when that path is verified PASS unless evidence shows wider blast radius"
+  anti_patch_rule: >
+    A local symptom does not justify a local patch if the real cause is shared state, Auth,
+    permissions, backend contract, data flow or another upstream dependency. Fix the owning
+    root cause, not merely the visible button or message.
+  expansion_rule:
+    - "Do not audit the whole system for a local failure by default."
+    - "Expand one level only when evidence shows a shared dependency or wider blast radius."
+    - "If the same repair path fails twice, stop and reopen root-cause / architectural analysis."
+    - "Escalate to Core Smoke for shared Auth/RLS/client/data-model changes."
+    - "Escalate to Full Regression only for release gates or explicit full-system audit triggers."
+  communication_rule: >
+    For normal reported bugs, do not narrate every diagnostic step. Work the path autonomously,
+    repair within delegated free/reversible scope, rerun the path, and report the verified result
+    or a genuine user-only blocker.
+  chinese_formula: "局部故障，局部追根；跨层根因，才扩大范围。"
+
 adaptive_test_router:
   rules:
+    - "For a concrete user-reported bug, Targeted Root Debug takes priority over broad test selection."
     - "Map changed files/functions to the smallest owning module first."
     - "Run Fast Check before expensive tests."
     - "If Fast Check passes, run only targeted tests for the affected module."
@@ -123,14 +157,17 @@ ci_efficiency:
 xiaoe_online_behavior:
   on_start:
     - "Identify current project and latest unfinished engineering checkpoint."
+    - "If Eric reports a concrete failure, enter Targeted Root Debug immediately."
+    - "Lock the exact affected business path before selecting broader tests."
     - "Classify current change scope and risk."
-    - "Choose Fast Check, Targeted Test, Core Smoke or Full Regression automatically."
+    - "Choose Fast Check, Targeted Test, Core Smoke or Full Regression automatically only after the failure path is understood."
     - "Do not ask Eric to choose the test level unless a real business/risk decision is required."
   autonomous_loop:
-    - "test"
+    - "reproduce the reported failure path"
+    - "find the first broken point"
     - "diagnose root cause"
     - "repair if free, reversible and in delegated scope"
-    - "rerun the smallest sufficient test"
+    - "rerun the full affected path end-to-end"
     - "expand test scope only if evidence requires it"
     - "report only the final verified result or a genuine user-only blocker"
   communication_rule: >
@@ -147,10 +184,10 @@ safety_guards:
   - "Paid actions still require Eric's explicit approval."
 
 success_metric:
-  normal_bug_fix: "Fast Check + Targeted Test, typically tens of seconds to a few minutes"
+  normal_bug_fix: "Targeted Root Debug + affected-path E2E, typically tens of seconds to a few minutes"
   shared_core_change: "Fast Check + Core Smoke"
   release_or_architecture_change: "Full Regression"
 
 formula:
-  english: "Test narrow first. Expand with risk. Full regression only when it earns its cost."
-  chinese: "先小测，按风险扩；日常不重建，关键才全测；快，但不猜、不降安全、不假装PASS。"
+  english: "Trace the broken path first. Fix the owner. Expand only with evidence."
+  chinese: "局部故障，局部追根；跨层根因，才扩大范围。快，但不猜、不降安全、不假装PASS。"
