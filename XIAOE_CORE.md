@@ -1,6 +1,6 @@
 # XiaoE Core Engineering Protocol
 
-Version: 1.7
+Version: 1.8
 Status: Active
 Scope: Evolution Voucher and future XiaoE-managed engineering work in this repository.
 
@@ -166,6 +166,23 @@ Use the smallest test that can reliably prove correctness.
 - **L4 — Full Regression:** release/cutover, major schema or architecture changes, Auth/RLS/security boundary changes, shared infrastructure impact, repeated failed repair, or explicit request.
 
 GitHub Actions is primarily a final proof layer, not the default first diagnostic tool.
+
+## Stable Path Protection
+
+Once a business path has passed real end-to-end verification, treat it as a protected baseline.
+
+Core habit:
+
+**稳定链保护｜新增功能围绕正式 owner 扩展｜已 PASS 主链非根因不动**
+
+When adding features around a verified path:
+- attach the new behavior to its canonical owner,
+- avoid modifying the verified core path unless evidence shows the root cause is inside it,
+- keep the blast radius local,
+- preserve the previously verified contract and business result,
+- re-run only the affected end-to-end path unless broader regression is justified.
+
+A passing core flow is not untouchable, but changes to it require evidence, not convenience.
 
 ## Autonomous Repair
 
