@@ -6,7 +6,7 @@ const EVOLUTION_ASSET_VERSION=(()=>{
   try{scriptVersion=new URL(document.currentScript?.src||'',window.location.href).searchParams.get('v')||'';}catch(_){}
   const pagePath=String(window.location?.pathname||'').toLowerCase();
   const legacyAdminBootstrap=pagePath.endsWith('/admin.html')&&scriptVersion==='20260818-07';
-  return pageVersion||(legacyAdminBootstrap?'20260818-29':scriptVersion)||'20260818-29';
+  return pageVersion||(legacyAdminBootstrap?'20260818-30':scriptVersion)||'20260818-30';
 })();
 window.EVOLUTION_ASSET_VERSION=EVOLUTION_ASSET_VERSION;
 const evolutionAsset=path=>`${path}?v=${encodeURIComponent(EVOLUTION_ASSET_VERSION)}`;
@@ -81,6 +81,19 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
 })();
 
 function evoLoadScript(id,path,test){if(test&&!test())return;if(document.getElementById(id))return;const s=document.createElement('script');s.id=id;s.src=evolutionAsset(path);document.head.appendChild(s);}
-(function(){const path=String(window.location?.pathname||'').toLowerCase();evoLoadScript('adminMobileFocusScript','assets/js/admin-mobile-focus.js',()=>path.endsWith('/admin.html'));evoLoadScript('allocationValidityUiScript','assets/js/allocation-validity-ui.js',()=>path.endsWith('/admin.html')||path.includes('voucher-engine'));evoLoadScript('allocationManagementUiScript','assets/js/allocation-management-ui.js',()=>path.includes('voucher-engine'));evoLoadScript('partnerManagementUiScript','assets/js/partner-management-ui.js',()=>path.endsWith('/admin.html'));evoLoadScript('portalAccessShareScript','assets/js/portal-access-share.js',()=>path.endsWith('/admin.html')||path.endsWith('/partner.html')||path.endsWith('/admin-staff.html'));evoLoadScript('customerDistrictUiScript','assets/js/customer-district-ui.js',()=>path.endsWith('/admin.html')||path.endsWith('/partner.html'));evoLoadScript('adminSettingsCollapseScript','assets/js/admin-settings-collapse.js',()=>path.endsWith('/admin.html'));evoLoadScript('portalExcelExportScript','assets/js/portal-excel-export.js',()=>path.endsWith('/partner.html')||path.endsWith('/staff.html'));})();
+(function(){
+  const path=String(window.location?.pathname||'').toLowerCase();
+  const isAdmin=path.endsWith('/admin.html');
+  evoLoadScript('adminMobileFocusScript','assets/js/admin-mobile-focus.js',()=>isAdmin);
+  evoLoadScript('allocationValidityUiScript','assets/js/allocation-validity-ui.js',()=>isAdmin||path.includes('voucher-engine'));
+  evoLoadScript('allocationManagementUiScript','assets/js/allocation-management-ui.js',()=>path.includes('voucher-engine'));
+  evoLoadScript('partnerManagementUiScript','assets/js/partner-management-ui.js',()=>isAdmin);
+  if(!isAdmin)evoLoadScript('portalAccessShareScript','assets/js/portal-access-share.js',()=>path.endsWith('/partner.html')||path.endsWith('/admin-staff.html'));
+  const loadAdminPartnerCreator=()=>{if(!isAdmin)return;evoLoadScript('portalAccessShareScript','assets/js/portal-access-share.js',()=>true);};
+  if(isAdmin){if(document.readyState==='complete')setTimeout(loadAdminPartnerCreator,0);else window.addEventListener('load',()=>setTimeout(loadAdminPartnerCreator,0),{once:true});}
+  evoLoadScript('customerDistrictUiScript','assets/js/customer-district-ui.js',()=>isAdmin||path.endsWith('/partner.html'));
+  evoLoadScript('adminSettingsCollapseScript','assets/js/admin-settings-collapse.js',()=>isAdmin);
+  evoLoadScript('portalExcelExportScript','assets/js/portal-excel-export.js',()=>path.endsWith('/partner.html')||path.endsWith('/staff.html'));
+})();
 
 (function loadVoucherCardImageUI(){const path=String(window.location?.pathname||'').toLowerCase();if(!path.endsWith('/partner.html'))return;if(document.getElementById('voucherCardRendererScript'))return;const renderer=document.createElement('script');renderer.id='voucherCardRendererScript';renderer.src=evolutionAsset('assets/js/voucher-card-renderer.js');renderer.onload=()=>{if(document.getElementById('voucherCardShareUiScript'))return;const share=document.createElement('script');share.id='voucherCardShareUiScript';share.src=evolutionAsset('assets/js/voucher-card-share-ui.js');document.head.appendChild(share);};document.head.appendChild(renderer);})();
