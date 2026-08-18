@@ -55,10 +55,6 @@ serve(async (req) => {
     const contact_phone = typeof body.contact_phone === "string" ? body.contact_phone.trim() : null;
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     const staff_limit = Number(body.staff_limit ?? 0);
-    const all_branches = body.all_branches === true;
-    const branch_codes = Array.isArray(body.branch_codes)
-      ? [...new Set(body.branch_codes.map((v: unknown) => String(v || "").trim().toUpperCase()).filter(Boolean))]
-      : [];
     const rawAllocations = Array.isArray(body.allocations)
       ? body.allocations
       : (body.version_id ? [{ version_id: body.version_id, quantity: body.quantity, validity_anchor: body.validity_anchor, validity_value: body.validity_value, validity_unit: body.validity_unit }] : []);
@@ -80,7 +76,6 @@ serve(async (req) => {
     if (allocations.some((x: any) => !Number.isInteger(x.validity_value) || x.validity_value < 1)) return json({ success: false, error: "Each Voucher validity value must be a whole number of at least 1" }, 400);
     if (allocations.some((x: any) => !["days", "months"].includes(x.validity_unit))) return json({ success: false, error: "Validity Unit must be Days or Months" }, 400);
     if (new Set(allocations.map((x: any) => x.version_id)).size !== allocations.length) return json({ success: false, error: "Duplicate Initial Voucher selected" }, 400);
-    if (!all_branches && branch_codes.length < 1) return json({ success: false, error: "Select at least one claim branch" }, 400);
 
     const temporaryPassword = PARTNER_INITIAL_PASSWORD;
     const { data: createdUserData, error: createUserError } = await server.auth.admin.createUser({ email, password: temporaryPassword, email_confirm: true });
@@ -97,8 +92,8 @@ serve(async (req) => {
       p_login_email: email,
       p_actor_user_id: caller.id,
       p_allocations: allocations,
-      p_all_branches: all_branches,
-      p_branch_codes: branch_codes,
+      p_all_branches: true,
+      p_branch_codes: [],
     });
 
     if (provisionError || !provisioned?.success) {
