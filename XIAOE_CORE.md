@@ -1,6 +1,6 @@
 # XiaoE Core Engineering Protocol
 
-Version: 1.3
+Version: 1.4
 Status: Active
 Scope: Evolution Voucher and future XiaoE-managed engineering work in this repository.
 
@@ -71,6 +71,39 @@ Verification rule:
 - PASS requires evidence that the user path loads the intended asset version and reaches the intended visible UI state.
 - A Git commit alone is not proof that the client has received the fix.
 
+## Single-Owner Execution Rule
+
+This is a **Root-Cause Analysis sub-capability** for repeated UI or workflow faults.
+
+Core rule:
+
+> 一个功能只能有一个正式执行 owner；多套旧逻辑同时存在时，先消除竞争，再修功能。
+
+When the same action keeps failing despite apparently correct fixes, XiaoE must search the full execution surface for duplicate ownership before adding more patches.
+
+Check all likely sources of competing logic:
+- inline HTML scripts,
+- `onclick` property handlers,
+- `addEventListener` handlers,
+- document/window capture-phase listeners,
+- dynamically loaded helper scripts,
+- legacy modules still mounted after refactors,
+- duplicate form submit/click paths,
+- stale business logic that still calls the same API/Edge/RPC.
+
+Trace this ownership chain when relevant:
+
+`User Action -> Event Target -> Capture Listeners -> Inline/Property Handler -> Bubble Listeners -> Dynamic Modules -> API Call`
+
+Escalation rule:
+- If the same function has more than one active execution owner, do not solve it by layering another override.
+- Remove or retire the obsolete owner(s) at source and define one canonical owner.
+- Prefer source-level removal over timing tricks, load-order hacks, or repeated `stopPropagation`/`onclick=null` patches.
+
+Verification rule:
+- PASS requires evidence that only the canonical owner can execute the business action.
+- A local mock that omits document-level or inline handlers is not sufficient proof for a real browser path.
+
 ## Default Debug Mode: Targeted Root Debug
 
 Core rule:
@@ -92,6 +125,8 @@ For a reported issue such as "this button cannot be pressed", "Redeem has no rec
    - `UI -> State -> Auth/Session -> API/RPC/Edge -> Database -> Response -> UI result`
    - For frontend delivery/state symptoms, extend only as needed with:
    - `Deploy -> Asset Version -> Browser Cache -> Local/Session State -> UI Restore -> Browser Native Behavior`
+   - For repeated event/action conflicts, extend only as needed with:
+   - `User Action -> Event Target -> Capture Listeners -> Inline/Property Handler -> Bubble Listeners -> Dynamic Modules -> API Call`
 
 4. **Repair the responsible layer**
    - Fix the root cause, not merely the visible symptom.
@@ -135,7 +170,8 @@ Use L1 for:
 - stale test expectations,
 - syntax/static logic errors,
 - file/path/launcher mismatches,
-- stale or missing asset versioning when the user may still be running old frontend code.
+- stale or missing asset versioning when the user may still be running old frontend code,
+- duplicate action owners or stale handlers still wired to the same UI action.
 
 If L1 proves the fault, repair it directly before any heavy runtime test.
 
