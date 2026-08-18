@@ -26,17 +26,17 @@ body[data-admin-section="partners"] .check span{
   overflow-wrap:anywhere;
 }
 
-/* Add Partner form: white entry fields for stronger contrast. */
+/* Add Partner form: softer off-white entry fields for comfortable contrast. */
 body[data-admin-section="partners"] #dashboardState .card:has(#newPartnerName) input:not([type="hidden"]),
 body[data-admin-section="partners"] #dashboardState .card:has(#newPartnerName) select{
-  background:#ffffff!important;
-  color:#0b1530!important;
-  border-color:#d6dbea!important;
-  -webkit-text-fill-color:#0b1530!important;
-  caret-color:#0b1530;
+  background:#d9dee8!important;
+  color:#15213a!important;
+  border-color:#aeb8cb!important;
+  -webkit-text-fill-color:#15213a!important;
+  caret-color:#15213a;
 }
 body[data-admin-section="partners"] #dashboardState .card:has(#newPartnerName) input::placeholder{
-  color:#78839c!important;
+  color:#65728a!important;
   opacity:1;
 }
 
