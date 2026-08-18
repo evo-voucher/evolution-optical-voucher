@@ -38,5 +38,13 @@ input::placeholder,textarea::placeholder{color:#8f9abb!important}input:focus,sel
 /* Partner primary module controls */
 .moduleNav .moduleBtn{min-height:82px!important;padding:15px 14px!important;box-shadow:none!important}.moduleNav .moduleBtn b{font-size:15px!important;line-height:1.22!important}.moduleNav .moduleBtn span{font-size:11px!important;line-height:1.4!important}.moduleNav #staffNavBtn:not(.hidden){display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;text-align:center!important}
 
+/* Partner Staff display name -> Redeem Portal. Internal partner_staff role remains unchanged. */
+#staffNavBtn b{font-size:0!important}
+#staffNavBtn b::after{content:"Redeem Portal";font-size:15px;line-height:1.22}
+#staffNavBtn span{font-size:0!important}
+#staffNavBtn span::after{content:"Manage redeem staff accounts and access";font-size:11px;line-height:1.4}
+#staffManagementCard .moduleHead h2{font-size:0!important}
+#staffManagementCard .moduleHead h2::after{content:"Redeem Portal";font-size:clamp(20px,4vw,28px);line-height:1.2}
+
 @media(max-width:780px){.shell{padding:12px 10px 110px!important}.card{padding:17px!important;border-radius:17px!important;margin-bottom:10px!important}.toprow{align-items:flex-start!important}.stats,.miniStats{grid-template-columns:repeat(2,minmax(0,1fr))!important}.toolgrid,.formgrid,.controls,.filterbar,.searchRow{grid-template-columns:1fr!important}.branchgrid{grid-template-columns:1fr!important}.tool{min-height:auto!important}.actions{display:flex!important;flex-wrap:wrap!important}.actions button{flex:1 1 140px!important}input,select,textarea,button{font-size:16px!important}.admin-bottom-nav{width:calc(100% - 12px);bottom:max(5px,env(safe-area-inset-bottom));border-radius:18px}.admin-bottom-nav button{min-height:52px!important;font-size:9px!important}.admin-nav-icon{font-size:17px}}
 @media(max-width:430px){.shell{padding-left:8px!important;padding-right:8px!important}.card{padding:16px!important}.stats,.miniStats{grid-template-columns:1fr 1fr!important}h1{font-size:26px!important}h2{font-size:22px!important}.admin-bottom-nav{gap:1px;padding:5px}.admin-bottom-nav button{padding:6px 1px!important;font-size:8px!important;letter-spacing:-.02em}}
