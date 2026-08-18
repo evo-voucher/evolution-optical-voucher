@@ -6,7 +6,7 @@ const EVOLUTION_ASSET_VERSION=(()=>{
   try{scriptVersion=new URL(document.currentScript?.src||'',window.location.href).searchParams.get('v')||'';}catch(_){}
   const pagePath=String(window.location?.pathname||'').toLowerCase();
   const legacyAdminBootstrap=pagePath.endsWith('/admin.html')&&scriptVersion==='20260818-07';
-  return pageVersion||(legacyAdminBootstrap?'20260818-30':scriptVersion)||'20260818-30';
+  return pageVersion||(legacyAdminBootstrap?'20260818-31':scriptVersion)||'20260818-31';
 })();
 window.EVOLUTION_ASSET_VERSION=EVOLUTION_ASSET_VERSION;
 const evolutionAsset=path=>`${path}?v=${encodeURIComponent(EVOLUTION_ASSET_VERSION)}`;
@@ -27,7 +27,7 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
     metas.forEach(meta=>meta.setAttribute('content','#000000'));
     document.documentElement.style.backgroundColor='#000000';
   };
-  apply();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});
+  apply();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
 })();
 
 (function installAdminReturnToMain(){
@@ -89,7 +89,7 @@ function evoLoadScript(id,path,test){if(test&&!test())return;if(document.getElem
   evoLoadScript('allocationManagementUiScript','assets/js/allocation-management-ui.js',()=>path.includes('voucher-engine'));
   evoLoadScript('partnerManagementUiScript','assets/js/partner-management-ui.js',()=>isAdmin);
   if(!isAdmin)evoLoadScript('portalAccessShareScript','assets/js/portal-access-share.js',()=>path.endsWith('/partner.html')||path.endsWith('/admin-staff.html'));
-  const loadAdminPartnerCreator=()=>{if(!isAdmin)return;evoLoadScript('portalAccessShareScript','assets/js/portal-access-share.js',()=>true);};
+  const loadAdminPartnerCreator=()=>{if(!isAdmin)return;evoLoadScript('portalAccessShareScript','assets/js/portal-access-share.js',()=>true);evoLoadScript('adminPartnerCreateOwnerScript','assets/js/admin-partner-create-owner.js',()=>true);};
   if(isAdmin){if(document.readyState==='complete')setTimeout(loadAdminPartnerCreator,0);else window.addEventListener('load',()=>setTimeout(loadAdminPartnerCreator,0),{once:true});}
   evoLoadScript('customerDistrictUiScript','assets/js/customer-district-ui.js',()=>isAdmin||path.endsWith('/partner.html'));
   evoLoadScript('adminSettingsCollapseScript','assets/js/admin-settings-collapse.js',()=>isAdmin);
