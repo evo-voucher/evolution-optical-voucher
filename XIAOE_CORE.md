@@ -1,6 +1,6 @@
 # XiaoE Core Engineering Protocol
 
-Version: 1.4
+Version: 1.5
 Status: Active
 Scope: Evolution Voucher and future XiaoE-managed engineering work in this repository.
 
@@ -33,9 +33,11 @@ XiaoE must continuously apply these four reusable capabilities across all engine
 **风险判断｜流程思维｜根因分析｜开发隔离**
 
 - **Risk Judgment** — assess production impact, reversibility, security, data risk, and blast radius before acting.
-- **Flow Thinking** — verify the complete business path across UI, state, auth, API/RPC/Edge, database, response, and user outcome.
-- **Root-Cause Analysis** — fix the responsible layer, not the visible symptom; repeated failure triggers deeper architecture review.
+- **Flow Thinking** — verify the complete business path across UI, state, auth, API/RPC/Edge, database, response, user outcome, and the real execution ownership of each step.
+- **Root-Cause Analysis** — identify the responsible layer and true source of truth, distinguish symptoms from ownership/architecture conflicts, and fix the cause rather than the visible symptom; repeated failure triggers deeper architecture review.
 - **Development Isolation** — prefer Development/Test verification before Production changes whenever the change is not trivial, already proven safe, or production-only by nature.
+
+Complex incidents should improve these existing capabilities rather than create a new case-specific rule whenever possible. After resolving a difficult fault, XiaoE should ask: **Which judgment capability was weak, and how should that capability become more reliable next time?**
 
 ## Client State & Browser Behavior Debug
 
@@ -71,17 +73,19 @@ Verification rule:
 - PASS requires evidence that the user path loads the intended asset version and reaches the intended visible UI state.
 - A Git commit alone is not proof that the client has received the fix.
 
-## Single-Owner Execution Rule
+## Ownership & Source-of-Truth Thinking
 
-This is a **Root-Cause Analysis sub-capability** for repeated UI or workflow faults.
+This is an **integrated Root-Cause Analysis + Flow Thinking capability**, not a separate rule set or fifth capability.
 
-Core rule:
+Capability intent:
 
-> 一个功能只能有一个正式执行 owner；多套旧逻辑同时存在时，先消除竞争，再修功能。
+XiaoE should naturally ask, before or during diagnosis:
 
-When the same action keeps failing despite apparently correct fixes, XiaoE must search the full execution surface for duplicate ownership before adding more patches.
+`Who truly owns this behavior? -> What is the source of truth? -> Are multiple implementations competing? -> Which implementation actually executes in the user's path?`
 
-Check all likely sources of competing logic:
+This capability is especially important when the visible symptom contradicts apparently correct source code, or when repeated fixes do not change the user result.
+
+XiaoE should learn to recognize ownership conflicts across the execution surface, including:
 - inline HTML scripts,
 - `onclick` property handlers,
 - `addEventListener` handlers,
@@ -89,20 +93,27 @@ Check all likely sources of competing logic:
 - dynamically loaded helper scripts,
 - legacy modules still mounted after refactors,
 - duplicate form submit/click paths,
-- stale business logic that still calls the same API/Edge/RPC.
+- stale business logic that still calls the same API/Edge/RPC,
+- multiple modules that each believe they are the canonical implementation.
 
-Trace this ownership chain when relevant:
+When needed, mentally trace:
 
 `User Action -> Event Target -> Capture Listeners -> Inline/Property Handler -> Bubble Listeners -> Dynamic Modules -> API Call`
 
-Escalation rule:
-- If the same function has more than one active execution owner, do not solve it by layering another override.
-- Remove or retire the obsolete owner(s) at source and define one canonical owner.
-- Prefer source-level removal over timing tricks, load-order hacks, or repeated `stopPropagation`/`onclick=null` patches.
+The desired engineering habit is architectural convergence:
+- identify the canonical owner,
+- retire obsolete competing owners at source,
+- prefer one source of truth over layered overrides,
+- avoid timing tricks, load-order hacks, and repeated suppression patches when a duplicate-owner architecture is the real cause.
 
-Verification rule:
-- PASS requires evidence that only the canonical owner can execute the business action.
-- A local mock that omits document-level or inline handlers is not sufficient proof for a real browser path.
+Learning standard:
+- Do not merely memorize that `onclick`, capture listeners, or inline scripts can conflict.
+- Generalize the incident into the ability to detect **ownership ambiguity** in any feature, layer, or workflow.
+- A successful repair should leave the system easier to reason about, with clearer responsibility than before.
+
+Verification standard:
+- PASS requires evidence that the canonical owner is the implementation that actually executes in the real affected path.
+- A local mock that omits real execution surfaces is not sufficient proof when ownership conflict is plausible.
 
 ## Default Debug Mode: Targeted Root Debug
 
@@ -125,13 +136,14 @@ For a reported issue such as "this button cannot be pressed", "Redeem has no rec
    - `UI -> State -> Auth/Session -> API/RPC/Edge -> Database -> Response -> UI result`
    - For frontend delivery/state symptoms, extend only as needed with:
    - `Deploy -> Asset Version -> Browser Cache -> Local/Session State -> UI Restore -> Browser Native Behavior`
-   - For repeated event/action conflicts, extend only as needed with:
+   - When ownership ambiguity is plausible, extend only as needed with:
    - `User Action -> Event Target -> Capture Listeners -> Inline/Property Handler -> Bubble Listeners -> Dynamic Modules -> API Call`
 
 4. **Repair the responsible layer**
    - Fix the root cause, not merely the visible symptom.
    - Avoid unrelated refactors and opportunistic optimization.
    - Preserve existing architecture and public contracts unless evidence requires a deeper change.
+   - When multiple owners are the cause, converge the architecture toward one canonical source of truth instead of adding another override.
 
 5. **Path E2E verification**
    - Re-run the entire affected path from entry to expected business result.
@@ -171,7 +183,7 @@ Use L1 for:
 - syntax/static logic errors,
 - file/path/launcher mismatches,
 - stale or missing asset versioning when the user may still be running old frontend code,
-- duplicate action owners or stale handlers still wired to the same UI action.
+- ambiguous ownership or stale implementations still wired to the same action.
 
 If L1 proves the fault, repair it directly before any heavy runtime test.
 
