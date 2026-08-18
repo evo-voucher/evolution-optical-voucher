@@ -45,7 +45,19 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
 
 (function registerCanonicalAdminSettingsCard(){
   const path=String(window.location?.pathname||'').toLowerCase();if(!path.endsWith('/admin.html'))return;
-  const register=()=>{if(document.getElementById('adminSettingsCard'))return;const dash=document.getElementById('dashboardState');if(!dash)return;const card=[...dash.children].find(el=>el.classList?.contains('card')&&(el.querySelector('h2')?.textContent||'').trim()==='Admin Tools');if(!card)return;card.id='adminSettingsCard';card.dataset.adminSection='settings';const heading=card.querySelector('h2');if(heading)heading.textContent='System Settings';const toolgrid=card.querySelector('.toolgrid');if(toolgrid)toolgrid.remove();};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',register,{once:true});else register();
+  const register=()=>{
+    if(document.getElementById('adminSettingsCard'))return;
+    const dash=document.getElementById('dashboardState');if(!dash)return;
+    const toolsCard=[...dash.children].find(el=>el.classList?.contains('card')&&(el.querySelector('h2')?.textContent||'').trim()==='Admin Tools');
+    if(!toolsCard)return;
+    const settingsCard=document.createElement('section');
+    settingsCard.id='adminSettingsCard';
+    settingsCard.className='card';
+    settingsCard.dataset.adminSection='settings';
+    settingsCard.innerHTML='<h2>System Settings</h2>';
+    toolsCard.insertAdjacentElement('afterend',settingsCard);
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',register,{once:true});else register();
 })();
 
 (function recoverPartnerAccessShareView(){
