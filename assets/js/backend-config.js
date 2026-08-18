@@ -4,7 +4,7 @@ const EVOLUTION_ASSET_VERSION=(()=>{
   const pageVersion=new URLSearchParams(window.location.search).get('v');
   let scriptVersion='';
   try{scriptVersion=new URL(document.currentScript?.src||'',window.location.href).searchParams.get('v')||'';}catch(_){}
-  return pageVersion||scriptVersion||'20260818-10';
+  return pageVersion||scriptVersion||'20260818-11';
 })();
 window.EVOLUTION_ASSET_VERSION=EVOLUTION_ASSET_VERSION;
 const evolutionAsset=path=>`${path}?v=${encodeURIComponent(EVOLUTION_ASSET_VERSION)}`;
@@ -17,6 +17,47 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   publishableKey: 'sb_publishable_uu1Qyx-M3dldpZn9jq7jXw_RLTHOMh_',
   siteBase: 'https://evo-voucher.github.io/evolution-optical-voucher/'
 });
+
+(function unifyBrowserChrome(){
+  const apply=()=>{
+    const metas=[...document.querySelectorAll('meta[name="theme-color"]')];
+    if(!metas.length){
+      const meta=document.createElement('meta');
+      meta.name='theme-color';
+      document.head.appendChild(meta);
+      metas.push(meta);
+    }
+    metas.forEach(meta=>meta.setAttribute('content','#000000'));
+    document.documentElement.style.backgroundColor='#000000';
+  };
+  apply();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});
+})();
+
+(function honorAdminDeepLink(){
+  const path=String(window.location?.pathname||'').toLowerCase();
+  if(!(path.endsWith('/admin.html')||path.endsWith('/admin-dashboard.html')))return;
+  let requested='';
+  try{requested=sessionStorage.getItem('evo-admin-section')||'';}catch(_){}
+  if(requested!=='reports')return;
+  const locate=()=>{
+    const dash=document.getElementById('dashboardState');
+    if(!dash||dash.classList.contains('hidden'))return false;
+    const target=[...dash.querySelectorAll('.card')].find(card=>(card.querySelector('h2')?.textContent||'').trim()==='Redemption Report');
+    if(!target)return false;
+    target.scrollIntoView({behavior:'smooth',block:'start'});
+    target.animate?.([{boxShadow:'0 0 0 0 rgba(214,90,240,0)'},{boxShadow:'0 0 0 3px rgba(214,90,240,.55)'},{boxShadow:'0 0 0 0 rgba(214,90,240,0)'}],{duration:1200,easing:'ease-out'});
+    try{sessionStorage.removeItem('evo-admin-section')}catch(_){}
+    return true;
+  };
+  const start=()=>{
+    if(locate())return;
+    let tries=0;
+    const timer=setInterval(()=>{tries++;if(locate()||tries>40)clearInterval(timer)},250);
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
+  else start();
+})();
 
 (function registerCanonicalAdminSettingsCard(){
   const path=String(window.location?.pathname||'').toLowerCase();
