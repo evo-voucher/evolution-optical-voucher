@@ -17,7 +17,7 @@
 <body>
   <div class="wrap"><div class="halo"></div><img src="staff-icon-180.png" alt="Staff"><div class="name">EVOLUTION OPTICAL · STAFF</div><div class="bar"></div></div>
   <script>
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'}).catch(() => {});
     setTimeout(() => location.replace(`staff.html?v=${Date.now()}`), 650);
   </script>
 </body>
