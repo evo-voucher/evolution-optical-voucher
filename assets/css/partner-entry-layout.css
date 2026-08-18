@@ -26,6 +26,35 @@ body[data-admin-section="partners"] .check span{
   overflow-wrap:anywhere;
 }
 
+/* Add Partner form: white entry fields for stronger contrast. */
+body[data-admin-section="partners"] #dashboardState .card:has(#newPartnerName) input:not([type="hidden"]),
+body[data-admin-section="partners"] #dashboardState .card:has(#newPartnerName) select{
+  background:#ffffff!important;
+  color:#0b1530!important;
+  border-color:#d6dbea!important;
+  -webkit-text-fill-color:#0b1530!important;
+  caret-color:#0b1530;
+}
+body[data-admin-section="partners"] #dashboardState .card:has(#newPartnerName) input::placeholder{
+  color:#78839c!important;
+  opacity:1;
+}
+
+/* Mobile right-side swipe gutter: keeps a clear touch strip beside form fields. */
+@media(max-width:780px){
+  body[data-admin-section="partners"]{
+    padding-right:24px!important;
+  }
+  body[data-admin-section="partners"] .shell{
+    width:calc(100% - 10px);
+    margin-left:0;
+    margin-right:auto;
+  }
+  body[data-admin-section="partners"] #dashboardState > .card{
+    margin-right:6px;
+  }
+}
+
 #partnerSubnavCard{
   height:300px;
   min-height:300px;
