@@ -1,6 +1,12 @@
 (()=>{
   const cfg=window.EVOLUTION_VOUCHER_BACKEND||{};
   if(!(cfg.enabled===true&&cfg.supabaseUrl&&cfg.publishableKey))return;
+  if(!document.querySelector('script[data-portal-access-share]')){
+    const shareScript=document.createElement('script');
+    shareScript.dataset.portalAccessShare='1';
+    shareScript.src='assets/js/portal-access-share.js?v=20260818-25';
+    document.head.appendChild(shareScript);
+  }
   const db=window.supabase.createClient(cfg.supabaseUrl,cfg.publishableKey,{auth:{persistSession:true}});
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const num=v=>Number(v||0);
