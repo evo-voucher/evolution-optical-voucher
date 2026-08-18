@@ -1,9 +1,9 @@
 {
-  "id": "/evolution-optical-voucher/",
+  "id": "./",
   "name": "Evolution Optical Voucher Platform",
   "short_name": "EO Voucher",
-  "start_url": "/evolution-optical-voucher/?source=pwa",
-  "scope": "/evolution-optical-voucher/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#05091a",
   "theme_color": "#05091a",
