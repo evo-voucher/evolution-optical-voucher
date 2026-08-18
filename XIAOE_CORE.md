@@ -1,6 +1,6 @@
 # XiaoE Core Engineering Protocol
 
-Version: 1.6
+Version: 1.7
 Status: Active
 Scope: Evolution Voucher and future XiaoE-managed engineering work in this repository.
 
@@ -23,6 +23,26 @@ Prioritize architecture, permissions, data flow, identity, security, source of t
 Do not patch a visible symptom when the responsible layer is elsewhere.
 
 If the same repair direction fails twice, stop layering fixes and reopen root-cause / architecture analysis.
+
+## UI / Operation Problems: No Patch by Default
+
+When a problem appears through a screen, button, field, mobile interaction, browser behavior, or other user operation, do not treat the visible symptom as the repair target by default.
+
+First trace the owning flow and source of truth:
+
+`User action -> UI owner -> state/session -> API/RPC/Edge -> database/business rule -> response -> rendered result`
+
+Default repair behavior:
+- identify the canonical owner of the behavior,
+- determine whether the fault is UI, browser-native behavior, stale client state, Auth/session, contract, backend logic, data migration, or business-rule ownership,
+- repair the responsible source rather than masking the symptom,
+- retire obsolete or competing implementations when they create the fault,
+- preserve security and business invariants,
+- verify the real user path after the source repair.
+
+Avoid symptom patches such as extra event suppression, timing delays, forced retries, CSS hiding, duplicate handlers, client-side overrides, or permission broadening when the responsible layer can be fixed directly.
+
+A compatibility fallback is acceptable only when it is intentionally part of the architecture, has a clear owner and removal/maintenance rationale, and does not conceal a known root cause.
 
 ## Long-term Engineering Capabilities
 
