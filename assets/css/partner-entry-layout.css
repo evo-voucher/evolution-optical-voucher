@@ -26,29 +26,7 @@ body[data-admin-section="partners"] .check span{
   overflow-wrap:anywhere;
 }
 
-/* Add Partner form: match the unified soft cream-yellow entry fields. */
-body[data-admin-section="partners"] #dashboardState .card:has(#newPartnerName) input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]),
-body[data-admin-section="partners"] #dashboardState .card:has(#newPartnerName) select,
-body[data-admin-section="partners"] #dashboardState .card:has(#newPartnerName) textarea{
-  background:#fffdb3!important;
-  color:#151b2b!important;
-  border-color:#d8d58d!important;
-  -webkit-text-fill-color:#151b2b!important;
-  caret-color:#151b2b!important;
-  color-scheme:light!important;
-}
-body[data-admin-section="partners"] #dashboardState .card:has(#newPartnerName) input::placeholder,
-body[data-admin-section="partners"] #dashboardState .card:has(#newPartnerName) textarea::placeholder{
-  color:#6f714f!important;
-  -webkit-text-fill-color:#6f714f!important;
-  opacity:1!important;
-}
-body[data-admin-section="partners"] #dashboardState .card:has(#newPartnerName) input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):focus,
-body[data-admin-section="partners"] #dashboardState .card:has(#newPartnerName) select:focus,
-body[data-admin-section="partners"] #dashboardState .card:has(#newPartnerName) textarea:focus{
-  background:#fffec7!important;
-  border-color:#37dff0!important;
-}
+/* Form field colours are intentionally owned by evolution-theme.css only. */
 
 /* Mobile right-side swipe gutter: keeps a clear touch strip beside form fields. */
 @media(max-width:780px){
