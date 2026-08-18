@@ -13,15 +13,31 @@ The launcher is not the AI model itself. It is the portable bootstrap, policy lo
 
 Primary flow:
 
-`Start XiaoE -> Connect GitHub -> Select Repository -> Read-only Discovery -> Build/Load Project Context -> Ready -> 小E上线`
+`Start XiaoE -> Load Core -> Root Before Flower -> Connect GitHub -> Select Repository -> Read-only Discovery -> Build/Load Project Context -> Ready -> 小E上线`
 
 The first session with a repository is discovery-first. Subsequent sessions should prefer restoring the existing project checkpoint, then refreshing only the changed state.
+
+## Highest Priority Operating Principle
+
+**Root Before Flower｜不补丁｜要根治**
+
+The launcher must load and surface this principle before engineering mode is enabled.
+
+Operational meaning:
+- symptom is evidence, not automatically the repair target,
+- find the canonical owner and source of truth,
+- trace the real execution/business path,
+- repair the responsible layer,
+- avoid symptom masking when the root is discoverable,
+- verify the affected real path before considering the fault resolved,
+- perform cosmetic or convenience improvements only after root stability is established.
 
 ## Screen 1 — Start
 
 Show:
 - XiaoE Portable v1
 - Core status: loaded / unavailable
+- Root Before Flower: active / unavailable
 - Network status
 - GitHub connection status
 - Primary action: `Connect GitHub`
@@ -95,6 +111,7 @@ Committing project context to the repository is a separate reversible action and
 Show a compact readiness card:
 
 - Core: loaded
+- Root Before Flower: active
 - GitHub: connected
 - Repository: selected
 - Access: read-only / read-write
@@ -107,7 +124,7 @@ Primary action:
 
 `小E上线`
 
-The launcher may enter engineering mode only after the core and selected project context are available.
+The launcher may enter engineering mode only after the core, Root Before Flower principle, and selected project context are available.
 
 ## Operating Modes
 
@@ -125,6 +142,7 @@ Permissions behavior:
 Available after discovery establishes enough context.
 
 Engineering actions remain governed by XiaoE Core:
+- Root Before Flower,
 - risk judgment,
 - flow thinking,
 - root-cause analysis,
@@ -172,7 +190,7 @@ Preferred v1 building blocks:
 
 Do not add a paid cloud control plane merely to make v1 work.
 
-Free-first never overrides security, correctness, or project-owner consent.
+Free-first never overrides security, correctness, root-cause integrity, or project-owner consent.
 
 ## Failure Behavior
 
@@ -193,16 +211,21 @@ If project context conflicts with repository evidence:
 - prior context remains historical evidence only,
 - XiaoE should resolve the conflict before engineering work proceeds.
 
+If a visible fault is found but its responsible layer is still unknown:
+- remain in root-cause discovery,
+- do not mark the issue resolved because a workaround hides the symptom.
+
 ## MVP Success Criteria
 
 Portable v1 is successful when a user can:
 1. start XiaoE from removable storage,
-2. authorize their own GitHub access,
-3. select one repository,
-4. complete read-only discovery,
-5. create or restore project context,
-6. enter `小E上线` mode with a clear access/risk boundary,
-7. disconnect without leaving plaintext secrets on the removable drive.
+2. verify Core and Root Before Flower are loaded,
+3. authorize their own GitHub access,
+4. select one repository,
+5. complete read-only discovery,
+6. create or restore project context,
+7. enter `小E上线` mode with a clear access/risk boundary,
+8. disconnect without leaving plaintext secrets on the removable drive.
 
 ## Explicit Non-goals for v1
 
