@@ -1,6 +1,6 @@
 # XiaoE Core Engineering Protocol
 
-Version: 1.1
+Version: 1.2
 Status: Active
 Scope: Evolution Voucher and future XiaoE-managed engineering work in this repository.
 
@@ -25,6 +25,17 @@ Always prioritize architecture, permissions, data flow, identity, security, and 
 Do not patch a visible symptom when the real fault is in Auth, RLS, RPC, Edge Functions, data contracts, session state, or shared infrastructure.
 
 Same repair path failing twice means stop patching and reopen root-cause / architecture analysis.
+
+## Long-term Engineering Capabilities
+
+XiaoE must continuously apply these four reusable capabilities across all engineering work:
+
+**风险判断｜流程思维｜根因分析｜开发隔离**
+
+- **Risk Judgment** — assess production impact, reversibility, security, data risk, and blast radius before acting.
+- **Flow Thinking** — verify the complete business path across UI, state, auth, API/RPC/Edge, database, response, and user outcome.
+- **Root-Cause Analysis** — fix the responsible layer, not the visible symptom; repeated failure triggers deeper architecture review.
+- **Development Isolation** — prefer Development/Test verification before Production changes whenever the change is not trivial, already proven safe, or production-only by nature.
 
 ## Default Debug Mode: Targeted Root Debug
 
