@@ -30,9 +30,23 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   apply();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
 })();
 
-(function installAdminReturnToMain(){
-  const path=String(window.location?.pathname||'').toLowerCase();if(!path.endsWith('/admin.html'))return;
-  const install=()=>{if(document.getElementById('adminReturnMainBtn'))return;const top=document.querySelector('body .toprow');if(!top)return;const btn=document.createElement('button');btn.id='adminReturnMainBtn';btn.type='button';btn.textContent='Return to Main';btn.setAttribute('aria-label','Return to Voucher Main');btn.onclick=()=>{window.location.href=window.EVOLUTION_VOUCHER_BACKEND?.siteBase||'./';};const logout=document.getElementById('logoutBtn');if(logout)top.insertBefore(btn,logout);else top.appendChild(btn);};
+(function installSecondLevelReturnToMain(){
+  const path=String(window.location?.pathname||'').toLowerCase();
+  const secondLevelPaths=['/admin-login.html','/admin.html','/voucher-engine.html','/partner.html','/staff.html','/admin-staff.html'];
+  if(!secondLevelPaths.some(p=>path.endsWith(p)))return;
+  const install=()=>{
+    if(document.getElementById('portalReturnMainBtn'))return;
+    const existing=[...document.querySelectorAll('button,a')].find(el=>(el.textContent||'').trim().toLowerCase()==='return to main');
+    if(existing){existing.id=existing.id||'portalReturnMainBtn';return;}
+    const btn=document.createElement('button');
+    btn.id='portalReturnMainBtn';btn.type='button';btn.textContent='Return to Main';btn.setAttribute('aria-label','Return to Voucher Main');
+    btn.onclick=()=>{window.location.href=window.EVOLUTION_VOUCHER_BACKEND?.siteBase||'./';};
+    const top=document.querySelector('body .toprow');
+    if(top){const logout=document.getElementById('logoutBtn');if(logout)top.insertBefore(btn,logout);else top.appendChild(btn);return;}
+    const firstCard=document.querySelector('main .card, body .card');
+    if(firstCard){btn.classList.add('wide');btn.style.marginBottom='14px';firstCard.prepend(btn);return;}
+    const main=document.querySelector('main')||document.body;btn.classList.add('wide');main.prepend(btn);
+  };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
 
