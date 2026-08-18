@@ -7,33 +7,13 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+const PARTNER_INITIAL_PASSWORD = "EVO12345678";
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { "Content-Type": "application/json", ...corsHeaders },
   });
-}
-
-function generateTemporaryPassword(length = 16) {
-  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
-  const lower = "abcdefghijkmnopqrstuvwxyz";
-  const digits = "23456789";
-  const symbols = "!@#$%*-_";
-  const all = upper + lower + digits + symbols;
-  const bytes = new Uint32Array(length);
-  crypto.getRandomValues(bytes);
-  const chars = [
-    upper[bytes[0] % upper.length],
-    lower[bytes[1] % lower.length],
-    digits[bytes[2] % digits.length],
-    symbols[bytes[3] % symbols.length],
-  ];
-  for (let i = 4; i < length; i++) chars.push(all[bytes[i] % all.length]);
-  for (let i = chars.length - 1; i > 0; i--) {
-    const j = bytes[i] % (i + 1);
-    [chars[i], chars[j]] = [chars[j], chars[i]];
-  }
-  return chars.join("");
 }
 
 serve(async (req) => {
@@ -102,7 +82,7 @@ serve(async (req) => {
     if (new Set(allocations.map((x: any) => x.version_id)).size !== allocations.length) return json({ success: false, error: "Duplicate Initial Voucher selected" }, 400);
     if (!all_branches && branch_codes.length < 1) return json({ success: false, error: "Select at least one claim branch" }, 400);
 
-    const temporaryPassword = generateTemporaryPassword();
+    const temporaryPassword = PARTNER_INITIAL_PASSWORD;
     const { data: createdUserData, error: createUserError } = await server.auth.admin.createUser({ email, password: temporaryPassword, email_confirm: true });
     const newUser = createdUserData?.user;
     if (createUserError || !newUser) return json({ success: false, error: "Failed to create Partner login", details: createUserError?.message }, 400);
