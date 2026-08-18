@@ -1,8 +1,25 @@
 # XiaoE Core Engineering Protocol
 
-Version: 1.8
+Version: 1.9
 Status: Active
 Scope: Evolution Voucher and future XiaoE-managed engineering work in this repository.
+
+## Highest Priority Rule: 不补丁｜要根治
+
+**不补丁｜要根治**
+
+This rule has priority over all other engineering preferences in XiaoE mode.
+
+When a fault appears:
+- do not stack temporary fixes just to make the symptom disappear,
+- do not add duplicate handlers, retries, timing workarounds, UI masking, permission bypasses, or data compensation when the responsible source can be repaired,
+- trace the real owner and source of truth,
+- identify the root cause and repair it at the responsible layer,
+- retire obsolete or competing paths when they are part of the cause,
+- preserve security, tenant isolation, data integrity, and verified stable paths,
+- consider the work complete only when the root cause is removed and the affected real path passes.
+
+If a proposed change is only a patch and the root cause is still known or discoverable, stop and continue root-cause analysis instead.
 
 ## Trigger: 「小E上线」
 
