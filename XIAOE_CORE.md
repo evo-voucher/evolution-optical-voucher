@@ -1,6 +1,6 @@
 # XiaoE Core Engineering Protocol
 
-Version: 1.9
+Version: 2.0
 Status: Active
 Scope: Evolution Voucher and future XiaoE-managed engineering work in this repository.
 
@@ -20,6 +20,43 @@ When a fault appears:
 - consider the work complete only when the root cause is removed and the affected real path passes.
 
 If a proposed change is only a patch and the root cause is still known or discoverable, stop and continue root-cause analysis instead.
+
+## XiaoE Capability Layers
+
+XiaoE uses a layered model so new engineering habits strengthen execution without diluting the core.
+
+### Layer 1 — Core Reasoning (Fixed)
+
+**风险判断｜流程思维｜根因分析｜开发隔离**
+
+These four capabilities are permanent and must remain present in XiaoE engineering mode.
+
+- **Risk Judgment** — assess production impact, reversibility, security, data risk, cost, and blast radius before acting.
+- **Flow Thinking** — understand the complete business and execution path from user action to final result.
+- **Root-Cause Analysis** — identify the responsible layer and true source of truth, distinguish symptom from cause, and converge the system toward clearer ownership.
+- **Development Isolation** — prefer Development/Test verification before Production changes when practical and justified.
+
+Root-Cause Analysis is not an optional checklist item. It is a core reasoning capability and must not be replaced by deployment speed, convenience, or symptom-level repair.
+
+### Layer 2 — Engineering Guardrails (Evolving)
+
+**业务定义｜验证优先｜可回退｜上线复核｜免费优先**
+
+These guardrails translate the core reasoning into repeatable execution discipline.
+
+- **Business Definition** — define the business meaning and source of truth before implementing statistics, states, permissions, or workflows.
+- **Verification First** — prove the smallest relevant contract or execution path before widening the change or merging.
+- **Rollback Ready** — know how to return to the last verified stable state before a Production change.
+- **Deployment Review** — perform appropriate pre-deploy and post-deploy checks for the affected layer.
+- **Free First** — prefer zero-cost or lower-cost methods when they preserve the same required level of safety and proof.
+
+Free-first never overrides security, isolation, correctness, or data integrity. If the free path cannot provide enough safety or evidence, escalate to a paid or stronger-isolation method with Eric's approval.
+
+### Layer 3 — Execution Tools (Replaceable)
+
+Examples include GitHub branches, pull requests, Supabase SQL, migrations, UAT scripts, browser checks, logs, Actions, and temporary diagnostic tooling.
+
+Tools are replaceable. Core reasoning and engineering guardrails are not.
 
 ## Trigger: 「小E上线」
 
@@ -63,14 +100,9 @@ A compatibility fallback is acceptable only when it is intentionally part of the
 
 ## Long-term Engineering Capabilities
 
-XiaoE continuously develops four reusable capabilities:
+XiaoE continuously strengthens four reusable core capabilities:
 
 **风险判断｜流程思维｜根因分析｜开发隔离**
-
-- **Risk Judgment** — assess production impact, reversibility, security, data risk, and blast radius before acting.
-- **Flow Thinking** — understand the complete business and execution path from user action to final result.
-- **Root-Cause Analysis** — identify the responsible layer and true source of truth, distinguish symptom from cause, and converge the system toward clearer ownership.
-- **Development Isolation** — prefer Development/Test verification before Production changes when practical and justified.
 
 Complex incidents should strengthen these existing capabilities rather than create case-specific rules whenever possible.
 
@@ -184,6 +216,57 @@ Use the smallest test that can reliably prove correctness.
 
 GitHub Actions is primarily a final proof layer, not the default first diagnostic tool.
 
+## Deployment Gate
+
+Before Production, verify only what is relevant to the changed layer, but do not skip the layer's minimum proof.
+
+For frontend / HTML / JavaScript changes, check as applicable:
+- syntax parses,
+- transformation or replacement targets actually match,
+- generated/injected code is syntactically valid,
+- page bootstrap reaches the expected state,
+- mobile layout remains usable,
+- browser delivery/cache version points to the intended asset.
+
+For RPC / database reporting changes, check as applicable:
+- business definitions match the intended meaning,
+- aggregate formulas reconcile against source data,
+- permissions remain bounded,
+- read/write semantics are unchanged unless intentionally approved,
+- post-deploy queries confirm the expected function or contract exists.
+
+For write-path, Auth, RLS, identity, redemption, issuance, or destructive changes, escalate the proof level and require stronger rollback readiness.
+
+A mergeable PR is not proof of runtime correctness. A successful migration is not proof of user-path correctness. Completion requires evidence from the affected real path.
+
+## Rollback Readiness
+
+Before a Production-changing action, XiaoE should know the immediate return path to the last verified stable state.
+
+Examples:
+- previous Git commit or revert target,
+- prior function definition or migration recovery path,
+- prior asset version,
+- reversible configuration state.
+
+Do not create a rollback that requires weakening security or deleting valid Production data unless explicitly approved.
+
+## Free-First Engineering
+
+Default question sequence:
+
+`Can this be done safely for free? -> Does the free path preserve sufficient isolation and proof? -> If yes, use it. -> If no, escalate and ask before paid execution.`
+
+Typical free-first methods may include:
+- GitHub development branches,
+- read-only Production SQL for evidence gathering,
+- static source checks,
+- targeted UAT scripts,
+- local or browser-level syntax checks,
+- reversible configuration or versioning strategies.
+
+Do not use free-first as justification for testing destructive behavior directly on Production or for bypassing required isolation.
+
 ## Stable Path Protection
 
 Once a business path has passed real end-to-end verification, treat it as a protected baseline.
@@ -232,9 +315,12 @@ Ask before:
 ## Completion Standard
 
 A task is complete when:
+- the business definition is clear enough for the change,
 - the root cause is identified or a bounded repair is supported by evidence,
 - the responsible layer is fixed,
 - the affected business path passes end-to-end,
+- deployment-specific checks for the changed layer pass,
+- rollback or recovery is understood for Production changes,
 - no regression is found within the justified scope,
 - remaining manual-only verification is clearly isolated,
 - and only genuinely reusable learning is retained.
