@@ -17,7 +17,7 @@
 <body>
   <div class="wrap"><div class="halo"></div><img src="partner-icon-180.png" alt="Partner"><div class="name">EVOLUTION OPTICAL · PARTNER</div><div class="bar"></div></div>
   <script>
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'}).catch(() => {});
     setTimeout(() => location.replace(`partner.html?v=${Date.now()}`), 650);
   </script>
 </body>
