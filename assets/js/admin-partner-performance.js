@@ -1,10 +1,44 @@
 (()=>{
   const cfg=window.EVOLUTION_VOUCHER_BACKEND||{};
   if(!(cfg.enabled===true&&cfg.supabaseUrl&&cfg.publishableKey))return;
+
+  function installPartnerShareRecovery(){
+    const pendingKey='evo_pending_partner_access_share',readyKey='evo_ready_partner_access_share';
+    const btn=document.getElementById('createPartnerBtn'),out=document.getElementById('createPartnerMsg');
+    if(btn&&out&&!btn.dataset.partnerShareRecovery){
+      btn.dataset.partnerShareRecovery='1';
+      btn.addEventListener('click',()=>{
+        const name=(document.getElementById('newPartnerName')?.value||'').trim();
+        const email=(document.getElementById('newPartnerEmail')?.value||'').trim().toLowerCase();
+        try{sessionStorage.removeItem(readyKey);sessionStorage.setItem(pendingKey,JSON.stringify({name,email}))}catch(_){}
+      },true);
+      new MutationObserver(()=>{
+        if(!out.querySelector('.msg.ok'))return;
+        try{
+          const pending=JSON.parse(sessionStorage.getItem(pendingKey)||'null');
+          if(pending?.email){sessionStorage.setItem(readyKey,JSON.stringify(pending));sessionStorage.removeItem(pendingKey)}
+        }catch(_){}
+      }).observe(out,{childList:true,subtree:true});
+    }
+    let ready=null;
+    try{ready=JSON.parse(sessionStorage.getItem(readyKey)||'null')}catch(_){}
+    if(!ready?.email)return;
+    let tries=0;
+    const timer=setInterval(()=>{
+      tries++;
+      const openPartners=document.querySelector('[data-admin-open="partners"]');
+      if(openPartners)openPartners.click();
+      const addPartner=document.querySelector('[data-partner-view="add"]');
+      if(addPartner){addPartner.click();clearInterval(timer);setTimeout(()=>document.getElementById('partnerAccessShare')?.scrollIntoView({block:'center',behavior:'smooth'}),150)}
+      else if(tries>80)clearInterval(timer);
+    },100);
+  }
+
+  installPartnerShareRecovery();
   if(!document.querySelector('script[data-portal-access-share]')){
     const shareScript=document.createElement('script');
     shareScript.dataset.portalAccessShare='1';
-    shareScript.src='assets/js/portal-access-share.js?v=20260818-25';
+    shareScript.src='assets/js/portal-access-share.js?v=20260818-26';
     document.head.appendChild(shareScript);
   }
   const db=window.supabase.createClient(cfg.supabaseUrl,cfg.publishableKey,{auth:{persistSession:true}});
