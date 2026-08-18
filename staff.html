@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
-const STAFF_ASSET_VERSION=new URLSearchParams(window.location.search).get('v')||'20260818-2055';
+const STAFF_ASSET_VERSION=new URLSearchParams(window.location.search).get('v')||'20260818-2120';
 document.write('<script src="assets/js/backend-config.js?v='+encodeURIComponent(STAFF_ASSET_VERSION)+'"><\/script>');
 </script>
 <style>
@@ -66,6 +66,13 @@ button:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;fil
       <p class="small">Staff redemption cannot be undone here. Any approved reversal is an Admin action and preserves the original redemption history.</p>
     </section>
     <div id="redeemMsg"></div>
+  </section>
+
+  <section id="staffAccountState" class="card hidden">
+    <h2>Change My Password</h2>
+    <p class="small">This changes only your own Staff / Manager login. Admin password reset remains a separate management action.</p>
+    <div class="grid"><div class="field"><label>Current Password</label><input id="staffCurrentPassword" type="password" autocomplete="current-password"></div><div class="field"><label>New Password</label><input id="staffNewPassword" type="password" autocomplete="new-password"></div><div class="field"><label>Confirm New Password</label><input id="staffConfirmPassword" type="password" autocomplete="new-password"></div></div>
+    <button id="staffChangePasswordBtn" class="wide">Change My Password</button><div id="staffPasswordMsg"></div>
   </section>
 
   <section class="card">
@@ -145,13 +152,15 @@ button:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;fil
   }
   async function verifySession(session){
     if(!session?.user)return false;
-    const context=await rpc('resolve_staff_portal_context');
+    const [context,realm]=await Promise.all([rpc('resolve_staff_portal_context'),rpc('current_operational_realm')]);
     $('loginState').classList.add('hidden');$('staffState').classList.remove('hidden');$('logoutBtn').classList.remove('hidden');$('operationState').classList.remove('hidden');
+    $('staffAccountState').classList.toggle('hidden',realm?.realm!=='staff');
     $('sessionMeta').textContent=`Signed in as ${session.user.email||session.user.id} • ${context.staff_name} • ${context.role}`;
     await loadOperations();return true;
   }
   $('loginBtn').onclick=async()=>{const email=$('email').value.trim().toLowerCase(),password=$('password').value;if(!email||!password){show($('loginMsg'),'Enter email and password.');return}$('loginBtn').disabled=true;try{const{data,error}=await db.auth.signInWithPassword({email,password});if(error)throw error;await verifySession(data.session)}catch(e){show($('loginMsg'),e.message||'Sign in failed.')}finally{$('loginBtn').disabled=false}};
   $('logoutBtn').onclick=async()=>{await db.auth.signOut();location.reload()};
+  $('staffChangePasswordBtn').onclick=async()=>{const current=$('staffCurrentPassword').value,newPassword=$('staffNewPassword').value,confirm=$('staffConfirmPassword').value;show($('staffPasswordMsg'),'');if(!current||!newPassword||!confirm){show($('staffPasswordMsg'),'Enter current password, new password and confirmation.');return}if(newPassword.length<8){show($('staffPasswordMsg'),'New password must be at least 8 characters.');return}if(newPassword!==confirm){show($('staffPasswordMsg'),'New password confirmation does not match.');return}const btn=$('staffChangePasswordBtn');btn.disabled=true;try{const{data:userData,error:userError}=await db.auth.getUser();if(userError||!userData?.user?.email)throw new Error('Unable to verify your Staff account.');const{error:reauthError}=await db.auth.signInWithPassword({email:userData.user.email,password:current});if(reauthError)throw new Error('Current password is incorrect.');const{error:updateError}=await db.auth.updateUser({password:newPassword});if(updateError)throw updateError;$('staffCurrentPassword').value=$('staffNewPassword').value=$('staffConfirmPassword').value='';show($('staffPasswordMsg'),'Password changed successfully.','ok')}catch(e){show($('staffPasswordMsg'),e.message||'Unable to change password.','err')}finally{btn.disabled=false}};
   $('verifyBtn').onclick=async()=>{clearVerified();show($('verifyMsg'),'');const raw=$('voucherCode').value.trim();const branch=selectedBranchCode();if(!raw){show($('verifyMsg'),'Enter or scan a Voucher code.');return}if(staffContext?.branch_selection_required&&!branch){show($('verifyMsg'),'Select a branch first.');return}$('verifyBtn').disabled=true;try{const code=await canonicalVoucherCode(raw);$('voucherCode').value=code;const v=await rpc('verify_voucher',{p_voucher_code:code,p_branch_code:branch});if(!v?.success)throw new Error(v?.error||'Voucher verification failed.');verified=v;verificationMethod=verificationMethod||'manual_code';renderVerified(v)}catch(e){show($('verifyMsg'),e.message||'Voucher verification failed.')}finally{$('verifyBtn').disabled=false}};
   $('redeemBtn').onclick=async()=>{if(!verified?.can_redeem)return;const branch=selectedBranchCode();$('redeemBtn').disabled=true;try{const r=await rpc('redeem_voucher',{p_voucher_code:verified.voucher_code,p_notes:$('notes').value.trim()||null,p_branch_code:branch,p_redeem_method:verificationMethod||'manual_code'});if(!r?.success)throw new Error(r?.error||'Redemption failed.');show($('redeemMsg'),`Redeemed successfully at ${r.branch_name}.`,'ok');$('voucherCode').value='';$('notes').value='';clearVerified();await loadOperations()}catch(e){show($('redeemMsg'),e.message||'Redemption failed.','err')}finally{$('redeemBtn').disabled=false}};
   $('cancelRedeemBtn').onclick=()=>{clearVerified();show($('redeemMsg'),'')};
