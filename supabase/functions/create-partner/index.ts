@@ -14,6 +14,28 @@ function json(body: unknown, status = 200) {
   });
 }
 
+function generateTemporaryPassword(length = 16) {
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lower = "abcdefghijkmnopqrstuvwxyz";
+  const digits = "23456789";
+  const symbols = "!@#$%*-_";
+  const all = upper + lower + digits + symbols;
+  const bytes = new Uint32Array(length);
+  crypto.getRandomValues(bytes);
+  const chars = [
+    upper[bytes[0] % upper.length],
+    lower[bytes[1] % lower.length],
+    digits[bytes[2] % digits.length],
+    symbols[bytes[3] % symbols.length],
+  ];
+  for (let i = 4; i < length; i++) chars.push(all[bytes[i] % all.length]);
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = bytes[i] % (i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join("");
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
   if (req.method !== "POST") return json({ success: false, error: "Method not allowed" }, 405);
@@ -52,7 +74,6 @@ serve(async (req) => {
     const contact_person = typeof body.contact_person === "string" ? body.contact_person.trim() : null;
     const contact_phone = typeof body.contact_phone === "string" ? body.contact_phone.trim() : null;
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
-    const password = typeof body.password === "string" ? body.password : "";
     const staff_limit = Number(body.staff_limit ?? 0);
     const all_branches = body.all_branches === true;
     const branch_codes = Array.isArray(body.branch_codes)
@@ -69,38 +90,22 @@ serve(async (req) => {
       validity_unit: typeof item?.validity_unit === "string" ? item.validity_unit.trim().toLowerCase() : "",
     }));
 
-    if (!partner_code || !partner_name || !email || !password) return json({ success: false, error: "Missing required fields" }, 400);
+    if (!partner_code || !partner_name || !email) return json({ success: false, error: "Missing required fields" }, 400);
     if (!/^[A-Z0-9_-]+$/.test(partner_code)) return json({ success: false, error: "Invalid partner code" }, 400);
     if (!email.includes("@")) return json({ success: false, error: "Invalid email" }, 400);
-    if (password.length < 6) return json({ success: false, error: "Password must be at least 6 characters" }, 400);
     if (!Number.isInteger(staff_limit) || staff_limit < 0 || staff_limit > 1000) return json({ success: false, error: "Invalid Staff Limit" }, 400);
     if (!allocations.length) return json({ success: false, error: "Select at least one Initial Voucher" }, 400);
-    if (allocations.some((x: any) => !x.version_id || !Number.isInteger(x.quantity) || x.quantity < 1)) {
-      return json({ success: false, error: "Each Initial Voucher needs a valid whole-number quantity of at least 1" }, 400);
-    }
-    if (allocations.some((x: any) => !["issue", "allocation"].includes(x.validity_anchor))) {
-      return json({ success: false, error: "Validity Start must be Issue Date or Allocation Date" }, 400);
-    }
-    if (allocations.some((x: any) => !Number.isInteger(x.validity_value) || x.validity_value < 1)) {
-      return json({ success: false, error: "Each Voucher validity value must be a whole number of at least 1" }, 400);
-    }
-    if (allocations.some((x: any) => !["days", "months"].includes(x.validity_unit))) {
-      return json({ success: false, error: "Validity Unit must be Days or Months" }, 400);
-    }
-    if (new Set(allocations.map((x: any) => x.version_id)).size !== allocations.length) {
-      return json({ success: false, error: "Duplicate Initial Voucher selected" }, 400);
-    }
+    if (allocations.some((x: any) => !x.version_id || !Number.isInteger(x.quantity) || x.quantity < 1)) return json({ success: false, error: "Each Initial Voucher needs a valid whole-number quantity of at least 1" }, 400);
+    if (allocations.some((x: any) => !["issue", "allocation"].includes(x.validity_anchor))) return json({ success: false, error: "Validity Start must be Issue Date or Allocation Date" }, 400);
+    if (allocations.some((x: any) => !Number.isInteger(x.validity_value) || x.validity_value < 1)) return json({ success: false, error: "Each Voucher validity value must be a whole number of at least 1" }, 400);
+    if (allocations.some((x: any) => !["days", "months"].includes(x.validity_unit))) return json({ success: false, error: "Validity Unit must be Days or Months" }, 400);
+    if (new Set(allocations.map((x: any) => x.version_id)).size !== allocations.length) return json({ success: false, error: "Duplicate Initial Voucher selected" }, 400);
     if (!all_branches && branch_codes.length < 1) return json({ success: false, error: "Select at least one claim branch" }, 400);
 
-    const { data: createdUserData, error: createUserError } = await server.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-    });
+    const temporaryPassword = generateTemporaryPassword();
+    const { data: createdUserData, error: createUserError } = await server.auth.admin.createUser({ email, password: temporaryPassword, email_confirm: true });
     const newUser = createdUserData?.user;
-    if (createUserError || !newUser) {
-      return json({ success: false, error: "Failed to create Partner login", details: createUserError?.message }, 400);
-    }
+    if (createUserError || !newUser) return json({ success: false, error: "Failed to create Partner login", details: createUserError?.message }, 400);
 
     const { data: provisioned, error: provisionError } = await server.rpc("admin_provision_partner_with_initial_allocations", {
       p_partner_code: partner_code,
@@ -123,14 +128,7 @@ serve(async (req) => {
       return json({ success: false, error: "Failed to provision Partner", details: message }, status);
     }
 
-    return json({
-      success: true,
-      partner: provisioned.partner,
-      user_id: newUser.id,
-      initial_allocations: provisioned.initial_allocations,
-      claim_all_branches: provisioned.claim_all_branches,
-      claim_branch_codes: provisioned.claim_branch_codes,
-    }, 201);
+    return json({ success: true, partner: provisioned.partner, user_id: newUser.id, temporary_password: temporaryPassword, initial_allocations: provisioned.initial_allocations, claim_all_branches: provisioned.claim_all_branches, claim_branch_codes: provisioned.claim_branch_codes }, 201);
   } catch (e) {
     return json({ success: false, error: "Unexpected error", details: e instanceof Error ? e.message : String(e) }, 500);
   }
