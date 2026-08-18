@@ -4,7 +4,7 @@ const EVOLUTION_ASSET_VERSION=(()=>{
   const pageVersion=new URLSearchParams(window.location.search).get('v');
   let scriptVersion='';
   try{scriptVersion=new URL(document.currentScript?.src||'',window.location.href).searchParams.get('v')||'';}catch(_){}
-  return pageVersion||scriptVersion||'20260818-11';
+  return pageVersion||scriptVersion||'20260818-12';
 })();
 window.EVOLUTION_ASSET_VERSION=EVOLUTION_ASSET_VERSION;
 const evolutionAsset=path=>`${path}?v=${encodeURIComponent(EVOLUTION_ASSET_VERSION)}`;
@@ -248,16 +248,6 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   const script=document.createElement('script');
   script.id='portalAccessShareScript';
   script.src=evolutionAsset('assets/js/portal-access-share.js');
-  document.head.appendChild(script);
-})();
-
-(function loadTestSandboxUI(){
-  const path=String(window.location?.pathname||'').toLowerCase();
-  if(!path.endsWith('/admin.html'))return;
-  if(document.getElementById('testSandboxUiScript'))return;
-  const script=document.createElement('script');
-  script.id='testSandboxUiScript';
-  script.src=evolutionAsset('assets/js/test-sandbox-ui.js');
   document.head.appendChild(script);
 })();
 
