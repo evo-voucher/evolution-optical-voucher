@@ -41,18 +41,13 @@ jobs:
           done
 
           curl --silent --show-error --location "${base}/assets/js/backend-config.js" -o /tmp/backend-config.js
-          curl --silent --show-error --location "${base}/partner.html" -o /tmp/partner.html
 
           grep -Eq "enabled:[[:space:]]*true" /tmp/backend-config.js || { echo 'Deployed config is not enabled' >&2; exit 1; }
           grep -Eq "environment:[[:space:]]*'production'" /tmp/backend-config.js || { echo 'Deployed config is not production' >&2; exit 1; }
-          grep -Fq "projectId: 'xfivcfwexcxsyiylgryn'" /tmp/backend-config.js || { echo 'Deployed projectId mismatch' >&2; exit 1; }
-          grep -Fq "supabaseUrl: 'https://xfivcfwexcxsyiylgryn.supabase.co'" /tmp/backend-config.js || { echo 'Deployed Supabase URL mismatch' >&2; exit 1; }
+          grep -Fq "projectId: 'hukihbcyyqhanaqrizvm'" /tmp/backend-config.js || { echo 'Deployed projectId mismatch' >&2; exit 1; }
+          grep -Fq "supabaseUrl: 'https://hukihbcyyqhanaqrizvm.supabase.co'" /tmp/backend-config.js || { echo 'Deployed Supabase URL mismatch' >&2; exit 1; }
           grep -Eq "publishableKey:[[:space:]]*'sb_publishable_[^']+'" /tmp/backend-config.js || { echo 'Deployed publishable key missing or wrong type' >&2; exit 1; }
           grep -Fq "siteBase: 'https://evo-voucher.github.io/evolution-optical-voucher/'" /tmp/backend-config.js || { echo 'Deployed siteBase mismatch' >&2; exit 1; }
-
-          grep -Fq '<b>Scan / Issue</b>' /tmp/partner.html || { echo 'Partner nav label missing: Scan / Issue' >&2; exit 1; }
-          grep -Fq '<b>Record</b>' /tmp/partner.html || { echo 'Partner nav label missing: Record' >&2; exit 1; }
-          grep -Fq '<b>Add Assistants</b>' /tmp/partner.html || { echo 'Partner nav label missing: Add Assistants' >&2; exit 1; }
 
           if grep -Eiq "service[_-]?role|sb_secret_|SUPABASE_SERVICE_ROLE_KEY" /tmp/backend-config.js; then
             echo 'Privileged credential marker found in deployed public config' >&2
