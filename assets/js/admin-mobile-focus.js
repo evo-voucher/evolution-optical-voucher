@@ -23,6 +23,23 @@
     document.head.appendChild(style);
   }
 
+  function installPartnerCredentialHints(root=document){
+    const email=root.querySelector?.('#newPartnerEmail')||(root.id==='newPartnerEmail'?root:null);
+    const password=root.querySelector?.('#newPartnerPassword')||(root.id==='newPartnerPassword'?root:null);
+    if(email){
+      email.setAttribute('autocomplete','off');
+      email.setAttribute('autocapitalize','none');
+      email.setAttribute('spellcheck','false');
+      email.setAttribute('data-lpignore','true');
+      email.setAttribute('data-1p-ignore','true');
+    }
+    if(password){
+      password.setAttribute('autocomplete','new-password');
+      password.setAttribute('data-lpignore','true');
+      password.setAttribute('data-1p-ignore','true');
+    }
+  }
+
   function reveal(input){
     setTimeout(()=>{
       if(document.activeElement!==input)return;
@@ -45,6 +62,7 @@
   }
 
   function installInputs(root=document){
+    installPartnerCredentialHints(root);
     if(root.matches?.(INPUT_SELECTOR))prepare(root);
     root.querySelectorAll?.(INPUT_SELECTOR).forEach(prepare);
   }
