@@ -61,8 +61,6 @@
     const contact_phone=(g('newPartnerPhone')?.value||'').trim();
     const email=(g('newPartnerEmail')?.value||'').trim().toLowerCase();
     const staff_limit=Number(g('newPartnerStaffLimit')?.value||0);
-    const all_branches=!!g('initialAllBranches')?.checked;
-    const branch_codes=[...document.querySelectorAll('.initial-branch:checked')].map(x=>x.value);
     const allocations=[...document.querySelectorAll('.initial-voucher-row')].map(row=>({
       version_id:row.querySelector('.initial-voucher-version')?.value||'',
       quantity:Number(row.querySelector('.initial-voucher-qty')?.value||0),
@@ -78,10 +76,9 @@
     if(allocations.some(x=>!Number.isInteger(x.quantity)||x.quantity<1)){setCreateMsg('Each Initial Allocation Quantity must be at least 1.');return;}
     if(allocations.some(x=>!['issue','allocation'].includes(x.validity_anchor)||!Number.isInteger(x.validity_value)||x.validity_value<1||!['days','months'].includes(x.validity_unit))){setCreateMsg('Every Voucher needs a valid Start, Value and Unit.');return;}
     if(new Set(allocations.map(x=>x.version_id)).size!==allocations.length){setCreateMsg('The same Voucher cannot be selected twice during initial setup. Add more later through Voucher Engine.');return;}
-    if(!all_branches&&!branch_codes.length){setCreateMsg('Select at least one Claim Branch.');return;}
     btn.disabled=true;btn.textContent='Creating Partner…';
     try{
-      const {data,error}=await db.functions.invoke('create-partner',{body:{partner_code,partner_name,contact_person:contact_person||null,contact_phone:contact_phone||null,email,staff_limit,allocations,all_branches,branch_codes}});
+      const {data,error}=await db.functions.invoke('create-partner',{body:{partner_code,partner_name,contact_person:contact_person||null,contact_phone:contact_phone||null,email,staff_limit,allocations}});
       if(error)throw error;if(!data?.success||!data?.temporary_password)throw new Error(data?.details||data?.error||'Partner creation failed.');
       setCreateMsg(`Partner ${partner_name} created with ${allocations.length} initial allocation${allocations.length===1?'':'s'} and validity rules.`,true);
       renderPartnerLoginShare(partner_name,email,data.temporary_password);
