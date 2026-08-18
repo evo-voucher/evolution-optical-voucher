@@ -6,7 +6,7 @@ const EVOLUTION_ASSET_VERSION=(()=>{
   try{scriptVersion=new URL(document.currentScript?.src||'',window.location.href).searchParams.get('v')||'';}catch(_){}
   const pagePath=String(window.location?.pathname||'').toLowerCase();
   const legacyAdminBootstrap=pagePath.endsWith('/admin.html')&&scriptVersion==='20260818-07';
-  return pageVersion||(legacyAdminBootstrap?'20260818-24':scriptVersion)||'20260818-24';
+  return pageVersion||(legacyAdminBootstrap?'20260818-27':scriptVersion)||'20260818-27';
 })();
 window.EVOLUTION_ASSET_VERSION=EVOLUTION_ASSET_VERSION;
 const evolutionAsset=path=>`${path}?v=${encodeURIComponent(EVOLUTION_ASSET_VERSION)}`;
@@ -46,6 +46,22 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
 (function registerCanonicalAdminSettingsCard(){
   const path=String(window.location?.pathname||'').toLowerCase();if(!path.endsWith('/admin.html'))return;
   const register=()=>{if(document.getElementById('adminSettingsCard'))return;const dash=document.getElementById('dashboardState');if(!dash)return;const card=[...dash.children].find(el=>el.classList?.contains('card')&&(el.querySelector('h2')?.textContent||'').trim()==='Admin Tools');if(!card)return;card.id='adminSettingsCard';card.dataset.adminSection='settings';const heading=card.querySelector('h2');if(heading)heading.textContent='System Settings';const toolgrid=card.querySelector('.toolgrid');if(toolgrid)toolgrid.remove();};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',register,{once:true});else register();
+})();
+
+(function recoverPartnerAccessShareView(){
+  const path=String(window.location?.pathname||'').toLowerCase();if(!path.endsWith('/admin.html'))return;
+  let ready=null;try{ready=JSON.parse(sessionStorage.getItem('evo_ready_partner_access_share')||'null')}catch(_){}
+  if(!ready?.email)return;
+  const reveal=()=>{
+    const partnerNav=document.querySelector('[data-admin-open="partners"]');
+    if(partnerNav)partnerNav.click();
+    const add=document.querySelector('[data-partner-view="add"]');
+    if(!add)return false;
+    add.click();
+    setTimeout(()=>document.getElementById('partnerAccessShare')?.scrollIntoView({block:'center',behavior:'smooth'}),180);
+    return true;
+  };
+  let tries=0;const timer=setInterval(()=>{tries++;if(reveal()||tries>100)clearInterval(timer)},100);
 })();
 
 (function installEvolutionTheme(){if(document.getElementById('evolutionCommercialTheme'))return;const link=document.createElement('link');link.id='evolutionCommercialTheme';link.rel='stylesheet';link.href=evolutionAsset('assets/css/evolution-theme.css');document.head.appendChild(link);})();
