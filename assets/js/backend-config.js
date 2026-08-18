@@ -4,7 +4,7 @@ const EVOLUTION_ASSET_VERSION=(()=>{
   const pageVersion=new URLSearchParams(window.location.search).get('v');
   let scriptVersion='';
   try{scriptVersion=new URL(document.currentScript?.src||'',window.location.href).searchParams.get('v')||'';}catch(_){}
-  return pageVersion||scriptVersion||'20260818-22';
+  return pageVersion||scriptVersion||'20260818-23';
 })();
 window.EVOLUTION_ASSET_VERSION=EVOLUTION_ASSET_VERSION;
 const evolutionAsset=path=>`${path}?v=${encodeURIComponent(EVOLUTION_ASSET_VERSION)}`;
