@@ -4,7 +4,7 @@ const EVOLUTION_ASSET_VERSION=(()=>{
   const pageVersion=new URLSearchParams(window.location.search).get('v');
   let scriptVersion='';
   try{scriptVersion=new URL(document.currentScript?.src||'',window.location.href).searchParams.get('v')||'';}catch(_){}
-  return pageVersion||scriptVersion||'20260818-13';
+  return pageVersion||scriptVersion||'20260818-14';
 })();
 window.EVOLUTION_ASSET_VERSION=EVOLUTION_ASSET_VERSION;
 const evolutionAsset=path=>`${path}?v=${encodeURIComponent(EVOLUTION_ASSET_VERSION)}`;
@@ -263,7 +263,7 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
 
 (function loadPortalAccessShare(){
   const path=String(window.location?.pathname||'').toLowerCase();
-  if(!(path.endsWith('/admin.html')||path.endsWith('/partner.html')))return;
+  if(!(path.endsWith('/admin.html')||path.endsWith('/partner.html')||path.endsWith('/admin-staff.html')))return;
   if(document.getElementById('portalAccessShareScript'))return;
   const script=document.createElement('script');
   script.id='portalAccessShareScript';
