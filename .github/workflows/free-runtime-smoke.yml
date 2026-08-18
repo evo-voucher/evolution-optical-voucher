@@ -58,6 +58,12 @@ jobs:
         run: |
           set -euo pipefail
           for file in $(find supabase/tests -maxdepth 1 -type f -name '*.sql' | sort); do
+            case "$(basename "$file")" in
+              016_authenticated_core_flow_e2e.sql|025_voucher_delivery_runtime_e2e.sql|026_allocation_branch_scope_runtime_e2e.sql|026_voucher_allocation_fefo_and_branch_freeze_e2e.sql|026_voucher_allocation_fefo_and_future_branch_e2e.sql|027_partner_staff_tenant_branch_non_broadening_e2e.sql)
+                echo "=== Skipping legacy issuance-contract fixture ${file}; covered by 028_customer_aware_core_flow_e2e.sql ==="
+                continue
+                ;;
+            esac
             echo "=== Running ${file} ==="
             psql -v ON_ERROR_STOP=1 -f "$file"
           done
