@@ -4,7 +4,7 @@ const EVOLUTION_ASSET_VERSION=(()=>{
   const pageVersion=new URLSearchParams(window.location.search).get('v');
   let scriptVersion='';
   try{scriptVersion=new URL(document.currentScript?.src||'',window.location.href).searchParams.get('v')||'';}catch(_){}
-  return pageVersion||scriptVersion||'20260818-12';
+  return pageVersion||scriptVersion||'20260818-13';
 })();
 window.EVOLUTION_ASSET_VERSION=EVOLUTION_ASSET_VERSION;
 const evolutionAsset=path=>`${path}?v=${encodeURIComponent(EVOLUTION_ASSET_VERSION)}`;
@@ -32,6 +32,26 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   };
   apply();
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});
+})();
+
+(function installAdminReturnToMain(){
+  const path=String(window.location?.pathname||'').toLowerCase();
+  if(!path.endsWith('/admin.html'))return;
+  const install=()=>{
+    if(document.getElementById('adminReturnMainBtn'))return;
+    const top=document.querySelector('body .toprow');
+    if(!top)return;
+    const btn=document.createElement('button');
+    btn.id='adminReturnMainBtn';
+    btn.type='button';
+    btn.textContent='Return to Main';
+    btn.setAttribute('aria-label','Return to Voucher Main');
+    btn.onclick=()=>{window.location.href=window.EVOLUTION_VOUCHER_BACKEND?.siteBase||'./';};
+    const logout=document.getElementById('logoutBtn');
+    if(logout)top.insertBefore(btn,logout);else top.appendChild(btn);
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
+  else install();
 })();
 
 (function honorAdminDeepLink(){
