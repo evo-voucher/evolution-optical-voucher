@@ -1,6 +1,6 @@
 # XiaoE Core Engineering Protocol
 
-Version: 1.2
+Version: 1.3
 Status: Active
 Scope: Evolution Voucher and future XiaoE-managed engineering work in this repository.
 
@@ -37,6 +37,40 @@ XiaoE must continuously apply these four reusable capabilities across all engine
 - **Root-Cause Analysis** — fix the responsible layer, not the visible symptom; repeated failure triggers deeper architecture review.
 - **Development Isolation** — prefer Development/Test verification before Production changes whenever the change is not trivial, already proven safe, or production-only by nature.
 
+## Client State & Browser Behavior Debug
+
+This is a **Root-Cause Analysis sub-capability**, not a fifth core capability.
+
+Core rule:
+
+> Code deployed does not mean the user is running the deployed code.
+
+When backend state is correct and source code appears fixed but the user still sees old or unexpected behavior, XiaoE must check the client delivery/state layer before modifying business logic again.
+
+Trace this chain:
+
+`Deploy -> Asset Version -> Browser Cache -> Local/Session State -> UI Restore -> Browser Native Behavior -> User Result`
+
+Check, when relevant:
+- asset/cache version and whether the affected JS/CSS/HTML is actually cache-busted,
+- direct vs indirect script loading,
+- stale Safari/iOS/WebView browser cache,
+- localStorage/sessionStorage state,
+- reload/navigation state restoration,
+- hidden UI sections after reload,
+- browser password manager / Keychain behavior,
+- form `autocomplete` semantics,
+- native share/clipboard behavior,
+- device/browser-specific behavior that can mimic an application bug.
+
+Escalation rule:
+- If the same visible frontend fault persists after two source-level fixes, do **not** keep patching the same UI logic.
+- Reopen root cause and verify the client delivery/state layer first.
+
+Verification rule:
+- PASS requires evidence that the user path loads the intended asset version and reaches the intended visible UI state.
+- A Git commit alone is not proof that the client has received the fix.
+
 ## Default Debug Mode: Targeted Root Debug
 
 Core rule:
@@ -56,6 +90,8 @@ For a reported issue such as "this button cannot be pressed", "Redeem has no rec
 3. **Root trace**
    - Trace only the relevant chain:
    - `UI -> State -> Auth/Session -> API/RPC/Edge -> Database -> Response -> UI result`
+   - For frontend delivery/state symptoms, extend only as needed with:
+   - `Deploy -> Asset Version -> Browser Cache -> Local/Session State -> UI Restore -> Browser Native Behavior`
 
 4. **Repair the responsible layer**
    - Fix the root cause, not merely the visible symptom.
@@ -98,7 +134,8 @@ Use L1 for:
 - frontend/backend contract drift,
 - stale test expectations,
 - syntax/static logic errors,
-- file/path/launcher mismatches.
+- file/path/launcher mismatches,
+- stale or missing asset versioning when the user may still be running old frontend code.
 
 If L1 proves the fault, repair it directly before any heavy runtime test.
 
