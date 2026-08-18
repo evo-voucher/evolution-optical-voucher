@@ -26,18 +26,28 @@ body[data-admin-section="partners"] .check span{
   overflow-wrap:anywhere;
 }
 
-/* Add Partner form: softer off-white entry fields for comfortable contrast. */
-body[data-admin-section="partners"] #dashboardState .card:has(#newPartnerName) input:not([type="hidden"]),
-body[data-admin-section="partners"] #dashboardState .card:has(#newPartnerName) select{
-  background:#d9dee8!important;
-  color:#15213a!important;
-  border-color:#aeb8cb!important;
-  -webkit-text-fill-color:#15213a!important;
-  caret-color:#15213a;
+/* Add Partner form: match the unified soft cream-yellow entry fields. */
+body[data-admin-section="partners"] #dashboardState .card:has(#newPartnerName) input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]),
+body[data-admin-section="partners"] #dashboardState .card:has(#newPartnerName) select,
+body[data-admin-section="partners"] #dashboardState .card:has(#newPartnerName) textarea{
+  background:#fffdb3!important;
+  color:#151b2b!important;
+  border-color:#d8d58d!important;
+  -webkit-text-fill-color:#151b2b!important;
+  caret-color:#151b2b!important;
+  color-scheme:light!important;
 }
-body[data-admin-section="partners"] #dashboardState .card:has(#newPartnerName) input::placeholder{
-  color:#65728a!important;
-  opacity:1;
+body[data-admin-section="partners"] #dashboardState .card:has(#newPartnerName) input::placeholder,
+body[data-admin-section="partners"] #dashboardState .card:has(#newPartnerName) textarea::placeholder{
+  color:#6f714f!important;
+  -webkit-text-fill-color:#6f714f!important;
+  opacity:1!important;
+}
+body[data-admin-section="partners"] #dashboardState .card:has(#newPartnerName) input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):focus,
+body[data-admin-section="partners"] #dashboardState .card:has(#newPartnerName) select:focus,
+body[data-admin-section="partners"] #dashboardState .card:has(#newPartnerName) textarea:focus{
+  background:#fffec7!important;
+  border-color:#37dff0!important;
 }
 
 /* Mobile right-side swipe gutter: keeps a clear touch strip beside form fields. */
