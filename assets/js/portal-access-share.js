@@ -5,13 +5,13 @@
   const path=String(window.location?.pathname||'').toLowerCase();
   const partnerPortalUrl=`${siteBase}partner.html`;
   const branchStaffUrl=`${siteBase}staff.html`;
-  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
 
   function ensureStyle(){
     if(document.getElementById('portalAccessShareStyle'))return;
     const style=document.createElement('style');
     style.id='portalAccessShareStyle';
-    style.textContent=`.portal-share-box{margin-top:12px;padding:12px;border:1px solid rgba(101,230,181,.42);border-radius:14px;background:#0d2438}.portal-share-box b{display:block;color:#e9fff7}.portal-share-meta{margin-top:5px;color:#a9bddc;font-size:11px;line-height:1.45;word-break:break-word}.portal-share-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.portal-share-actions button{min-height:40px;padding:8px 12px}.portal-share-copy-ok{margin-top:7px;color:#65e6b5;font-size:11px}.customer-db-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.customer-db-actions button{min-height:40px}.customer-db-table{overflow:auto}.customer-db-table table{width:100%;border-collapse:collapse;font-size:12px}.customer-db-table th,.customer-db-table td{padding:9px 8px;border-bottom:1px solid rgba(115,135,210,.22);text-align:left;white-space:nowrap}.customer-db-table th{font-size:10px;color:#9fb1d9;text-transform:uppercase}@media(max-width:560px){.portal-share-actions button,.customer-db-actions button{flex:1}}`;
+    style.textContent=`.portal-share-box{margin-top:12px;padding:12px;border:1px solid rgba(101,230,181,.42);border-radius:14px;background:#0d2438}.portal-share-box b{display:block;color:#e9fff7}.portal-share-meta{margin-top:5px;color:#a9bddc;font-size:11px;line-height:1.45;word-break:break-word}.portal-share-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.portal-share-actions button{min-height:40px;padding:8px 12px}.portal-share-copy-ok{margin-top:7px;color:#65e6b5;font-size:11px}.customer-db-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.customer-db-actions button{min-height:40px}.customer-db-table{overflow:auto}.customer-db-table table{width:100%;border-collapse:collapse;font-size:12px}.customer-db-table th,.customer-db-table td{padding:9px 8px;border-bottom:1px solid rgba(115,135,210,.22);text-align:left;white-space:nowrap}.customer-db-table th{font-size:10px;color:#9fb1d9;text-transform:uppercase}.customer-field-rules{margin:14px 0;padding:14px;border:1px solid rgba(100,128,210,.45);border-radius:14px;background:#0d1839}.customer-field-rule-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.customer-field-rules .field{margin-top:8px}.customer-field-rules button{width:100%;margin-top:12px}.customer-field-rules-status{margin-top:8px;font-size:11px;color:#a9bddc}@media(max-width:560px){.portal-share-actions button,.customer-db-actions button{flex:1}.customer-field-rule-grid{grid-template-columns:1fr}}`;
     document.head.appendChild(style);
   }
 
@@ -26,16 +26,64 @@
 
   function adminDb(){if(!window.supabase?.createClient)return null;return window.supabase.createClient(cfg.supabaseUrl,cfg.publishableKey)}
   function downloadCustomerCsv(rows){const headers=['Partner Code','Partner Name','Customer Name','Customer Phone','Birthday','First Seen','Last Seen','Voucher Count'];const safe=v=>{let s=String(v??'');if(/^[=+\-@]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"'};const lines=[headers,...rows.map(r=>[r.partner_code,r.partner_name,r.customer_name,r.customer_phone,r.customer_birthday,r.first_seen_at?new Date(r.first_seen_at).toLocaleString('en-MY',{timeZone:'Asia/Kuala_Lumpur'}):'',r.last_seen_at?new Date(r.last_seen_at).toLocaleString('en-MY',{timeZone:'Asia/Kuala_Lumpur'}):'',r.voucher_count])].map(row=>row.map(safe).join(','));const blob=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`customer-database-${new Date().toISOString().slice(0,10)}.csv`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200)}
+
+  async function loadCustomerFieldRules(db,phoneSelect,birthdaySelect,status){
+    const{data,error}=await db.rpc('customer_field_requirements',{});if(error)throw error;
+    phoneSelect.value=data?.phone_required?'required':'optional';birthdaySelect.value=data?.birthday_required?'required':'optional';
+    if(status)status.textContent=`Current: Phone ${data?.phone_required?'Required':'Optional'} • Birthday ${data?.birthday_required?'Required':'Optional'}`;
+    return data||{};
+  }
+
   function installAdminCustomerDatabase(){
     if(!path.endsWith('/admin.html')||document.getElementById('adminCustomerDatabaseCard'))return;
     const dash=document.getElementById('dashboardState');if(!dash)return;ensureStyle();
-    const card=document.createElement('section');card.id='adminCustomerDatabaseCard';card.className='card';card.innerHTML='<h2>Customer Database</h2><p class="small">Customer master records. Birthday is stored as customer information only and never appears on the customer Voucher or QR.</p><div class="customer-db-actions"><button type="button" id="customerDbRefresh">Refresh</button><button type="button" id="customerDbExport">Export Customer File</button></div><div id="customerDbMsg"></div><div id="customerDbTable" class="customer-db-table"><div class="small">Sign in to load customer records.</div></div>';dash.appendChild(card);
+    const card=document.createElement('section');card.id='adminCustomerDatabaseCard';card.className='card';card.dataset.adminSection='settings';card.innerHTML='<h2>Customer Database</h2><p class="small">Customer master records. Birthday is stored as customer information only and never appears on the customer Voucher or QR.</p><div class="customer-field-rules"><b>Partner Customer Required Fields</b><div class="small">Choose whether Partner must complete these fields before issuing a Voucher.</div><div class="customer-field-rule-grid"><div class="field"><label>Customer Phone</label><select id="customerPhoneRule"><option value="required">Required</option><option value="optional">Optional</option></select></div><div class="field"><label>Customer Birthday</label><select id="customerBirthdayRule"><option value="required">Required</option><option value="optional">Optional</option></select></div></div><button type="button" id="saveCustomerFieldRules">Save Field Rules</button><div id="customerFieldRulesStatus" class="customer-field-rules-status">Loading current settings…</div></div><div class="customer-db-actions"><button type="button" id="customerDbRefresh">Refresh</button><button type="button" id="customerDbExport">Export Customer File</button></div><div id="customerDbMsg"></div><div id="customerDbTable" class="customer-db-table"><div class="small">Sign in to load customer records.</div></div>';dash.appendChild(card);
     let rows=[];
-    const load=async()=>{const msg=document.getElementById('customerDbMsg'),table=document.getElementById('customerDbTable');if(!msg||!table)return;msg.textContent='Loading…';try{const db=adminDb();if(!db)throw new Error('Database client unavailable.');const{data,error}=await db.rpc('admin_customer_directory',{});if(error)throw error;rows=data||[];table.innerHTML=rows.length?`<table><thead><tr><th>Partner</th><th>Customer</th><th>Phone</th><th>Birthday</th><th>Vouchers</th><th>Last Seen</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.partner_code)} • ${esc(r.partner_name)}</td><td>${esc(r.customer_name)}</td><td>${esc(r.customer_phone||'—')}</td><td>${esc(r.customer_birthday||'—')}</td><td>${esc(r.voucher_count)}</td><td>${esc(r.last_seen_at?new Date(r.last_seen_at).toLocaleDateString('en-MY',{timeZone:'Asia/Kuala_Lumpur'}):'—')}</td></tr>`).join('')}</tbody></table>`:'<div class="small">No customer records.</div>';msg.textContent=`${rows.length} customer record(s).`}catch(e){rows=[];msg.textContent=e?.message||'Unable to load customer database.'}};
+    const db=adminDb();
+    const phoneRule=document.getElementById('customerPhoneRule'),birthdayRule=document.getElementById('customerBirthdayRule'),ruleStatus=document.getElementById('customerFieldRulesStatus');
+    const loadRules=async()=>{try{if(!db)throw new Error('Database client unavailable.');await loadCustomerFieldRules(db,phoneRule,birthdayRule,ruleStatus)}catch(e){ruleStatus.textContent=e?.message||'Unable to load field rules.'}};
+    document.getElementById('saveCustomerFieldRules').onclick=async()=>{const btn=document.getElementById('saveCustomerFieldRules');btn.disabled=true;ruleStatus.textContent='Saving…';try{const{data,error}=await db.rpc('admin_set_customer_field_requirements',{p_phone_required:phoneRule.value==='required',p_birthday_required:birthdayRule.value==='required'});if(error)throw error;ruleStatus.textContent=`Saved ✓ Phone ${data?.phone_required?'Required':'Optional'} • Birthday ${data?.birthday_required?'Required':'Optional'}`}catch(e){ruleStatus.textContent=e?.message||'Unable to save field rules.'}finally{btn.disabled=false}};
+    const load=async()=>{const msg=document.getElementById('customerDbMsg'),table=document.getElementById('customerDbTable');if(!msg||!table)return;msg.textContent='Loading…';try{if(!db)throw new Error('Database client unavailable.');const{data,error}=await db.rpc('admin_customer_directory',{});if(error)throw error;rows=data||[];table.innerHTML=rows.length?`<table><thead><tr><th>Partner</th><th>Customer</th><th>Phone</th><th>Birthday</th><th>Vouchers</th><th>Last Seen</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.partner_code)} • ${esc(r.partner_name)}</td><td>${esc(r.customer_name)}</td><td>${esc(r.customer_phone||'—')}</td><td>${esc(r.customer_birthday||'—')}</td><td>${esc(r.voucher_count)}</td><td>${esc(r.last_seen_at?new Date(r.last_seen_at).toLocaleDateString('en-MY',{timeZone:'Asia/Kuala_Lumpur'}):'—')}</td></tr>`).join('')}</tbody></table>`:'<div class="small">No customer records.</div>';msg.textContent=`${rows.length} customer record(s).`}catch(e){rows=[];msg.textContent=e?.message||'Unable to load customer database.'}};
     document.getElementById('customerDbRefresh').onclick=load;document.getElementById('customerDbExport').onclick=()=>{if(rows.length)downloadCustomerCsv(rows);else load()};
-    let tries=0;const timer=setInterval(()=>{tries++;if(!dash.classList.contains('hidden')){clearInterval(timer);load()}else if(tries>80)clearInterval(timer)},250);
+    let tries=0;const timer=setInterval(()=>{tries++;if(!dash.classList.contains('hidden')){clearInterval(timer);loadRules();load()}else if(tries>80)clearInterval(timer)},250);
   }
 
-  function mount(){if(path.endsWith('/admin.html')){installAdminPartnerShare();installAdminCustomerDatabase()}if(path.endsWith('/partner.html'))installPartnerRedeemShare();if(path.endsWith('/admin-staff.html'))installBranchStaffShare()}
+  function installPartnerCustomerFields(){
+    if(!path.endsWith('/partner.html')||document.getElementById('issueBirthday'))return;
+    const phone=document.getElementById('issuePhone'),issueBtn=document.getElementById('issueBtn');if(!phone||!issueBtn)return;
+    const phoneField=phone.closest('.field');if(!phoneField)return;
+    const birthdayField=document.createElement('div');birthdayField.className='field';birthdayField.innerHTML='<label id="issueBirthdayLabel">Customer Birthday (optional)</label><input id="issueBirthday" type="date" autocomplete="bday">';phoneField.insertAdjacentElement('afterend',birthdayField);
+    const phoneLabel=phoneField.querySelector('label'),birthday=document.getElementById('issueBirthday'),birthdayLabel=document.getElementById('issueBirthdayLabel');
+    let rules={phone_required:true,birthday_required:false};
+    const db=adminDb();
+    const applyRules=r=>{rules={phone_required:!!r.phone_required,birthday_required:!!r.birthday_required};phone.required=rules.phone_required;birthday.required=rules.birthday_required;if(phoneLabel)phoneLabel.textContent=`Customer Phone${rules.phone_required?'':' (optional)'}`;birthdayLabel.textContent=`Customer Birthday${rules.birthday_required?'':' (optional)'}`;};
+    applyRules(rules);
+    const refreshRules=async()=>{try{const{data,error}=await db.rpc('customer_field_requirements',{});if(error)throw error;applyRules(data||rules);return true}catch(_){return false}};
+    let tries=0;const ruleTimer=setInterval(async()=>{tries++;if(await refreshRules()||tries>80)clearInterval(ruleTimer)},250);
+
+    document.addEventListener('click',async e=>{
+      const target=e.target.closest?.('#issueBtn');if(!target)return;
+      e.preventDefault();e.stopImmediatePropagation();
+      const version=(document.getElementById('issueVersion')?.value||'').trim(),name=(document.getElementById('issueName')?.value||'').trim(),phoneValue=phone.value.trim(),birthdayValue=birthday.value||null;
+      const msgNode=document.getElementById('issueMsg'),resultNode=document.getElementById('issueResult');
+      const show=(text,ok=false)=>{if(msgNode)msgNode.innerHTML=text?`<div class="msg ${ok?'ok':'err'}">${esc(text)}</div>`:'';};
+      show('');if(resultNode)resultNode.innerHTML='';
+      await refreshRules();
+      if(!version){show('Select an available Voucher type.');return}if(!name){show('Customer name is required.');return}if(rules.phone_required&&!phoneValue){show('Customer phone is required.');return}if(rules.birthday_required&&!birthdayValue){show('Customer birthday is required.');return}
+      target.disabled=true;
+      try{
+        const picker=document.getElementById('adminPartnerSelect'),args={p_version_id:version,p_customer_name:name,p_customer_phone:phoneValue||null,p_customer_birthday:birthdayValue};if(picker?.value)args.p_partner_id=picker.value;
+        const{data,error}=await db.rpc('issue_engine_voucher_with_customer',args);if(error)throw error;
+        const token=data?.public_token,code=data?.voucher_code,voucherId=data?.voucher_id,url=token?`${siteBase}voucher.html?v=${encodeURIComponent(token)}`:'';
+        let shareHtml='';if(voucherId){const share=await db.rpc('get_partner_voucher_share',{p_voucher_id:voucherId});if(!share.error&&share.data?.message_body){const shareMessage=[share.data.message_body,url?`Voucher: ${url}`:''].filter(Boolean).join('\n\n');shareHtml=`<a class="shareLink" href="https://wa.me/?text=${encodeURIComponent(shareMessage)}" target="_blank" rel="noopener">Share via WhatsApp</a>`}else shareHtml='<div class="shareNote">Voucher issued. WhatsApp share is temporarily unavailable.</div>'}
+        show(`Voucher ${code||''} issued successfully.`,true);
+        if(resultNode)resultNode.innerHTML=`<div class="msg ok"><b>${esc(data?.voucher_type||'Voucher')}</b><div>Code: ${esc(code||'—')}</div><div>Expiry: ${esc(data?.expiry_date||'—')}</div>${url?`<a class="resultLink" href="${esc(url)}" target="_blank" rel="noopener">Open customer voucher</a><div class="issuedQrWrap"><div class="issuedQrTitle">SCAN CUSTOMER VOUCHER</div><div id="issuedQr" class="issuedQr"></div></div>`:''}${shareHtml}</div>`;
+        if(url&&window.QRCode&&document.getElementById('issuedQr'))new QRCode(document.getElementById('issuedQr'),{text:url,width:220,height:220,correctLevel:QRCode.CorrectLevel.M});
+        document.getElementById('issueName').value='';phone.value='';birthday.value='';
+      }catch(err){show(err?.message||'Voucher issuance failed.')}finally{target.disabled=false}
+    },true);
+  }
+
+  function mount(){if(path.endsWith('/admin.html')){installAdminPartnerShare();installAdminCustomerDatabase()}if(path.endsWith('/partner.html')){installPartnerRedeemShare();installPartnerCustomerFields()}if(path.endsWith('/admin-staff.html'))installBranchStaffShare()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
 })();
