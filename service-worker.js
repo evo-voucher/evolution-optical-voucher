@@ -1,7 +1,9 @@
-const SAFE_CACHE='evolution-voucher-safe-shell-v3';
+const SAFE_CACHE='evolution-voucher-safe-shell-v4';
 const SAFE_SHELL=[
   './',
   './index.html',
+  './admin-login.html',
+  './admin-dashboard.html',
   './admin.html',
   './admin-staff.html',
   './admin-partner-password.html',
@@ -9,7 +11,10 @@ const SAFE_SHELL=[
   './staff.html',
   './voucher.html',
   './voucher-engine.html',
-  './assets/js/backend-config.js'
+  './assets/js/backend-config.js',
+  './assets/css/evolution-theme.css',
+  './assets/css/allocation-compact.css',
+  './assets/css/partner-entry-layout.css'
 ];
 self.addEventListener('install',event=>{self.skipWaiting();event.waitUntil(caches.open(SAFE_CACHE).then(cache=>cache.addAll(SAFE_SHELL)))});
 self.addEventListener('activate',event=>{event.waitUntil((async()=>{for(const key of await caches.keys()){if(key!==SAFE_CACHE)await caches.delete(key)}await self.clients.claim()})())});

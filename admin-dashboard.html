@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07152f">
+<title>Evolution Optical • Admin Dashboard</title>
+<style>html,body{margin:0;min-height:100%;background:#071127;color:#fff;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{display:grid;place-items:center;padding:20px}.loading{color:#bcc3e3;font-weight:700}</style>
+</head>
+<body><div class="loading">Loading Admin Dashboard…</div>
+<script>
+(async()=>{
+  const dashboardUrl='admin-dashboard.html?v=20260818-05';
+  try{
+    const res=await fetch('admin.html?source=20260818-05',{cache:'no-store'});
+    if(!res.ok)throw new Error(`Admin source unavailable (${res.status})`);
+    let html=await res.text();
+    html=html.replace('assets/js/backend-config.js?v=20260818-02','assets/js/backend-config.js?v=20260818-03');
+    html=html.replace('async function verifyAdmin(session){','window.__EVOLUTION_ADMIN_REFRESH__=loadAdminData;\nasync function verifyAdmin(session){');
+    html=html.replace('</body>',`<script>
+(()=>{
+  let lastRefresh=0;
+  async function refreshWhenActive(){
+    const dashboard=document.getElementById('dashboardState');
+    if(!dashboard||dashboard.classList.contains('hidden')||typeof window.__EVOLUTION_ADMIN_REFRESH__!=='function')return;
+    const now=Date.now();
+    if(now-lastRefresh<1500)return;
+    lastRefresh=now;
+    try{await window.__EVOLUTION_ADMIN_REFRESH__();}catch(_){}
+  }
+  window.addEventListener('focus',refreshWhenActive);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshWhenActive();});
+  window.addEventListener('load',()=>{
+    try{history.replaceState(null,'','${dashboardUrl}');}catch(_){}
+  },{once:true});
+})();
+<\/script></body>`);
+    try{history.replaceState(null,'','admin.html?dashboard=20260818-05');}catch(_){}
+    document.open();
+    document.write(html);
+    document.close();
+  }catch(e){
+    try{history.replaceState(null,'',dashboardUrl);}catch(_){}
+    document.body.innerHTML=`<div style="max-width:680px;padding:22px;border:1px solid #6c3bf2;border-radius:18px;background:#101c43">Unable to load Admin Dashboard.<br><small>${String(e?.message||e)}</small></div>`;
+  }
+})();
+</script>
+</body>
+</html>
