@@ -7,7 +7,10 @@
 <title>Evolution Optical • Branch Staff Management</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script src="assets/js/backend-config.js"></script>
+<script>
+const STAFF_ASSET_VERSION=new URLSearchParams(window.location.search).get('v')||'20260818-2055';
+document.write('<script src="assets/js/backend-config.js?v='+encodeURIComponent(STAFF_ASSET_VERSION)+'"><\/script>');
+</script>
 <style>
 :root{--ink:#f7f8ff;--muted:#bcc7e3;--line:rgba(115,135,210,.34);--ok:#65e6b5;--err:#ff92a5;--warn:#ffd78f}
 *{box-sizing:border-box}
@@ -45,7 +48,7 @@ button:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;fil
   <section class="card">
     <h2>Verify Voucher</h2>
     <div id="branchField" class="field hidden"><label>Redemption Branch</label><select id="branchCode"></select></div>
-    <div class="field"><label>Voucher Code</label><input id="voucherCode" type="text" inputmode="text" autocapitalize="characters" placeholder="EO-YYYYMMDD-XXXXXXXX"></div>
+    <div class="field"><label>Voucher Code / QR Link</label><input id="voucherCode" type="text" inputmode="text" autocapitalize="characters" placeholder="EO-YYYYMMDD-XXXXXXXX or voucher link"></div>
     <button id="scanBtn" class="wide secondary">📷 Scan QR Code</button>
     <section id="scannerPanel" class="scanner hidden">
       <div id="qrReader"></div>
@@ -119,6 +122,27 @@ button:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;fil
     }catch(e){show($('contextMsg'),e.message||'Unable to load Staff operations.','err')}
   }
   async function rpc(name,args={}){const{data,error}=await db.rpc(name,args);if(error)throw error;return data;}
+  async function canonicalVoucherCode(raw){
+    const input=String(raw||'').trim();
+    if(!input)throw new Error('Enter or scan a Voucher code.');
+    let code='';let token='';
+    try{
+      const url=new URL(input);
+      code=(url.searchParams.get('code')||url.searchParams.get('voucher')||'').trim();
+      token=(url.searchParams.get('v')||url.searchParams.get('token')||'').trim();
+    }catch(_){
+      if(uuid.test(input))token=input;
+      else code=input;
+    }
+    if(code)return code;
+    if(token){
+      if(!uuid.test(token))throw new Error('Invalid Evolution Voucher QR token.');
+      const publicVoucher=await rpc('get_public_voucher',{p_token:token});
+      if(!publicVoucher?.success||!publicVoucher?.voucher_code)throw new Error(publicVoucher?.error||'Voucher not found');
+      return publicVoucher.voucher_code;
+    }
+    throw new Error('Voucher QR/link is not recognized.');
+  }
   async function verifySession(session){
     if(!session?.user)return false;
     const context=await rpc('resolve_staff_portal_context');
@@ -128,13 +152,13 @@ button:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;fil
   }
   $('loginBtn').onclick=async()=>{const email=$('email').value.trim().toLowerCase(),password=$('password').value;if(!email||!password){show($('loginMsg'),'Enter email and password.');return}$('loginBtn').disabled=true;try{const{data,error}=await db.auth.signInWithPassword({email,password});if(error)throw error;await verifySession(data.session)}catch(e){show($('loginMsg'),e.message||'Sign in failed.')}finally{$('loginBtn').disabled=false}};
   $('logoutBtn').onclick=async()=>{await db.auth.signOut();location.reload()};
-  $('verifyBtn').onclick=async()=>{clearVerified();show($('verifyMsg'),'');const code=$('voucherCode').value.trim();const branch=selectedBranchCode();if(!code){show($('verifyMsg'),'Enter or scan a Voucher code.');return}if(staffContext?.branch_selection_required&&!branch){show($('verifyMsg'),'Select a branch first.');return}$('verifyBtn').disabled=true;try{const v=await rpc('verify_voucher',{p_voucher_code:code,p_branch_code:branch});if(!v?.success)throw new Error(v?.error||'Voucher verification failed.');verified=v;verificationMethod=verificationMethod||'manual_code';renderVerified(v)}catch(e){show($('verifyMsg'),e.message||'Voucher verification failed.')}finally{$('verifyBtn').disabled=false}};
+  $('verifyBtn').onclick=async()=>{clearVerified();show($('verifyMsg'),'');const raw=$('voucherCode').value.trim();const branch=selectedBranchCode();if(!raw){show($('verifyMsg'),'Enter or scan a Voucher code.');return}if(staffContext?.branch_selection_required&&!branch){show($('verifyMsg'),'Select a branch first.');return}$('verifyBtn').disabled=true;try{const code=await canonicalVoucherCode(raw);$('voucherCode').value=code;const v=await rpc('verify_voucher',{p_voucher_code:code,p_branch_code:branch});if(!v?.success)throw new Error(v?.error||'Voucher verification failed.');verified=v;verificationMethod=verificationMethod||'manual_code';renderVerified(v)}catch(e){show($('verifyMsg'),e.message||'Voucher verification failed.')}finally{$('verifyBtn').disabled=false}};
   $('redeemBtn').onclick=async()=>{if(!verified?.can_redeem)return;const branch=selectedBranchCode();$('redeemBtn').disabled=true;try{const r=await rpc('redeem_voucher',{p_voucher_code:verified.voucher_code,p_notes:$('notes').value.trim()||null,p_branch_code:branch,p_redeem_method:verificationMethod||'manual_code'});if(!r?.success)throw new Error(r?.error||'Redemption failed.');show($('redeemMsg'),`Redeemed successfully at ${r.branch_name}.`,'ok');$('voucherCode').value='';$('notes').value='';clearVerified();await loadOperations()}catch(e){show($('redeemMsg'),e.message||'Redemption failed.','err')}finally{$('redeemBtn').disabled=false}};
   $('cancelRedeemBtn').onclick=()=>{clearVerified();show($('redeemMsg'),'')};
   $('branchCode').onchange=()=>{clearVerified();show($('verifyMsg'),'');show($('redeemMsg'),'')};
   async function closeScanner(){if(qrScanner&&scannerRunning){try{await qrScanner.stop()}catch(_){}try{await qrScanner.clear()}catch(_){}scannerRunning=false}qrScanner=null;$('scannerPanel').classList.add('hidden')}
   $('closeScannerBtn').onclick=closeScanner;
-  $('scanBtn').onclick=async()=>{show($('verifyMsg'),'');if(!window.Html5Qrcode){show($('verifyMsg'),'QR scanner library is unavailable.');return}await closeScanner();$('scannerPanel').classList.remove('hidden');qrScanner=new Html5Qrcode('qrReader');try{await qrScanner.start({facingMode:'environment'},{fps:10,qrbox:{width:240,height:240}},async decoded=>{if(scanBusy)return;scanBusy=true;try{await closeScanner();let code=decoded.trim();try{const u=new URL(decoded);code=u.searchParams.get('code')||u.searchParams.get('voucher')||decoded}catch(_){}$('voucherCode').value=code;verificationMethod='qr';$('verifyBtn').click()}finally{setTimeout(()=>scanBusy=false,700)}},()=>{});scannerRunning=true}catch(e){await closeScanner();show($('verifyMsg'),e.message||'Unable to start camera.') }};
+  $('scanBtn').onclick=async()=>{show($('verifyMsg'),'');if(!window.Html5Qrcode){show($('verifyMsg'),'QR scanner library is unavailable.');return}await closeScanner();$('scannerPanel').classList.remove('hidden');qrScanner=new Html5Qrcode('qrReader');try{await qrScanner.start({facingMode:'environment'},{fps:10,qrbox:{width:240,height:240}},async decoded=>{if(scanBusy)return;scanBusy=true;try{await closeScanner();$('voucherCode').value=decoded.trim();verificationMethod='qr';$('verifyBtn').click()}finally{setTimeout(()=>scanBusy=false,700)}},()=>{});scannerRunning=true}catch(e){await closeScanner();show($('verifyMsg'),e.message||'Unable to start camera.') }};
   db.auth.getSession().then(async({data})=>{if(data?.session){try{await verifySession(data.session)}catch(e){show($('loginMsg'),e.message||'Session verification failed.')}}});
 })();
 </script>
