@@ -6,7 +6,7 @@ const EVOLUTION_ASSET_VERSION=(()=>{
   try{scriptVersion=new URL(document.currentScript?.src||'',window.location.href).searchParams.get('v')||'';}catch(_){}
   const pagePath=String(window.location?.pathname||'').toLowerCase();
   const legacyAdminBootstrap=pagePath.endsWith('/admin.html')&&scriptVersion==='20260818-07';
-  return pageVersion||(legacyAdminBootstrap?'20260818-31':scriptVersion)||'20260818-31';
+  return pageVersion||(legacyAdminBootstrap?'20260818-34':scriptVersion)||'20260818-34';
 })();
 window.EVOLUTION_ASSET_VERSION=EVOLUTION_ASSET_VERSION;
 const evolutionAsset=path=>`${path}?v=${encodeURIComponent(EVOLUTION_ASSET_VERSION)}`;
@@ -72,11 +72,18 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   const supabase=window.supabase;if(!supabase||typeof supabase.createClient!=='function'||supabase.__evolutionAuthNamespaced)return;const originalCreateClient=supabase.createClient.bind(supabase);const path=String(window.location?.pathname||'').toLowerCase();const clientCache=new Map();
   function resolveStorageKey(){if(path.includes('admin')||path.includes('voucher-engine'))return'evolution-voucher-auth-admin-v2';if(path.includes('partner'))return'evolution-voucher-auth-partner';if(path.includes('staff'))return'evolution-voucher-auth-staff';return'evolution-voucher-auth-default';}
   function errorStatus(error){const direct=Number(error?.status||error?.statusCode||0);if(direct)return direct;const context=error?.context;const fromContext=Number(context?.status||context?.statusCode||0);if(fromContext)return fromContext;return/\b401\b|unauthorized/i.test(String(error?.message||''))?401:0;}
+  function isAuthPermissionError(error){const code=String(error?.code||'').toLowerCase();const message=String(error?.message||error||'').toLowerCase();return errorStatus(error)===401||code==='42501'||/permission denied for function|jwt expired|invalid jwt|unauthorized/.test(message);}
   function isTerminalSessionError(error){const code=String(error?.code||error?.error_code||'').toLowerCase();const message=String(error?.message||error||'').toLowerCase();return code==='refresh_token_not_found'||code==='session_not_found'||/refresh token not found|session not found/.test(message);}
   const portalStorageKey=resolveStorageKey();if(portalStorageKey==='evolution-voucher-auth-admin-v2'){try{localStorage.removeItem('evolution-voucher-auth-admin');}catch(_){}try{sessionStorage.removeItem('evolution-voucher-auth-admin');}catch(_){}}
   async function clearTerminalSession(client,error){if(!isTerminalSessionError(error))return false;try{localStorage.removeItem(portalStorageKey);}catch(_){}try{sessionStorage.removeItem(portalStorageKey);}catch(_){}try{await client.auth.signOut({scope:'local'});}catch(_){}return true;}
   async function refreshIfPossible(client,force=false){const{data}=await client.auth.getSession();const session=data?.session;if(!session)return false;const expiresAt=Number(session.expires_at||0);const nearExpiry=expiresAt>0&&expiresAt*1000<=Date.now()+90000;if(!force&&!nearExpiry)return true;const{data:refreshed,error}=await client.auth.refreshSession();if(error){await clearTerminalSession(client,error);return false;}return!!refreshed?.session;}
-  function wrapClient(client){if(!client?.functions||client.__evolutionAuthRecovery)return client;const originalInvoke=client.functions.invoke.bind(client.functions);client.functions.invoke=async function resilientInvoke(name,options){try{await refreshIfPossible(client,false)}catch(_){}let result=await originalInvoke(name,options);if(errorStatus(result?.error)!==401)return result;let refreshed=false;try{refreshed=await refreshIfPossible(client,true)}catch(_){refreshed=false}if(!refreshed)return result;return await originalInvoke(name,options);};Object.defineProperty(client,'__evolutionAuthRecovery',{value:true,enumerable:false});return client;}
+  function wrapClient(client){
+    if(!client||client.__evolutionAuthRecovery)return client;
+    const originalRpc=typeof client.rpc==='function'?client.rpc.bind(client):null;
+    if(originalRpc){client.rpc=async function resilientRpc(name,args,options){try{await refreshIfPossible(client,false)}catch(_){}let result=await originalRpc(name,args,options);if(!isAuthPermissionError(result?.error))return result;let refreshed=false;try{refreshed=await refreshIfPossible(client,true)}catch(_){refreshed=false}if(!refreshed)return result;return await originalRpc(name,args,options);};}
+    if(client.functions){const originalInvoke=client.functions.invoke.bind(client.functions);client.functions.invoke=async function resilientInvoke(name,options){try{await refreshIfPossible(client,false)}catch(_){}let result=await originalInvoke(name,options);if(!isAuthPermissionError(result?.error))return result;let refreshed=false;try{refreshed=await refreshIfPossible(client,true)}catch(_){refreshed=false}if(!refreshed)return result;return await originalInvoke(name,options);};}
+    Object.defineProperty(client,'__evolutionAuthRecovery',{value:true,enumerable:false});return client;
+  }
   supabase.createClient=function createNamespacedClient(url,key,options={}){const authOptions=options?.auth||{};const storageKey=authOptions.storageKey||portalStorageKey;const persistSession=authOptions.persistSession!==false;const cacheKey=persistSession?`${String(url)}|${String(key)}|${storageKey}`:'';if(cacheKey&&clientCache.has(cacheKey))return clientCache.get(cacheKey);const client=wrapClient(originalCreateClient(url,key,{...options,auth:{...authOptions,storageKey}}));if(cacheKey)clientCache.set(cacheKey,client);return client;};Object.defineProperty(supabase,'__evolutionAuthNamespaced',{value:true,configurable:false,enumerable:false,writable:false});
 })();
 
