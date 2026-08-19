@@ -1,8 +1,8 @@
 # XiaoE Checkpoint
 
 Version: 2.0 Structured Checkpoint
-Timestamp: 2026-08-19 16:24 +08:00
-Mode: Work mode active
+Timestamp: 2026-08-19 16:27 +08:00
+Mode: Work mode ended
 Repository: evo-voucher/evolution-optical-voucher
 Branch: main
 
@@ -17,14 +17,14 @@ Authority order:
 Checkpoint content is continuation context, not live truth. Any state that may have changed must be re-verified before mutation.
 
 ## Active Goal
-- Keep the current Production Voucher system stable while improving XiaoE's ability to continue work reliably across ChatGPT sessions.
-- No Voucher feature change is currently open in this checkpoint.
+- No active Voucher defect or feature is open at session close.
+- Preserve the current Production Voucher baseline until the next issue or feature is explicitly opened.
 
 ## Current Protocol State
 - General reasoning authority: `evo-voucher/xiaoe-core-v2/core/behavior/XIAOE_BEHAVIOR_LOGIC_V1.md`.
 - Voucher execution protocol: `XIAOE_CORE.md` version 2.2.
 - Current startup order: `Behavior Logic -> Voucher Core -> Checkpoint`.
-- Behavior Logic now includes context anchoring, scoped search discipline, owner-first search, competing-path checks, change budget, invariant protection, and risk-sensitive stop/reassess behavior.
+- Behavior Logic includes context anchoring, scoped search discipline, owner-first search, competing-path checks, change budget, invariant protection, and risk-sensitive stop/reassess behavior.
 - Voucher Core v2.2 includes Voucher Domain Invariants and Business Number Ownership.
 
 ## Verified Facts
@@ -50,8 +50,9 @@ Unless current evidence proves otherwise, preserve:
 PASS: Repository contains the stable canonical voucher, partner isolation, branch-scope snapshot, and reporting layers.
 PASS: Behavior Logic is the highest XiaoE engineering-governance layer.
 PASS: `XIAOE_CORE.md` version 2.2 is the Voucher-specific execution protocol.
-PASS: Voucher Core now protects Domain Invariants and canonical Business Number Ownership.
-PASS: Checkpoint responsibility is limited to current project state and continuation context.
+PASS: Voucher Core protects Domain Invariants and canonical Business Number Ownership.
+PASS: Structured Checkpoint v2 is the continuation layer for future ChatGPT sessions.
+PASS: No Voucher Production functionality was changed during the governance-optimization session.
 
 ## Re-verify Needed Before Next Mutation
 Re-verify only what is relevant to the next opened issue or feature, including as applicable:
@@ -70,21 +71,22 @@ Do not re-verify unrelated stable areas without evidence that they are involved.
 - Deferred design must not be treated as deployed fact.
 
 ## Open Issues / Blockers
-- No active Voucher defect or feature is recorded in this checkpoint.
+- No active Voucher defect or feature is recorded at session close.
 - No known blocker is currently recorded.
 
 ## Last Change
 - XiaoE engineering governance was strengthened without changing Voucher Production functionality.
-- `XIAOE_BEHAVIOR_LOGIC_V1.md` received context-governance and search-discipline enhancements.
+- `XIAOE_BEHAVIOR_LOGIC_V1.md` received stability, context-governance, and search-discipline enhancements.
 - `XIAOE_CORE.md` was upgraded to v2.2 with Voucher Domain Invariants, Business Number Ownership, and a compact startup/continuation flow.
-- This checkpoint was converted to Structured Checkpoint v2 for faster and more reliable ChatGPT continuation.
+- `XIAOE_CHECKPOINT.md` was converted to Structured Checkpoint v2 for faster and more reliable ChatGPT continuation.
+- Work session closed cleanly at 2026-08-19 16:27 +08:00.
 
 ## Next Action
-When the next Voucher issue or feature is opened:
+On the next 「小E上线」:
 1. Load Behavior Logic.
 2. Load Voucher Core v2.2.
 3. Restore this checkpoint.
-4. Re-verify only the state that could affect the new task.
+4. Re-verify only the state that could affect the newly opened task.
 5. Lock the active objective, owner, scope, protected invariants, and verification target.
 6. Continue from the smallest justified next action.
 
