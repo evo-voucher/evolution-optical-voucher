@@ -9,6 +9,8 @@ on:
       - 'admin.html'
       - 'partner.html'
       - 'staff.html'
+      - 'partner-launch.html'
+      - 'staff-launch.html'
       - 'assets/js/backend-config.js'
       - '.github/workflows/production-public-smoke.yml'
 
@@ -27,8 +29,8 @@ jobs:
 
           base='https://evo-voucher.github.io/evolution-optical-voucher'
 
-          for path in '/' '/admin.html' '/partner.html' '/staff.html' '/assets/js/backend-config.js'; do
-            code="$(curl --silent --show-error --location --output /tmp/page --write-out '%{http_code}' "${base}${path}")"
+          for path in '/' '/admin.html' '/partner.html' '/staff.html' '/partner-launch.html' '/staff-launch.html' '/assets/js/backend-config.js'; do
+            code="$(curl --silent --show-error --location --output /tmp/page --write-out '%{http_code}' "${base}${path}?smoke=$(date +%s)")"
             if [[ "$code" != '200' ]]; then
               echo "Public page failed: ${path} -> HTTP ${code}" >&2
               exit 1
@@ -40,7 +42,19 @@ jobs:
             echo "OK ${path} (${code})"
           done
 
-          curl --silent --show-error --location "${base}/assets/js/backend-config.js" -o /tmp/backend-config.js
+          curl --silent --show-error --location "${base}/partner.html?smoke=$(date +%s)" -o /tmp/partner.html
+          curl --silent --show-error --location "${base}/staff.html?smoke=$(date +%s)" -o /tmp/staff.html
+
+          if grep -Eiq 'Return[[:space:]]+to[[:space:]]+Main' /tmp/partner.html; then
+            echo 'Partner portal exposes Return to Main' >&2
+            exit 1
+          fi
+          if grep -Eiq 'Return[[:space:]]+to[[:space:]]+Main' /tmp/staff.html; then
+            echo 'Staff portal exposes Return to Main' >&2
+            exit 1
+          fi
+
+          curl --silent --show-error --location "${base}/assets/js/backend-config.js?smoke=$(date +%s)" -o /tmp/backend-config.js
 
           grep -Eq "enabled:[[:space:]]*true" /tmp/backend-config.js || { echo 'Deployed config is not enabled' >&2; exit 1; }
           grep -Eq "environment:[[:space:]]*'production'" /tmp/backend-config.js || { echo 'Deployed config is not production' >&2; exit 1; }
