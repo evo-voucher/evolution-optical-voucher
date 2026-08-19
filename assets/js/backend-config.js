@@ -122,4 +122,21 @@ function evoLoadScript(id,path,test){if(test&&!test())return;if(document.getElem
   evoLoadScript('portalExcelExportScript','assets/js/portal-excel-export.js',()=>path.endsWith('/partner.html')||path.endsWith('/staff.html'));
 })();
 
+(function installSafeVoucherVersionGrouping(){
+  const path=String(window.location?.pathname||'').toLowerCase();
+  if(!path.includes('voucher-engine'))return;
+  const sortSelect=select=>{
+    if(!select||select.id!=='allocationVersion'||select.options.length<3)return;
+    const current=select.value;
+    const placeholder=[...select.options].find(option=>!option.value)||null;
+    const options=[...select.options].filter(option=>option.value);
+    options.sort((a,b)=>String(a.textContent||'').trim().localeCompare(String(b.textContent||'').trim(),undefined,{numeric:true,sensitivity:'base'}));
+    select.replaceChildren(...(placeholder?[placeholder]:[]),...options);
+    if(current)select.value=current;
+  };
+  const handle=e=>{const select=e.target?.closest?.('#allocationVersion');if(select)sortSelect(select);};
+  document.addEventListener('pointerdown',handle,true);
+  document.addEventListener('focusin',handle,true);
+})();
+
 (function loadVoucherCardImageUI(){const path=String(window.location?.pathname||'').toLowerCase();if(!path.endsWith('/partner.html'))return;if(document.getElementById('voucherCardRendererScript'))return;const renderer=document.createElement('script');renderer.id='voucherCardRendererScript';renderer.src=evolutionAsset('assets/js/voucher-card-renderer.js');renderer.onload=()=>{if(document.getElementById('voucherCardShareUiScript'))return;const share=document.createElement('script');share.id='voucherCardShareUiScript';share.src=evolutionAsset('assets/js/voucher-card-share-ui.js');document.head.appendChild(share);};document.head.appendChild(renderer);})();
