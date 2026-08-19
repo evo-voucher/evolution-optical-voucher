@@ -1,6 +1,6 @@
 # Evolution Voucher Environment Contract
 
-Version: 1.0
+Version: 1.1
 Status: Active project execution contract
 Scope: Evolution Voucher development, UAT, release and Production environment boundaries
 
@@ -51,14 +51,14 @@ Purpose: release-candidate business acceptance environment that proves realistic
 
 UAT must:
 - use a pinned/identifiable release candidate,
-- have an explicit non-Production identity,
+- have an explicit non-Production deployment role,
 - preserve the same business contracts expected in Production where fidelity matters,
 - use test identities/test records or another verified isolation method,
 - prove the relevant Admin/Partner/Staff/Customer journey for L3/L4 changes.
 
 UAT must not:
 - write to authoritative Production business data unless a separately approved read-only/controlled verification path is explicitly required,
-- share an ambiguous backend identity with Production,
+- share an ambiguous deployment identity with Production,
 - be treated as PASS merely because pages load.
 
 ### PRODUCTION
@@ -83,6 +83,8 @@ An environment identity is not just a label such as `environment: 'production'`.
 It is the verified tuple:
 
 `role + source ref + deployed URL + backend project + data semantics + release candidate/version`
+
+The deployment role and the backend compatibility mode are separate facts. A UAT surface may temporarily execute a production-compatible contract while remaining explicitly non-authoritative; in that case the deployment role must still be declared as UAT and authoritative Production data must remain protected.
 
 Before any persistent mutation or release, XiaoE must verify the relevant tuple rather than trusting a filename, folder, remembered project ID or UI label.
 
@@ -120,10 +122,12 @@ Reason: the observed dataset materially differs from the documented Production b
 - Frontend harnesses: `/uat/` and `/uat-preview/`
 - `/uat/loader.js` pins a candidate commit, which is suitable for immutable release-candidate testing.
 - `/uat-preview/` contains Admin/Partner/Staff/Voucher/Voucher Engine surfaces.
-- Current `uat-preview/assets/js/backend-config.js` points to `xfivcfwexcxsyiylgryn` but labels the environment `production`.
-- Verification status: **PARTIAL / IDENTITY LABEL NOT YET CONVERGED**
+- `uat-preview/assets/js/backend-config.js` currently points to `xfivcfwexcxsyiylgryn`.
+- The UAT preview now declares `role: 'uat'` and `authoritativeData: false`.
+- Its existing `environment: 'production'` value is retained temporarily as a compatibility-mode field and must not be interpreted as deployment authority.
+- Verification status: **UAT DEPLOYMENT ROLE EXPLICIT; BACKEND FORMALIZATION STILL PARTIAL**
 
-Rule: until UAT identity is explicitly converged, treat `/uat-preview/` as a preview/test surface, not proof of an isolated formal UAT backend.
+Rule: until the backend identity is formally promoted as the UAT target, treat `/uat-preview/` as a preview/test surface with explicit non-Production authority, not proof of a final isolated UAT backend topology.
 
 ## 6. Release Routing by Existing L1-L4 Ladder
 
@@ -169,6 +173,12 @@ When drift is detected:
 
 Do not resolve drift by making all environments point to the easiest currently accessible backend.
 
+An automated repository gate now runs `scripts/check-environment-contract.sh`. It checks that Readiness and Production Smoke agree, that the root Production backend config matches that contract, that UAT has an explicit non-Production role, and that public UAT config contains no privileged credential markers.
+
+Current gate result during this audit: **EXPECTED FAIL / BLOCKED** because root `assets/js/backend-config.js` points to `xfivcfwexcxsyiylgryn` while Readiness and Production Smoke both require `hukihbcyyqhanaqrizvm`.
+
+This failure is a safety result, not a request to rewrite either side by assumption. The next action is live Production identity verification.
+
 ## 9. Future Extensibility
 
 This contract intentionally permits future changes such as:
@@ -187,19 +197,21 @@ Only the current implementation mapping and release mechanics should be updated.
 
 ## 10. Current Audit Result
 
-Current maturity: **PARTIAL READY**.
+Current maturity: **PARTIAL READY / RELEASE BLOCKED ON IDENTITY DRIFT**.
 
 Strengths:
 - local Supabase + browser E2E exist,
 - targeted workflows exist,
 - UAT/preview surfaces exist,
+- UAT now has an explicit non-Production deployment role,
 - Production smoke exists,
+- automated environment identity gate exists,
 - rollback/readiness rules exist.
 
 Remaining convergence work:
 - formally converge DEV identity,
-- formally converge UAT backend identity and label,
+- formally converge the UAT backend target,
 - re-verify the real Production runtime target because current repository config and Production Smoke/Readiness disagree,
-- then add or enforce promotion gates between candidate -> UAT -> Production.
+- then close the promotion gate between candidate -> UAT -> Production.
 
 Until that convergence is complete, environment-changing work must remain branch-first and must not rewrite Production identity by assumption.
