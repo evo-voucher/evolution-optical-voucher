@@ -42,7 +42,9 @@ grep -Eq "authoritativeData:[[:space:]]*false" "$uat_config" || fail 'UAT previe
 grep -Fq "siteBase: 'https://evo-voucher.github.io/evolution-optical-voucher/uat-preview/'" "$uat_config" || fail 'UAT preview siteBase is not isolated to /uat-preview/'
 pass 'UAT preview has explicit non-production deployment identity'
 
-if grep -Eiq "service[_-]?role|sb_secret_|SUPABASE_SERVICE_ROLE_KEY" "$uat_config"; then
+# Ignore comment-only documentation such as "Never place service_role here";
+# fail only when privileged credential markers appear in executable/config content.
+if grep -Ev '^[[:space:]]*//' "$uat_config" | grep -Eiq "service[_-]?role|sb_secret_|SUPABASE_SERVICE_ROLE_KEY"; then
   fail 'privileged credential marker found in UAT public backend config'
 fi
 pass 'UAT public config contains no privileged credential markers'
