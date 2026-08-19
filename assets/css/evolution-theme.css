@@ -20,6 +20,8 @@ p,.small,.meta{color:var(--eo-muted)!important;line-height:1.5!important}
 button,.tool{border-radius:14px!important;transition:transform .10s ease,border-color .10s ease,background .10s ease!important}
 button{min-height:46px!important;background:linear-gradient(180deg,#394cae,#182b73 62%,#0d1c4c)!important;color:#fff!important;font-weight:850!important;border:1px solid rgba(141,92,255,.78)!important;box-shadow:0 3px 8px rgba(0,0,0,.16)!important}
 button:hover:not(:disabled){border-color:rgba(173,139,255,.9)!important}button:active:not(:disabled){transform:translateY(1px);box-shadow:0 1px 3px rgba(0,0,0,.15)!important}button:disabled{opacity:.45!important}
+/* Standalone external portals must never expose Main navigation. */
+body:has(#partnerState) #portalReturnMainBtn,body:has(#staffState) #portalReturnMainBtn{display:none!important}
 /* Unified form fields across Admin, Partner, Redeem Portal and Staff Portal. */
 input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),select,textarea{background:#fffdb3!important;color:#10182a!important;-webkit-text-fill-color:#10182a!important;border:1px solid #d9d47a!important;border-radius:14px!important;min-height:48px!important;padding:11px 13px!important;box-shadow:none!important;caret-color:#10182a!important;color-scheme:light!important}
 input::placeholder,textarea::placeholder{color:#6f6d45!important;-webkit-text-fill-color:#6f6d45!important;opacity:1!important}
