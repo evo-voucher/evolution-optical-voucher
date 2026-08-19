@@ -1,22 +1,29 @@
 # Evolution Optical Voucher Engine — Readiness Baseline
 
-Status date: 2026-08-16
+Status date: 2026-08-19
 
 ## Engineering rule
 
 Root before flower. A queued job, partial smoke, or UI success is not proof of the end state. A state becomes VERIFIED only when its owning runtime path and regression gates close successfully.
 
-## Current authoritative cutover state
+## Current authoritative target state
 
-- `cutover_state = VERIFIED`
+- `cutover_state = VERIFIED_HISTORICAL_BASELINE`
 - `hosted_cutover_verified = true`
-- `production_target = hukihbcyyqhanaqrizvm`
+- `production_target = xfivcfwexcxsyiylgryn`
+- `previous_verified_target = hukihbcyyqhanaqrizvm`
 - `xiaoe_ai_core = uuqiwyqxllqsuboogbxh`
 - Voucher runtime must never be redirected to XiaoE AI Core.
 
-The original clean-third-project route was retired after the Supabase Free plan two-active-project limit was confirmed. The approved route is **existing-production convergence**: preserve the active Evolution production project, add compatibility boundaries, verify canonical behavior in CI, and cut the rebuilt frontend over only after production compatibility gates pass.
+The original 2026-08-16 hosted cutover was verified against `hukihbcyyqhanaqrizvm`. On 2026-08-18 commit `cebae630fb41e7222c8ba1deed8761a044fa7f76` deliberately changed `assets/js/backend-config.js` from `hukihbcyyqhanaqrizvm` to `xfivcfwexcxsyiylgryn` with the commit message `Point production frontend to canonical Supabase backend`.
 
-## Verified evidence
+Therefore the 2026-08-16 `hukih...` values below remain historical cutover evidence, while the current repository Production target contract is `xfivcfwexcxsyiylgryn`.
+
+## Historical verified cutover evidence — 2026-08-16
+
+The original cutover route was **existing-production convergence**: preserve the active Evolution production project, add compatibility boundaries, verify canonical behavior in CI, and cut the rebuilt frontend over only after production compatibility gates pass.
+
+Verified evidence from that cutover:
 
 - Free Supabase Runtime Smoke #127: full success on QR-scanner production lineage, including migrations, SQL contracts, signed Auth flow, Edge trusted-boundary tests, Partner Staff lifecycle, Admin controls, and Browser E2E.
 - GitHub Pages deployment #271 completed successfully for commit `24b42530822d9d079bb3abb3841dbd497e2b07bc`.
@@ -30,40 +37,41 @@ The original clean-third-project route was retired after the Supabase Free plan 
 - Production baseline was rechecked after browser smoke and remained 43 Vouchers / 8 Redemptions.
 - Historical `TEST-MINES-001` / redemption pair was confirmed to predate this cutover and was not created by current smoke activity.
 - Production Edge audit classified differences correctly: `voucher-engine` matches GitHub current; `manage-partner-staff`, `reset-partner-password`, and `admin-set-partner-staff-limit` retain intentional hosted compatibility implementations.
-- Browser configuration uses only the modern `sb_publishable_...` key. No service-role credential is permitted in frontend code.
+- Browser configuration used only the modern `sb_publishable_...` key. No service-role credential is permitted in frontend code.
 
-## Current frontend state
+This historical evidence must not be reinterpreted as proof that the later `xfiv...` target has the same 43 Voucher / 8 Redemption baseline.
 
-The verified production frontend configuration is:
+## Current frontend target state
 
-- project ID: `hukihbcyyqhanaqrizvm`
-- Supabase URL: `https://hukihbcyyqhanaqrizvm.supabase.co`
+Current repository Production configuration is:
+
+- project ID: `xfivcfwexcxsyiylgryn`
+- Supabase URL: `https://xfivcfwexcxsyiylgryn.supabase.co`
 - browser key type: modern `sb_publishable_...`
 - site base: `https://evo-voucher.github.io/evolution-optical-voucher/`
 - environment: `production`
+- target-intent evidence: commit `cebae630fb41e7222c8ba1deed8761a044fa7f76`
 
-Any other project ID, XiaoE AI Core reference, service-role/secret material, or non-HTTPS backend must fail preflight.
+The currently connected Supabase account can access `xfivcfwexcxsyiylgryn`, where the environment audit observed 2 partners, 7 branches, 1 voucher, 1 redemption and 2 voucher versions. Those counts are evidence about `xfiv...`; they are not expected to match the historical `hukih...` baseline.
+
+Any XiaoE AI Core reference, service-role/secret material, non-HTTPS backend, or unexplained target drift must fail the environment/release gate.
 
 ## Verification status
 
-All cutover gates are closed:
+The 2026-08-16 cutover remains a VERIFIED historical baseline for `hukih...`.
 
-1. Hosted Cutover Preflight passes in production mode.
-2. Free Supabase Runtime Smoke passes.
-3. GitHub Pages deployment succeeds on the QR-scanner production lineage.
-4. Public deployed pages load the production backend configuration.
-5. Real browser smoke verifies Admin Sign In, Partner Sign In, Staff Sign In, Staff branch-aware Verify, QR Scan, and public Voucher rendering against production.
-6. Production baseline is rechecked after smoke and no unintended residue exists.
+The current repository target migration to `xfiv...` is **SOURCE-INTENT VERIFIED** because the explicit target-change commit and current root backend config agree. Final current-runtime verification still requires the Production Public Smoke to pass against the deployed GitHub Pages surface using the updated `xfiv...` expectation.
 
-Therefore:
+Current release rule:
 
-- `cutover_state = VERIFIED`
-- `hosted_cutover_verified = true`
+1. Environment Contract Gate must show root Production config, Readiness target and Production Smoke target agree on `xfivcfwexcxsyiylgryn`.
+2. Deployment/runtime smoke must confirm the public GitHub Pages surface actually serves that target.
+3. If runtime differs, do not rewrite data or weaken guards; diagnose deployment/cache/source ownership and recover to a known-good state.
 
 ## Architecture invariants
 
 - Stable Core owns identity, Voucher state, redemption state, and durable relationships.
-- Hosted Compatibility owns legacy production semantics such as hosted identity tables and status translations.
+- Hosted Compatibility owns legacy production semantics such as hosted identity tables and status translations where still applicable.
 - Environment adapters translate between canonical and hosted implementations; Portal code must not own lineage-specific assumptions.
 - Browser code receives only publishable credentials, never service-role credentials.
 - High-impact mutations stay behind narrow authenticated RPC / Edge boundaries.
@@ -72,4 +80,4 @@ Therefore:
 
 ## Rollback
 
-If a later deployment or browser verification fails, restore `assets/js/backend-config.js` to fail-closed first when the failure can expose users to a broken path, then diagnose the owning layer. Do not patch production data to force a green result.
+If a later deployment or browser verification fails, restore `assets/js/backend-config.js` to a known-good fail-closed or verified target state first when the failure can expose users to a broken path, then diagnose the owning layer. Do not patch Production data to force a green result.
