@@ -1,6 +1,6 @@
 # XiaoE Environment Routing Contract
 
-Version: 1.0
+Version: 1.1
 Status: Active second-layer execution companion
 Scope: Evolution Voucher only
 
@@ -65,7 +65,7 @@ Before any persistent environment-changing action, verify the environment tuple:
 
 If any critical identity component is ambiguous or conflicts with current verified evidence:
 
-`STOP -> verify runtime identity -> classify stale artifact -> correct only the owner -> re-run gate`
+`STOP -> verify owner/history/runtime -> classify stale artifact -> correct only the owner -> re-run gate`
 
 Do not solve identity drift by redirecting all environments to the easiest accessible backend.
 
@@ -104,7 +104,10 @@ As of 2026-08-19:
 
 - UAT preview has an explicit non-Production deployment role.
 - Environment Contract Gate exists and is active on the audit branch.
-- Current gate is intentionally BLOCKED because repository root Production backend config and documented/smoke Production target disagree.
-- No Production identity correction is authorized until live Production identity is re-verified.
+- Production target history was traced to commit `cebae630fb41e7222c8ba1deed8761a044fa7f76`, which intentionally changed the root Production backend from `hukihbcyyqhanaqrizvm` to `xfivcfwexcxsyiylgryn`.
+- Readiness and Production Smoke were stale relative to that later source-of-truth change and are being converged to `xfiv...` on this branch.
+- Source/config identity may be marked VERIFIED only after the Environment Contract Gate passes.
+- Live deployed identity remains pending until Production Public Smoke passes after promotion to `main`.
+- Behavior Logic remains unchanged.
 
-This blocked state is expected safety behavior and must not be bypassed merely to make CI green.
+Do not bypass the Production smoke step merely because source/config identity is internally consistent.
