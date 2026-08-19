@@ -1,6 +1,6 @@
 # Evolution Voucher Environment Contract
 
-Version: 1.1
+Version: 1.2
 Status: Active project execution contract
 Scope: Evolution Voucher development, UAT, release and Production environment boundaries
 
@@ -95,39 +95,38 @@ They may be replaced through an explicit, verified migration/cutover.
 
 Status date: 2026-08-19
 
-### Production candidate mapping
+### Production mapping
 
 - Role: PRODUCTION
 - Git source: `main`
 - Public site: `https://evo-voucher.github.io/evolution-optical-voucher/`
-- Authoritative target according to current Readiness + Production Smoke contract: `hukihbcyyqhanaqrizvm`
-- Verification status: **DOCUMENTED/WORKFLOW-VERIFIED, LIVE CONNECTOR ACCESS NOT CURRENTLY AVAILABLE**
-- Historical readiness baseline records 43 vouchers / 8 redemptions after production smoke.
+- Current repository Production target: `xfivcfwexcxsyiylgryn`
+- Current Supabase URL: `https://xfivcfwexcxsyiylgryn.supabase.co`
+- Target-intent evidence: commit `cebae630fb41e7222c8ba1deed8761a044fa7f76`, message `Point production frontend to canonical Supabase backend`.
+- That commit explicitly changed the root Production config from `hukihbcyyqhanaqrizvm` to `xfivcfwexcxsyiylgryn`.
+- Current source identity status: **VERIFIED**.
+- Current live deployed runtime identity status: **PENDING PRODUCTION PUBLIC SMOKE AFTER PROMOTION**.
 
-Rule: do not rewrite Production target identity based only on another accessible Supabase project. Re-verify the real deployed runtime before any Production target correction or cutover.
+Historical note: the 2026-08-16 readiness baseline and 43 Voucher / 8 Redemption count belonged to the older `hukih...` target and must not be used as the expected dataset for `xfiv...`.
 
-### Development / rebuild candidate mapping
+### Development / engineering-test mapping
 
-- Role: DEV candidate
-- Backend project currently accessible: `xfivcfwexcxsyiylgryn`
-- Supabase status at audit: ACTIVE_HEALTHY
-- Current audit data: 2 partners, 7 branches, 1 voucher, 1 redemption, 2 voucher versions
-- Current Supabase development branches: none
-- Verification status: **STRONG DEV/REBUILD CANDIDATE, NOT AUTHORITATIVE PRODUCTION**
-
-Reason: the observed dataset materially differs from the documented Production baseline.
+- Preferred DEV proof remains local Supabase / disposable test runtime where practical.
+- The currently connected remote project `xfivcfwexcxsyiylgryn` is the present Production-target backend according to the explicit 2026-08-18 target-change commit, so it must no longer be classified as a generic DEV backend merely because its dataset is small.
+- Supabase development branches observed at audit: none.
+- Any future remote DEV backend must have an explicit non-Production identity before use.
 
 ### UAT mapping
 
-- Frontend harnesses: `/uat/` and `/uat-preview/`
+- Frontend harnesses: `/uat/` and `/uat-preview/`.
 - `/uat/loader.js` pins a candidate commit, which is suitable for immutable release-candidate testing.
 - `/uat-preview/` contains Admin/Partner/Staff/Voucher/Voucher Engine surfaces.
 - `uat-preview/assets/js/backend-config.js` currently points to `xfivcfwexcxsyiylgryn`.
-- The UAT preview now declares `role: 'uat'` and `authoritativeData: false`.
+- The UAT preview declares `role: 'uat'` and `authoritativeData: false`.
 - Its existing `environment: 'production'` value is retained temporarily as a compatibility-mode field and must not be interpreted as deployment authority.
-- Verification status: **UAT DEPLOYMENT ROLE EXPLICIT; BACKEND FORMALIZATION STILL PARTIAL**
+- Verification status: **UAT DEPLOYMENT ROLE EXPLICIT; BACKEND ISOLATION STILL PARTIAL**.
 
-Rule: until the backend identity is formally promoted as the UAT target, treat `/uat-preview/` as a preview/test surface with explicit non-Production authority, not proof of a final isolated UAT backend topology.
+Rule: because UAT currently shares the same backend project ID as the current Production target, UAT must remain non-authoritative and must not perform uncontrolled writes to live Production data. Formal UAT backend isolation remains a future improvement.
 
 ## 6. Release Routing by Existing L1-L4 Ladder
 
@@ -145,7 +144,7 @@ Any task that changes environment identity, Auth/RLS/security boundary, schema/m
 
 A release candidate may enter Production only when all applicable items are true:
 
-1. target environment tuple is VERIFIED,
+1. target environment tuple is VERIFIED at source/config level,
 2. required L1-L4 proof has passed,
 3. candidate commit/version is identifiable,
 4. no unresolved tenant/Auth/RLS/data-integrity regression exists,
@@ -169,15 +168,15 @@ Stop release/mutation when any of the following disagree unexpectedly:
 
 When drift is detected:
 
-`STOP -> identify real runtime -> classify stale record/config -> correct only the owning environment artifact -> re-run gate`
+`STOP -> identify real owner/history -> classify stale artifact -> correct only the owner -> re-run gate`
 
 Do not resolve drift by making all environments point to the easiest currently accessible backend.
 
-An automated repository gate now runs `scripts/check-environment-contract.sh`. It checks that Readiness and Production Smoke agree, that the root Production backend config matches that contract, that UAT has an explicit non-Production role, and that public UAT config contains no privileged credential markers.
+The audit identified that the root Production backend config was intentionally changed on 2026-08-18 to `xfiv...`, while the Readiness document and Production Smoke workflow still retained the older `hukih...` target. The owner/history check proved the later target-change commit was intentional, so the stale artifacts are the Readiness current-target declaration and Smoke expectation, not the current root config.
 
-Current gate result during this audit: **EXPECTED FAIL / BLOCKED** because root `assets/js/backend-config.js` points to `xfivcfwexcxsyiylgryn` while Readiness and Production Smoke both require `hukihbcyyqhanaqrizvm`.
+The Environment Contract Gate must now require root Production config, Readiness current target and Production Smoke expectation to agree on `xfivcfwexcxsyiylgryn`.
 
-This failure is a safety result, not a request to rewrite either side by assumption. The next action is live Production identity verification.
+This source-level convergence is not final runtime proof. After promotion to `main`, Production Public Smoke remains authoritative for whether the deployed GitHub Pages surface actually serves the current target.
 
 ## 9. Future Extensibility
 
@@ -197,21 +196,23 @@ Only the current implementation mapping and release mechanics should be updated.
 
 ## 10. Current Audit Result
 
-Current maturity: **PARTIAL READY / RELEASE BLOCKED ON IDENTITY DRIFT**.
+Current maturity: **SOURCE IDENTITY CONVERGED / LIVE PROMOTION PROOF PENDING**.
 
 Strengths:
 - local Supabase + browser E2E exist,
 - targeted workflows exist,
 - UAT/preview surfaces exist,
-- UAT now has an explicit non-Production deployment role,
+- UAT has an explicit non-Production deployment role,
 - Production smoke exists,
 - automated environment identity gate exists,
+- Production target history is now traced to the explicit 2026-08-18 change commit,
 - rollback/readiness rules exist.
 
 Remaining convergence work:
-- formally converge DEV identity,
-- formally converge the UAT backend target,
-- re-verify the real Production runtime target because current repository config and Production Smoke/Readiness disagree,
-- then close the promotion gate between candidate -> UAT -> Production.
+- run the Environment Contract Gate with all three source artifacts aligned on `xfiv...`,
+- promote the branch only when that gate passes,
+- let Production Public Smoke verify the actually deployed GitHub Pages runtime,
+- later formalize a remote DEV target if needed,
+- later isolate UAT backend from Production for stronger L3/L4 acceptance testing.
 
-Until that convergence is complete, environment-changing work must remain branch-first and must not rewrite Production identity by assumption.
+Until runtime smoke passes after promotion, source identity is verified but live deployed identity must not be overclaimed.
