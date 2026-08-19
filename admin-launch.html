@@ -23,7 +23,7 @@
     (async()=>{
       if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'}).catch(()=>{});
       if('caches' in window){try{const keys=await caches.keys();await Promise.all(keys.map(k=>caches.delete(k)))}catch(_){}}
-      setTimeout(()=>location.replace(`admin.html?v=${Date.now()}`),650);
+      setTimeout(()=>location.replace(`admin-dashboard.html?v=${Date.now()}`),650);
     })();
   </script>
 </body>
