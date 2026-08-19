@@ -166,7 +166,7 @@ async function loadData(){
   await requireAdminSession();
   const[tRes,vRes,pRes,bRes]=await Promise.all([
     db.from('voucher_templates').select('id,template_code,template_name,voucher_category,status,theme_code,current_version_id,created_at').order('created_at',{ascending:false}),
-    db.from('voucher_versions').select('id,template_id,version_no,version_name,face_value,validity_mode,valid_days,valid_months,theme_override_code,all_branches,status,created_at').order('created_at',{ascending:false}),
+    db.from('voucher_versions').select('id,template_id,version_no,version_name,face_value,validity_mode,valid_days,valid_months,theme_override_code,all_branches,status,created_at').order('created_at',{ascending:true}),
     rpc('admin_partner_directory'),rpc('admin_active_branches')
   ]);
   if(tRes.error)throw tRes.error;if(vRes.error)throw vRes.error;
