@@ -1,0 +1,35 @@
+name: Environment Contract Gate
+
+on:
+  pull_request:
+    paths:
+      - 'assets/js/backend-config.js'
+      - 'uat-preview/assets/js/backend-config.js'
+      - 'docs/ENVIRONMENT-CONTRACT.md'
+      - 'docs/VOUCHER-ENGINE-READINESS.md'
+      - 'scripts/check-environment-contract.sh'
+      - '.github/workflows/production-public-smoke.yml'
+      - '.github/workflows/environment-contract-gate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/backend-config.js'
+      - 'uat-preview/assets/js/backend-config.js'
+      - 'docs/ENVIRONMENT-CONTRACT.md'
+      - 'docs/VOUCHER-ENGINE-READINESS.md'
+      - 'scripts/check-environment-contract.sh'
+      - '.github/workflows/production-public-smoke.yml'
+      - '.github/workflows/environment-contract-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  environment-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check environment identity contract
+        run: bash scripts/check-environment-contract.sh
