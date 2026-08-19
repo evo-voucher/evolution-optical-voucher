@@ -1,6 +1,6 @@
 # XiaoE Core Engineering Protocol
 
-Version: 2.2
+Version: 2.3
 Status: Active
 Scope: Evolution Voucher engineering work only.
 
@@ -185,6 +185,96 @@ Use the smallest test that can reliably prove the affected Voucher path.
 
 Do not run broad regression by default when targeted proof is sufficient.
 Do not skip broader proof when the changed layer justifies it.
+
+## 10A. Automatic Voucher Task Routing
+
+Purpose: make Voucher engineering decisions faster and more accurate without adding a second risk system or weakening Behavior Logic.
+This router belongs to the Voucher execution layer only. It selects the smallest justified investigation and test path; it does not replace the higher-level stability constitution.
+
+### A. Route by the authoritative effect, not by the wording of the symptom
+
+Classify the task using the deepest verified layer that can actually change the business result:
+
+- **Presentation-only:** text, spacing, ordering, visibility, navigation, display formatting, non-authoritative UI state.
+- **Frontend logic:** local interaction, selector behavior, client validation, rendering logic, asset loading.
+- **Business/read model:** totals, reports, partner catalog, allocation views, derived status, canonical read contracts.
+- **Write path:** issuance, allocation mutation, partner/staff administration, redemption, reversals, state transitions.
+- **Boundary/security:** Auth, RLS, tenant isolation, role/branch scope, secrets, trusted Edge/RPC authorization.
+- **Structural/data:** schema, migration, constraints, indexes, ownership model, shared infrastructure, cutover.
+
+Visible location does not decide the route. A UI symptom owned by an RPC remains a business/read-model or write-path task.
+
+### B. Determine blast radius before choosing proof depth
+
+Assess only verified or directly implied impact:
+
+- **Local:** one selector, component, function, query, or page; no authoritative data change.
+- **Module:** one business capability such as Partner Management, Voucher Engine, Staff, Reporting, or Public Voucher.
+- **Cross-role / cross-layer:** more than one role, portal, RPC/Edge/database boundary, or shared business contract.
+- **System / persistent:** shared infrastructure, Auth/RLS, schema/migration, production data semantics, cutover, or destructive effect.
+
+Do not expand the blast radius because nearby code is messy. Expand only when evidence shows the active owner or invariant crosses the current boundary.
+
+### C. Automatic escalation triggers
+
+Escalate the route immediately when the proposed change can affect any of these authoritative concerns:
+
+- voucher issuance or redemption correctness,
+- allocation/quota authority,
+- partner tenant isolation,
+- staff branch/role scope,
+- Auth / RLS / identity,
+- canonical totals or financial/value reporting,
+- immutable/snapshotted historical scope,
+- Production persistent data,
+- schema / migration / constraint behavior,
+- secrets or trusted server boundaries,
+- shared runtime/deployment infrastructure.
+
+Escalation means stronger verification, not automatically a larger code change.
+
+### D. Confidence gate
+
+Use the existing evidence hierarchy and classify the route before mutation:
+
+- **VERIFIED:** active owner/path is proven by current source/runtime/database/test evidence.
+- **STRONG INFERENCE:** evidence strongly points to one owner, but one relevant runtime or competing-path check remains.
+- **HYPOTHESIS:** owner, target, or execution path is still uncertain.
+
+Routing rule:
+- VERIFIED -> may proceed with the minimum justified test level.
+- STRONG INFERENCE -> perform the smallest missing owner/runtime check first.
+- HYPOTHESIS -> do not mutate; gather evidence until the owner and scope are sufficiently established.
+
+### E. Map task route to the existing L1-L4 test ladder
+
+Use the highest requirement justified by authoritative effect, blast radius, and escalation triggers:
+
+- **L1 default:** presentation-only or frontend-local change, no authoritative data/permission effect, local blast radius, owner VERIFIED.
+- **L2 default:** local business logic/read-model change, focused backend contract, aggregate/reconciliation logic, or one-module behavior that can be proven without a full runtime journey.
+- **L3 default:** write path, cross-role/cross-layer behavior, issuance/redemption/allocation workflow, partner/staff lifecycle, branch-scope behavior, or any change whose correctness requires a real end-to-end business path.
+- **L4 required:** Auth/RLS/security boundary, schema/migration/architecture, shared infrastructure/cutover, destructive/high-impact persistent change, repeated failed repair, or explicit full-regression request.
+
+If two levels appear plausible, choose the lower level only when it can fully prove the affected business result and protected invariants. Otherwise escalate one level.
+
+### F. Fast-path examples
+
+- Voucher Version dropdown ordering -> presentation/frontend-local -> Local -> normally L1, L2 only if the ordering depends on authoritative data transformation.
+- Admin total amount wrong -> business/read model -> Module/Cross-layer -> normally L2, escalate to L3 if the total depends on a runtime RPC/reporting path that must reconcile end-to-end.
+- Partner cannot issue a valid allocated Voucher -> write path -> Cross-layer -> L3.
+- Duplicate redemption succeeds -> write path + integrity -> Cross-layer/System -> L3 minimum; L4 if schema/locking/RLS/architecture changes are required.
+- Partner can see another Partner's data -> boundary/security -> System -> L4.
+- Database migration or canonical ownership redesign -> structural/data -> System -> L4.
+
+### G. Speed rule
+
+The router should end once these are known with sufficient confidence:
+
+`Business object -> authoritative owner -> effect type -> blast radius -> protected invariant -> minimum proof level`
+
+Do not continue broad discovery after this tuple is established unless new evidence contradicts it.
+Do not run L4 merely because the system is important; run L4 because the changed layer or blast radius requires it.
+Do not stay at L1/L2 merely because the code change is small; a one-line change to an authoritative security or transaction boundary still routes high.
 
 ## 11. Production Gate
 
