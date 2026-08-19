@@ -6,6 +6,9 @@
   <meta name="theme-color" content="#08122f">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Staff</title>
   <style>
     html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at 50% 40%,#182660 0,#08122f 42%,#020611 100%);}
@@ -17,8 +20,11 @@
 <body>
   <div class="wrap"><div class="halo"></div><img src="staff-icon-180.png" alt="Staff"><div class="name">EVOLUTION OPTICAL · STAFF</div><div class="bar"></div></div>
   <script>
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'}).catch(() => {});
-    setTimeout(() => location.replace(`staff.html?v=${Date.now()}`), 650);
+    (async()=>{
+      if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js',{scope:'./',updateViaCache:'none'}).catch(()=>{});
+      if('caches' in window){try{const keys=await caches.keys();await Promise.all(keys.map(k=>caches.delete(k)))}catch(_){}}
+      setTimeout(()=>location.replace(`staff.html?v=${Date.now()}`),650);
+    })();
   </script>
 </body>
 </html>
