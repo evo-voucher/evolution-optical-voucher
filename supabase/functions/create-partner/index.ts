@@ -49,7 +49,7 @@ serve(async (req) => {
     if (!adminRow) return json({ success: false, error: "Admin access required" }, 403);
 
     const body = await req.json();
-    const partner_code = typeof body.partner_code === "string" ? body.partner_code.trim().toUpperCase() : "";
+    let partner_code = typeof body.partner_code === "string" ? body.partner_code.trim().toUpperCase() : "";
     const partner_name = typeof body.partner_name === "string" ? body.partner_name.trim() : "";
     const contact_person = typeof body.contact_person === "string" ? body.contact_person.trim() : null;
     const contact_phone = typeof body.contact_phone === "string" ? body.contact_phone.trim() : null;
@@ -64,16 +64,21 @@ serve(async (req) => {
     }));
 
     if (!partner_code || !partner_name || !email) return json({ success: false, error: "Missing required fields" }, 400);
-    if (!/^[A-Z0-9_-]+$/.test(partner_code)) return json({ success: false, error: "Invalid partner code" }, 400);
+    if (partner_code !== "AUTO" && !/^[A-Z0-9_-]+$/.test(partner_code)) return json({ success: false, error: "Invalid partner code" }, 400);
     if (!email.includes("@")) return json({ success: false, error: "Invalid email" }, 400);
     if (!Number.isInteger(staff_limit) || staff_limit < 0 || staff_limit > 1000) return json({ success: false, error: "Invalid Staff Limit" }, 400);
     if (!requestedAllocations.length) return json({ success: false, error: "Select at least one Initial Voucher" }, 400);
     if (requestedAllocations.some((x: any) => !x.version_id || !Number.isInteger(x.quantity) || x.quantity < 1)) return json({ success: false, error: "Each Initial Voucher needs a valid whole-number quantity of at least 1" }, 400);
     if (new Set(requestedAllocations.map((x: any) => x.version_id)).size !== requestedAllocations.length) return json({ success: false, error: "Duplicate Initial Voucher selected" }, 400);
 
-    // Read Voucher defaults through the existing admin SECURITY DEFINER RPC instead of
-    // querying voucher_versions directly. Production hardening intentionally denies
-    // direct table access, while the RPC is the canonical authorized read path.
+    if (partner_code === "AUTO") {
+      const { data: generatedCode, error: codeError } = await callerClient.rpc("admin_next_partner_code", { p_partner_name: partner_name });
+      if (codeError || typeof generatedCode !== "string" || !/^[A-Z][0-9]{3}$/.test(generatedCode)) {
+        return json({ success: false, error: "Unable to generate Partner Code", details: codeError?.message }, 500);
+      }
+      partner_code = generatedCode;
+    }
+
     const { data: activeVersions, error: versionError } = await callerClient.rpc("admin_active_voucher_versions");
     if (versionError) return json({ success: false, error: "Unable to load Voucher validity", details: versionError.message }, 500);
     const versionIds = requestedAllocations.map((x: any) => x.version_id);
