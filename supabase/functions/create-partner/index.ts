@@ -57,25 +57,44 @@ serve(async (req) => {
     const staff_limit = Number(body.staff_limit ?? 0);
     const rawAllocations = Array.isArray(body.allocations)
       ? body.allocations
-      : (body.version_id ? [{ version_id: body.version_id, quantity: body.quantity, validity_anchor: body.validity_anchor, validity_value: body.validity_value, validity_unit: body.validity_unit }] : []);
-    const allocations = rawAllocations.map((item: any) => ({
+      : (body.version_id ? [{ version_id: body.version_id, quantity: body.quantity }] : []);
+    const requestedAllocations = rawAllocations.map((item: any) => ({
       version_id: typeof item?.version_id === "string" ? item.version_id.trim() : "",
       quantity: Number(item?.quantity ?? 0),
-      validity_anchor: typeof item?.validity_anchor === "string" ? item.validity_anchor.trim().toLowerCase() : "issue",
-      validity_value: Number(item?.validity_value ?? 0),
-      validity_unit: typeof item?.validity_unit === "string" ? item.validity_unit.trim().toLowerCase() : "",
     }));
 
     if (!partner_code || !partner_name || !email) return json({ success: false, error: "Missing required fields" }, 400);
     if (!/^[A-Z0-9_-]+$/.test(partner_code)) return json({ success: false, error: "Invalid partner code" }, 400);
     if (!email.includes("@")) return json({ success: false, error: "Invalid email" }, 400);
     if (!Number.isInteger(staff_limit) || staff_limit < 0 || staff_limit > 1000) return json({ success: false, error: "Invalid Staff Limit" }, 400);
-    if (!allocations.length) return json({ success: false, error: "Select at least one Initial Voucher" }, 400);
-    if (allocations.some((x: any) => !x.version_id || !Number.isInteger(x.quantity) || x.quantity < 1)) return json({ success: false, error: "Each Initial Voucher needs a valid whole-number quantity of at least 1" }, 400);
-    if (allocations.some((x: any) => !["issue", "allocation"].includes(x.validity_anchor))) return json({ success: false, error: "Validity Start must be Issue Date or Allocation Date" }, 400);
-    if (allocations.some((x: any) => !Number.isInteger(x.validity_value) || x.validity_value < 1)) return json({ success: false, error: "Each Voucher validity value must be a whole number of at least 1" }, 400);
-    if (allocations.some((x: any) => !["days", "months"].includes(x.validity_unit))) return json({ success: false, error: "Validity Unit must be Days or Months" }, 400);
-    if (new Set(allocations.map((x: any) => x.version_id)).size !== allocations.length) return json({ success: false, error: "Duplicate Initial Voucher selected" }, 400);
+    if (!requestedAllocations.length) return json({ success: false, error: "Select at least one Initial Voucher" }, 400);
+    if (requestedAllocations.some((x: any) => !x.version_id || !Number.isInteger(x.quantity) || x.quantity < 1)) return json({ success: false, error: "Each Initial Voucher needs a valid whole-number quantity of at least 1" }, 400);
+    if (new Set(requestedAllocations.map((x: any) => x.version_id)).size !== requestedAllocations.length) return json({ success: false, error: "Duplicate Initial Voucher selected" }, 400);
+
+    const versionIds = requestedAllocations.map((x: any) => x.version_id);
+    const { data: versionRows, error: versionError } = await server
+      .from("voucher_versions")
+      .select("id,validity_mode,valid_days,valid_months,status")
+      .in("id", versionIds)
+      .eq("status", "active");
+    if (versionError) return json({ success: false, error: "Unable to load Voucher validity", details: versionError.message }, 500);
+    if (!Array.isArray(versionRows) || versionRows.length !== versionIds.length) return json({ success: false, error: "One or more selected Voucher Versions are unavailable" }, 400);
+
+    const byId = new Map(versionRows.map((v: any) => [v.id, v]));
+    const allocations = requestedAllocations.map((item: any) => {
+      const v: any = byId.get(item.version_id);
+      const mode = String(v?.validity_mode || "").toLowerCase();
+      if ((mode === "calendar_months_after_issue" || mode === "months") && Number.isInteger(v?.valid_months) && v.valid_months > 0) {
+        return { ...item, validity_anchor: "issue", validity_value: v.valid_months, validity_unit: "months" };
+      }
+      if ((mode === "days_after_issue" || mode === "days") && Number.isInteger(v?.valid_days) && v.valid_days > 0) {
+        return { ...item, validity_anchor: "issue", validity_value: v.valid_days, validity_unit: "days" };
+      }
+      return { ...item, validity_anchor: "", validity_value: 0, validity_unit: "" };
+    });
+    if (allocations.some((x: any) => !x.validity_anchor || !Number.isInteger(x.validity_value) || x.validity_value < 1 || !x.validity_unit)) {
+      return json({ success: false, error: "Selected Voucher Version has no supported default validity rule" }, 400);
+    }
 
     const temporaryPassword = PARTNER_INITIAL_PASSWORD;
     const { data: createdUserData, error: createUserError } = await server.auth.admin.createUser({ email, password: temporaryPassword, email_confirm: true });
