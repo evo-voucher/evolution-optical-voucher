@@ -71,24 +71,26 @@ serve(async (req) => {
     if (requestedAllocations.some((x: any) => !x.version_id || !Number.isInteger(x.quantity) || x.quantity < 1)) return json({ success: false, error: "Each Initial Voucher needs a valid whole-number quantity of at least 1" }, 400);
     if (new Set(requestedAllocations.map((x: any) => x.version_id)).size !== requestedAllocations.length) return json({ success: false, error: "Duplicate Initial Voucher selected" }, 400);
 
-    const versionIds = requestedAllocations.map((x: any) => x.version_id);
-    const { data: versionRows, error: versionError } = await server
-      .from("voucher_versions")
-      .select("id,validity_mode,valid_days,valid_months,status")
-      .in("id", versionIds)
-      .eq("status", "active");
+    // Read Voucher defaults through the existing admin SECURITY DEFINER RPC instead of
+    // querying voucher_versions directly. Production hardening intentionally denies
+    // direct table access, while the RPC is the canonical authorized read path.
+    const { data: activeVersions, error: versionError } = await callerClient.rpc("admin_active_voucher_versions");
     if (versionError) return json({ success: false, error: "Unable to load Voucher validity", details: versionError.message }, 500);
-    if (!Array.isArray(versionRows) || versionRows.length !== versionIds.length) return json({ success: false, error: "One or more selected Voucher Versions are unavailable" }, 400);
+    const versionIds = requestedAllocations.map((x: any) => x.version_id);
+    const versionRows = (Array.isArray(activeVersions) ? activeVersions : []).filter((v: any) => versionIds.includes(v.version_id));
+    if (versionRows.length !== versionIds.length) return json({ success: false, error: "One or more selected Voucher Versions are unavailable" }, 400);
 
-    const byId = new Map(versionRows.map((v: any) => [v.id, v]));
+    const byId = new Map(versionRows.map((v: any) => [v.version_id, v]));
     const allocations = requestedAllocations.map((item: any) => {
       const v: any = byId.get(item.version_id);
       const mode = String(v?.validity_mode || "").toLowerCase();
-      if ((mode === "calendar_months_after_issue" || mode === "months") && Number.isInteger(v?.valid_months) && v.valid_months > 0) {
-        return { ...item, validity_anchor: "issue", validity_value: v.valid_months, validity_unit: "months" };
+      const months = Number(v?.valid_months ?? 0);
+      const days = Number(v?.valid_days ?? 0);
+      if ((mode === "calendar_months_after_issue" || mode === "months") && Number.isInteger(months) && months > 0) {
+        return { ...item, validity_anchor: "issue", validity_value: months, validity_unit: "months" };
       }
-      if ((mode === "days_after_issue" || mode === "days") && Number.isInteger(v?.valid_days) && v.valid_days > 0) {
-        return { ...item, validity_anchor: "issue", validity_value: v.valid_days, validity_unit: "days" };
+      if ((mode === "days_after_issue" || mode === "days") && Number.isInteger(days) && days > 0) {
+        return { ...item, validity_anchor: "issue", validity_value: days, validity_unit: "days" };
       }
       return { ...item, validity_anchor: "", validity_value: 0, validity_unit: "" };
     });
