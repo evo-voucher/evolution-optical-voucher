@@ -58,8 +58,8 @@ jobs:
 
           grep -Eq "enabled:[[:space:]]*true" /tmp/backend-config.js || { echo 'Deployed config is not enabled' >&2; exit 1; }
           grep -Eq "environment:[[:space:]]*'production'" /tmp/backend-config.js || { echo 'Deployed config is not production' >&2; exit 1; }
-          grep -Fq "projectId: 'hukihbcyyqhanaqrizvm'" /tmp/backend-config.js || { echo 'Deployed projectId mismatch' >&2; exit 1; }
-          grep -Fq "supabaseUrl: 'https://hukihbcyyqhanaqrizvm.supabase.co'" /tmp/backend-config.js || { echo 'Deployed Supabase URL mismatch' >&2; exit 1; }
+          grep -Fq "projectId: 'xfivcfwexcxsyiylgryn'" /tmp/backend-config.js || { echo 'Deployed projectId mismatch' >&2; exit 1; }
+          grep -Fq "supabaseUrl: 'https://xfivcfwexcxsyiylgryn.supabase.co'" /tmp/backend-config.js || { echo 'Deployed Supabase URL mismatch' >&2; exit 1; }
           grep -Eq "publishableKey:[[:space:]]*'sb_publishable_[^']+'" /tmp/backend-config.js || { echo 'Deployed publishable key missing or wrong type' >&2; exit 1; }
           grep -Fq "siteBase: 'https://evo-voucher.github.io/evolution-optical-voucher/'" /tmp/backend-config.js || { echo 'Deployed siteBase mismatch' >&2; exit 1; }
 
