@@ -31,10 +31,11 @@ smoke_id="$(sed -n "s/.*projectId: '\([^']*\)'.*/\1/p" "$prod_smoke" | head -n1)
 [[ "$readiness_id" == "$smoke_id" ]] || fail "readiness target ($readiness_id) != production smoke target ($smoke_id)"
 pass "Readiness and Production Smoke agree on $readiness_id"
 
-if [[ "$prod_config_id" != "$readiness_id" ]]; then
-  fail "repository Production backend-config target ($prod_config_id) != documented/smoke Production target ($readiness_id). Re-verify live runtime before correcting either side."
-fi
-pass "Production backend-config identity matches release contract"
+[[ "$prod_config_id" == "$readiness_id" ]] || fail "repository Production backend-config target ($prod_config_id) != current release target ($readiness_id)"
+pass "Production backend-config identity matches current release contract"
+
+grep -Fq 'cebae630fb41e7222c8ba1deed8761a044fa7f76' "$readiness" || fail 'Readiness does not preserve current Production target-change evidence'
+pass 'Production target history is explicitly recorded'
 
 grep -Eq "role:[[:space:]]*'uat'" "$uat_config" || fail "UAT preview lacks explicit role: 'uat'"
 grep -Eq "authoritativeData:[[:space:]]*false" "$uat_config" || fail 'UAT preview is not explicitly marked non-authoritative'
