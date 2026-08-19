@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0",
+  "project_id": "evolution-optical-voucher",
+  "project_name": "Evolution Optical Voucher",
+  "bootstrap_status": "complete",
+  "behavior_source": {
+    "repository": "evo-voucher/xiaoe-core-v2",
+    "path": "core/behavior/XIAOE_BEHAVIOR_LOGIC_V1.md"
+  },
+  "context_bridge": {
+    "repository": "evo-voucher/xiaoe-core-v2",
+    "path": "core/collaboration/XIAOE_CONTEXT_BRIDGE_V1.md"
+  },
+  "project_core": {
+    "repository": "evo-voucher/evolution-optical-voucher",
+    "path": "XIAOE_CORE.md"
+  },
+  "checkpoint": {
+    "repository": "evo-voucher/evolution-optical-voucher",
+    "path": "XIAOE_CHECKPOINT.md"
+  },
+  "environment_contract": {
+    "repository": "evo-voucher/evolution-optical-voucher",
+    "path": "docs/ENVIRONMENT-CONTRACT.md"
+  },
+  "environment_routing": {
+    "repository": "evo-voucher/evolution-optical-voucher",
+    "path": "docs/XIAOE-ENVIRONMENT-ROUTING.md"
+  },
+  "startup_sequence": [
+    "detect_project",
+    "read_manifest",
+    "load_behavior",
+    "load_project_core",
+    "restore_checkpoint",
+    "retrieve_relevant_fusion_memory_if_needed",
+    "reverify_changed_live_state",
+    "build_active_context_pack",
+    "work"
+  ],
+  "protected_paths": [
+    "admin_login_and_launcher",
+    "partner_login_and_tenant_isolation",
+    "staff_access_boundaries",
+    "voucher_issuance_and_distribution_integrity",
+    "redemption_correctness",
+    "historical_branch_scope_snapshot_behavior",
+    "authoritative_reporting_and_business_totals",
+    "verified_production_asset_delivery",
+    "environment_identity_and_release_gates"
+  ],
+  "notes": "Locator and boot metadata only. Current verified runtime state always outranks this manifest and checkpoint memory. Never store secrets or business transaction truth here."
+}
