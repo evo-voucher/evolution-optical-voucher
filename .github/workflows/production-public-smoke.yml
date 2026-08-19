@@ -63,8 +63,9 @@ jobs:
           grep -Eq "publishableKey:[[:space:]]*'sb_publishable_[^']+'" /tmp/backend-config.js || { echo 'Deployed publishable key missing or wrong type' >&2; exit 1; }
           grep -Fq "siteBase: 'https://evo-voucher.github.io/evolution-optical-voucher/'" /tmp/backend-config.js || { echo 'Deployed siteBase mismatch' >&2; exit 1; }
 
-          if grep -Eiq "service[_-]?role|sb_secret_|SUPABASE_SERVICE_ROLE_KEY" /tmp/backend-config.js; then
-            echo 'Privileged credential marker found in deployed public config' >&2
+          # Detect actual privileged credential material, not harmless comments that mention service_role.
+          if grep -Eiq "sb_secret_|(service[_-]?role|serviceRole(Key)?|SUPABASE_SERVICE_ROLE_KEY)[[:space:]]*[:=][[:space:]]*['\"][^'\"]+" /tmp/backend-config.js; then
+            echo 'Privileged credential material found in deployed public config' >&2
             exit 1
           fi
 
