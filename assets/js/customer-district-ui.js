@@ -38,7 +38,44 @@ if(path.endsWith('/partner.html')){
 
 async function rules(){const{data,error}=await db.rpc('customer_field_requirements',{});if(error)throw error;return data||{}}
 async function districts(admin=false){const{data,error}=await db.rpc(admin?'admin_customer_district_directory':'customer_district_options',{});if(error)throw error;return data||[]}
-function admin(){if(!path.endsWith('/admin.html')||$('districtMasterCard'))return;const dash=$('dashboardState');if(!dash)return;const card=document.createElement('section');card.id='districtMasterCard';card.className='card';card.dataset.adminSection='settings';card.innerHTML=`<h2>District Management</h2><p class="small">Partner District list follows this exact order. Inactive Districts stay in history but are hidden from new customer selection.</p><button id="openAddDistrictBtn" class="wide" type="button">＋ Add District</button><div id="addDistrictPanel" class="hidden" style="margin-top:12px"><div class="field"><label>District Name</label><input id="newDistrictName" placeholder="Enter District name"></div><button id="addDistrictBtn" class="wide" type="button">Save District</button></div><div id="districtMsg" class="small"></div><div id="districtList" style="margin-top:12px"></div>`;dash.appendChild(card);
+function excelSafe(value){const s=String(value??'');return /^[=+\-@]/.test(s)?`'${s}`:s}
+async function exportAllCustomersByDistrict(button,status){
+  const previous=button.textContent;button.disabled=true;button.textContent='Preparing…';status.textContent='Loading all Partner customers…';
+  try{
+    if(!window.XLSX)throw new Error('Excel export library is unavailable.');
+    const [{data:customers,error:customerError},districtRows]=await Promise.all([db.rpc('admin_customer_directory',{p_partner_id:null}),districts(true)]);
+    if(customerError)throw customerError;
+    const rows=customers||[];if(!rows.length)throw new Error('No customer records to export.');
+    const order=new Map((districtRows||[]).map((r,i)=>[String(r.district_name||'').trim().toLowerCase(),i]));
+    const rankedDistrict=d=>{const key=String(d||'').trim().toLowerCase();return order.has(key)?order.get(key):Number.MAX_SAFE_INTEGER;};
+    rows.sort((a,b)=>rankedDistrict(a.customer_district)-rankedDistrict(b.customer_district)||String(a.customer_district||'').localeCompare(String(b.customer_district||''),undefined,{sensitivity:'base'})||String(a.partner_code||'').localeCompare(String(b.partner_code||''),undefined,{numeric:true,sensitivity:'base'})||String(a.customer_name||'').localeCompare(String(b.customer_name||''),undefined,{sensitivity:'base'}));
+    const exportRows=rows.map(r=>({
+      District:excelSafe(r.customer_district||'Unspecified'),
+      Partner_Code:excelSafe(r.partner_code),
+      Partner_Name:excelSafe(r.partner_name),
+      Customer_Name:excelSafe(r.customer_name),
+      Phone:excelSafe(r.customer_phone),
+      Birthday:r.customer_birthday||'',
+      Voucher_Count:Number(r.voucher_count||0),
+      First_Seen:r.first_seen_at||'',
+      Last_Seen:r.last_seen_at||''
+    }));
+    const ws=XLSX.utils.json_to_sheet(exportRows),wb=XLSX.utils.book_new();
+    ws['!cols']=[{wch:22},{wch:16},{wch:28},{wch:28},{wch:18},{wch:14},{wch:14},{wch:22},{wch:22}];
+    XLSX.utils.book_append_sheet(wb,ws,'Customers by District');
+    const date=new Date().toISOString().slice(0,10);XLSX.writeFile(wb,`evolution-all-customers-by-district-${date}.xlsx`);
+    const districtCount=new Set(rows.map(r=>String(r.customer_district||'').trim()).filter(Boolean)).size;
+    status.textContent=`Ready ✓ ${rows.length} customer(s) across ${districtCount} District(s). Sorted by District → Partner → Customer.`;
+  }catch(e){status.textContent=e.message||'Unable to export customer records.';}finally{button.disabled=false;button.textContent=previous;}
+}
+function ensureAdminCustomerExportCard(dash){
+  if($('adminCustomerExportCard'))return;
+  const card=document.createElement('section');card.id='adminCustomerExportCard';card.className='card';card.dataset.adminSection='reports';
+  card.innerHTML='<h2>Customer Records</h2><p class="small">All Partner customers in one master Excel file. Primary order follows the District Management sequence, then Partner, then Customer.</p><button id="exportAllCustomersByDistrict" class="wide" type="button">Export All Customers XLSX</button><div id="allCustomerExportStatus" class="small" style="margin-top:10px">Admin only • read-only export.</div>';
+  dash.appendChild(card);
+  const button=$('exportAllCustomersByDistrict'),status=$('allCustomerExportStatus');button.onclick=()=>exportAllCustomersByDistrict(button,status);
+}
+function admin(){if(!path.endsWith('/admin.html')||$('districtMasterCard'))return;const dash=$('dashboardState');if(!dash)return;const card=document.createElement('section');card.id='districtMasterCard';card.className='card';card.dataset.adminSection='settings';card.innerHTML=`<h2>District Management</h2><p class="small">Partner District list follows this exact order. Inactive Districts stay in history but are hidden from new customer selection.</p><button id="openAddDistrictBtn" class="wide" type="button">＋ Add District</button><div id="addDistrictPanel" class="hidden" style="margin-top:12px"><div class="field"><label>District Name</label><input id="newDistrictName" placeholder="Enter District name"></div><button id="addDistrictBtn" class="wide" type="button">Save District</button></div><div id="districtMsg" class="small"></div><div id="districtList" style="margin-top:12px"></div>`;dash.appendChild(card);ensureAdminCustomerExportCard(dash);
 const msg=$('districtMsg'),list=$('districtList'),panel=$('addDistrictPanel'),open=$('openAddDistrictBtn');open.onclick=()=>{panel.classList.toggle('hidden');open.textContent=panel.classList.contains('hidden')?'＋ Add District':'− Close Add District';if(!panel.classList.contains('hidden'))setTimeout(()=>$('newDistrictName')?.focus(),50)};
 async function load(){try{const rows=await districts(true);list.innerHTML=rows.map((r,i)=>`<div style="display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid rgba(115,135,210,.22)"><b>${i+1}</b><span>${esc(r.district_name)} <small>(${esc(r.district_status)})</small></span><span><button data-move="up" data-id="${r.district_id}" ${i===0?'disabled':''}>↑</button> <button data-move="down" data-id="${r.district_id}" ${i===rows.length-1?'disabled':''}>↓</button> <button data-status="${r.district_status==='active'?'inactive':'active'}" data-id="${r.district_id}">${r.district_status==='active'?'Inactive':'Active'}</button></span></div>`).join('');msg.textContent=`${rows.length} District(s)`}catch(e){msg.textContent=e.message||'Unable to load Districts'}}
 $('addDistrictBtn').onclick=async()=>{const name=$('newDistrictName').value.trim();if(!name)return;try{const{error}=await db.rpc('admin_add_customer_district',{p_district_name:name});if(error)throw error;$('newDistrictName').value='';panel.classList.add('hidden');open.textContent='＋ Add District';await load()}catch(e){msg.textContent=e.message}};
