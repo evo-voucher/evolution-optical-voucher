@@ -8,8 +8,10 @@ prod_config='assets/js/backend-config.js'
 uat_config='uat-preview/assets/js/backend-config.js'
 readiness='docs/VOUCHER-ENGINE-READINESS.md'
 prod_smoke='.github/workflows/production-public-smoke.yml'
+env_contract='docs/ENVIRONMENT-CONTRACT.md'
+env_routing='docs/XIAOE-ENVIRONMENT-ROUTING.md'
 
-for file in "$prod_config" "$uat_config" "$readiness" "$prod_smoke"; do
+for file in "$prod_config" "$uat_config" "$readiness" "$prod_smoke" "$env_contract" "$env_routing"; do
   [[ -f "$file" ]] || fail "missing required file: $file"
 done
 
@@ -43,5 +45,12 @@ if grep -Eiq "service[_-]?role|sb_secret_|SUPABASE_SERVICE_ROLE_KEY" "$uat_confi
   fail 'privileged credential marker found in UAT public backend config'
 fi
 pass 'UAT public config contains no privileged credential markers'
+
+grep -Fq 'L1 -> DEV/source proof' "$env_routing" || fail 'environment routing lacks L1 DEV route'
+grep -Fq 'L2 -> DEV/focused backend proof' "$env_routing" || fail 'environment routing lacks L2 DEV route'
+grep -Fq 'L3 -> DEV + UAT targeted business-path proof' "$env_routing" || fail 'environment routing lacks L3 UAT route'
+grep -Fq 'L4 -> DEV + UAT + full required regression + explicit Production gate' "$env_routing" || fail 'environment routing lacks L4 Production gate route'
+grep -Fq 'Behavior Logic is not modified by this routing contract.' "$env_routing" || fail 'routing contract does not preserve first-layer boundary'
+pass 'XiaoE environment routing contract is complete'
 
 echo 'Environment contract check PASS'
