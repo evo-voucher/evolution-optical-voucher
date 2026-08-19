@@ -1,7 +1,7 @@
 # XiaoE Checkpoint
 
 Version: 2.0 Structured Checkpoint
-Timestamp: 2026-08-19 18:13 +08:00
+Timestamp: 2026-08-19 22:21 +08:00
 Mode: Work mode ended
 Repository: evo-voucher/evolution-optical-voucher
 Branch: main
@@ -18,27 +18,30 @@ Checkpoint content is continuation context, not live truth. Any state that may h
 
 ## Active Goal
 - No active Voucher defect or feature is open at session close.
-- Preserve the current healthy Production Voucher baseline.
-- Security hardening remains optional follow-up work and is not an active Production change.
+- Preserve the current verified Production Voucher baseline.
+- Dev/UAT/Production environment governance is now established and verified.
 
 ## Current Protocol State
 - General reasoning authority: `evo-voucher/xiaoe-core-v2/core/behavior/XIAOE_BEHAVIOR_LOGIC_V1.md`.
-- Voucher execution protocol: `XIAOE_CORE.md` version 2.2.
+- First-layer Behavior Logic was not modified during the environment-governance work.
+- Voucher execution protocol: `XIAOE_CORE.md` version 2.3.
 - Current startup order: `Behavior Logic -> Voucher Core -> Checkpoint`.
-- Behavior Logic includes context anchoring, scoped search discipline, owner-first search, competing-path checks, change budget, invariant protection, and risk-sensitive stop/reassess behavior.
-- Voucher Core v2.2 includes Voucher Domain Invariants and Business Number Ownership.
+- Voucher Core v2.3 includes Automatic Voucher Task Routing, evidence/confidence gates, blast-radius classification, and L1-L4 test escalation.
+- Environment execution companion: `docs/XIAOE-ENVIRONMENT-ROUTING.md`.
+- Project environment boundary contract: `docs/ENVIRONMENT-CONTRACT.md`.
 
 ## Verified Facts
-- Current Production baseline is the Evolution Optical Voucher System on GitHub Pages + Supabase.
-- Admin launcher routing fix is merged to main so Admin enters through `admin-dashboard.html`.
-- Partner and Staff permanent entry URLs remain `partner-launch.html` and `staff-launch.html` for refresh/cache-safe upgrades.
-- Existing voucher redemption branch scope is snapshotted and immutable after issue.
-- The current 7-branch redemption path remains a protected stable core unless evidence proves a required change belongs there.
-- Read-only health check on 2026-08-19 found 2 partners, 1 voucher, 1 completed redemption, and 7 active branches.
-- Health check found 0 orphan redemptions, 0 overused vouchers, 0 negative usage, 0 redeemed-status mismatch, and 0 active vouchers already expired by date.
-- Key authorization paths sampled from live Supabase functions showed explicit Admin / Partner / Staff context checks in `admin_dashboard_summary`, `admin_engine_allocate`, `resolve_partner_portal_context`, `resolve_staff_portal_context`, `verify_voucher`, `redeem_voucher`, and `reverse_redemption`.
-- Supabase security advisor still reports hardening warnings, including exposed `SECURITY DEFINER` executability and leaked-password protection disabled; these warnings were not treated as active defects without path-specific evidence.
-- XiaoE governance is layered as `Behavior Logic -> Voucher Core -> Checkpoint`.
+- Current Production frontend target is `xfivcfwexcxsyiylgryn`.
+- Historical commit `cebae630fb41e7222c8ba1deed8761a044fa7f76` intentionally changed the Production frontend target from `hukihbcyyqhanaqrizvm` to `xfivcfwexcxsyiylgryn`.
+- Production `assets/js/backend-config.js`, current Readiness target, and Production Public Smoke expectations are aligned to `xfivcfwexcxsyiylgryn`.
+- Environment Contract defines durable DEV/UAT/PRODUCTION responsibilities without permanently locking provider, project ID, hosting, branch strategy, or CI/CD implementation.
+- UAT preview has explicit non-Production deployment identity markers and remains non-authoritative for Production data.
+- Existing L1-L4 task routing is connected to environment promotion: L1/L2 favor DEV-focused proof, L3 requires targeted UAT where relevant, and L4 requires DEV + UAT + full required regression + Production gate.
+- Environment Contract Gate passed after target/history convergence and credential-marker false-positive correction.
+- Production Public Smoke #59 and #60 both passed on commit `e5fe0056349abbc28277fbdb5fbf4dc276f993ff`.
+- Production Public Smoke verified public GitHub Pages surfaces, Production backend identity, Partner/Staff navigation constraints, and absence of actual privileged credential material in the deployed public config.
+- The prior Smoke failure on #58 was a verified false positive caused by a broad `service_role` text match against a harmless safety comment; the checker was narrowed to detect actual privileged credential material instead of harmless mentions.
+- No Voucher business logic, Supabase schema/data, Production backend target, or first-layer Behavior Logic was changed by the Smoke checker fix.
 
 ## Protected Paths / Invariants
 Unless current evidence proves otherwise, preserve:
@@ -50,53 +53,62 @@ Unless current evidence proves otherwise, preserve:
 - Historical branch-scope snapshot behavior for issued vouchers.
 - Reporting and business totals reconciling to authoritative source records.
 - Production asset delivery paths already verified as working.
+- Environment identity boundaries and release gates now established by the Environment Contract.
 
 ## Last Verified Point
-PASS: Core voucher/redemption data integrity checks passed on live Supabase.
-PASS: No orphan redemption, overuse, negative usage, status mismatch, or expired-active anomaly was found in the current live dataset.
-PASS: Sampled key Admin / Partner / Staff RPC paths contain explicit authorization/context gates.
-PASS: Current 7-branch redemption baseline remains protected.
-PASS: No Voucher Production code, data, permissions, schema, or configuration was modified during this health-check session.
+PASS: Environment Contract Gate.
+PASS: Production source identity aligned to `xfivcfwexcxsyiylgryn`.
+PASS: Production Public Smoke #59.
+PASS: Production Public Smoke #60.
+PASS: Dev/UAT/Production environment governance is COMPLETE / VERIFIED for the current implementation.
+PASS: First-layer Behavior Logic remained unchanged.
 
 ## Re-verify Needed Before Next Mutation
 Re-verify only what is relevant to the next opened issue or feature, including as applicable:
 - current GitHub source / branch state,
 - deployed frontend/runtime version,
+- current Production/Public Smoke status if release-sensitive,
 - Supabase schema / RPC / RLS state,
 - active business owner/source of truth,
 - affected stable paths and invariants.
 
-If security hardening is reopened, classify advisor warnings first and verify intended callers before changing EXECUTE grants or function security behavior.
-Do not re-verify unrelated stable areas without evidence that they are involved.
+If an environment-changing task is reopened, verify the environment tuple:
+`role + source ref + deployed URL + backend project + data semantics + release candidate/version`.
+Do not assume a remembered project ID is still authoritative if current runtime evidence disagrees.
 
 ## Deferred / Not Deployed
 - Future multi-merchant voucher network support remains deferred unless explicitly reopened.
 - Previously discussed directions include Evolution ↔ Partner, Partner ↔ Partner, and Partner self-redeem.
 - Previous preferred direction was an additive Network Layer with Issuer / Voucher Owner / Redeemer / Permission rather than rewriting existing Production voucher semantics.
-- Optional security hardening remains deferred: review low-risk EXECUTE exposure such as `assign_partner_code_before_insert()` / `admin_next_partner_code()` and consider enabling Supabase leaked-password protection after targeted verification.
-- Deferred design or hardening must not be treated as deployed fact.
+- Optional security hardening remains deferred and should begin with targeted evidence before changing permissions, RLS, Auth, or function security behavior.
+- Future environment upgrades such as Supabase branching, Staging, canary deploys, automated rollback, alternate hosting, or CI/CD replacement remain allowed by the current Environment Contract.
 
 ## Open Issues / Blockers
 - No active Voucher defect or feature is recorded at session close.
-- No known blocker is currently recorded.
-- Security advisor warnings remain informational/deferred until deliberately reopened as a hardening task.
+- No known environment-governance blocker remains.
+- Production Public Smoke is currently green on the latest environment-governance fix.
 
 ## Last Change
-- Performed a read-only Voucher health check against current GitHub/Supabase state.
-- Verified current live voucher/redemption integrity and sampled key authorization paths.
-- No Production mutation was made.
-- Work session closed cleanly at 2026-08-19 18:13 +08:00.
+- Completed Dev/UAT/Production environment audit and governance convergence.
+- Added Environment Contract and XiaoE environment routing companion.
+- Added/strengthened automated Environment Contract Gate.
+- Traced and verified the current Production target history.
+- Corrected a Production Public Smoke false positive without weakening the intended secret check.
+- Merged environment-governance work to `main`.
+- Verified Production Public Smoke #59 and #60 as successful on `e5fe0056349abbc28277fbdb5fbf4dc276f993ff`.
+- Work session closed cleanly at 2026-08-19 22:21 +08:00.
 
 ## Next Action
 On the next 「小E上线」:
 1. Load Behavior Logic.
-2. Load Voucher Core v2.2.
+2. Load Voucher Core v2.3.
 3. Restore this checkpoint.
 4. Re-verify only the state that could affect the newly opened task.
-5. Lock the active objective, owner, scope, protected invariants, and verification target.
+5. Lock the active objective, owner, scope, protected invariants, environment route, and verification target.
 6. Continue from the smallest justified next action.
 
-If the next task is security hardening, begin with read-only classification of advisor warnings and protect the current Production business paths until a specific change is proven necessary.
+For release-sensitive work, use the established path:
+`DEV proof -> UAT when required -> Production Gate -> deploy -> Production Smoke -> PASS or rollback/recovery`.
 
 ## Checkpoint Update Rule
 At 「小E收工」, update only:
