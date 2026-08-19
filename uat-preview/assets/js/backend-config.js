@@ -12,6 +12,8 @@ const evolutionAsset=path=>`${path}?v=${encodeURIComponent(EVOLUTION_ASSET_VERSI
 
 window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
   enabled: true,
+  role: 'uat',
+  authoritativeData: false,
   environment: 'production',
   projectId: 'xfivcfwexcxsyiylgryn',
   supabaseUrl: 'https://xfivcfwexcxsyiylgryn.supabase.co',
