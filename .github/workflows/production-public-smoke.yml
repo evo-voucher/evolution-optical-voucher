@@ -12,6 +12,7 @@ on:
       - 'partner-launch.html'
       - 'staff-launch.html'
       - 'assets/js/backend-config.js'
+      - 'assets/js/portal-excel-export.js'
       - '.github/workflows/production-public-smoke.yml'
 
 permissions:
@@ -29,7 +30,7 @@ jobs:
 
           base='https://evo-voucher.github.io/evolution-optical-voucher'
 
-          for path in '/' '/admin.html' '/partner.html' '/staff.html' '/partner-launch.html' '/staff-launch.html' '/assets/js/backend-config.js'; do
+          for path in '/' '/admin.html' '/partner.html' '/staff.html' '/partner-launch.html' '/staff-launch.html' '/assets/js/backend-config.js' '/assets/js/portal-excel-export.js'; do
             code="$(curl --silent --show-error --location --output /tmp/page --write-out '%{http_code}' "${base}${path}?smoke=$(date +%s)")"
             if [[ "$code" != '200' ]]; then
               echo "Public page failed: ${path} -> HTTP ${code}" >&2
@@ -68,5 +69,13 @@ jobs:
             echo 'Privileged credential material found in deployed public config' >&2
             exit 1
           fi
+
+          curl --silent --show-error --location "${base}/assets/js/portal-excel-export.js?smoke=$(date +%s)" -o /tmp/portal-excel-export.js
+          grep -Fq ".xlsx" /tmp/portal-excel-export.js || { echo 'Deployed Excel exporter is not using .xlsx output' >&2; exit 1; }
+          grep -Fq "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" /tmp/portal-excel-export.js || { echo 'Deployed Excel exporter MIME type is not XLSX' >&2; exit 1; }
+          grep -Fq "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" /tmp/portal-excel-export.js || { echo 'Deployed Excel exporter dependency URL mismatch' >&2; exit 1; }
+
+          curl --fail --silent --show-error --location 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js' -o /tmp/xlsx.full.min.js
+          [[ -s /tmp/xlsx.full.min.js ]] || { echo 'XLSX dependency returned empty content' >&2; exit 1; }
 
           echo 'Production public Pages smoke OK'
