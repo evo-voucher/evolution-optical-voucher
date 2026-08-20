@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
-const ADMIN_ASSET_VERSION=new URLSearchParams(window.location.search).get('v')||'20260818-33';
+const ADMIN_ASSET_VERSION=new URLSearchParams(window.location.search).get('v')||'20260820-1151';
 document.write('<script src="assets/js/backend-config.js?v='+encodeURIComponent(ADMIN_ASSET_VERSION)+'"><\/script>');
 </script>
 <style>
@@ -50,6 +50,6 @@ loadBootstrapStatus();db.auth.getSession().then(async({data})=>{if(data?.session
 </script>
 <script src="assets/js/admin-partner-performance.js"></script>
 <script src="assets/js/admin-branch-management.js"></script>
-<script src="assets/js/admin-settings.js?v=20260818-33"></script>
+<script src="assets/js/admin-settings.js?v=20260820-1151"></script>
 </body>
 </html>
