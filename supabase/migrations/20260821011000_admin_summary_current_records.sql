@@ -74,13 +74,13 @@ begin
   select
     coalesce(array_agg(v.id),array[]::uuid[]),
     count(*) filter (
-      where coalesce(v.status,'')<>'revoked'
+      where lower(coalesce(v.status,''))<>'revoked'
         and v.revoked_at is null
         and v.expiry_date is not null
         and v.expiry_date <= v_today - p_retention_days
     ),
     count(*) filter (
-      where (coalesce(v.status,'')='revoked' or v.revoked_at is not null)
+      where (lower(coalesce(v.status,''))='revoked' or v.revoked_at is not null)
         and coalesce(v.revoked_at,v.updated_at,v.created_at) <= v_now - make_interval(days=>p_retention_days)
     )
   into v_ids,v_expired_count,v_revoked_count
@@ -89,12 +89,12 @@ begin
     and not exists(select 1 from public.redemptions r where r.voucher_id=v.id)
     and (
       (
-        (coalesce(v.status,'')='revoked' or v.revoked_at is not null)
+        (lower(coalesce(v.status,''))='revoked' or v.revoked_at is not null)
         and coalesce(v.revoked_at,v.updated_at,v.created_at) <= v_now - make_interval(days=>p_retention_days)
       )
       or
       (
-        coalesce(v.status,'')<>'revoked'
+        lower(coalesce(v.status,''))<>'revoked'
         and v.revoked_at is null
         and v.expiry_date is not null
         and v.expiry_date <= v_today - p_retention_days
