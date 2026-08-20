@@ -1,3 +1,6 @@
+-- Unified current-record summary and stale-data cleanup.
+-- Both the nightly cron wrapper and Admin wrapper call the same protected cleanup engine.
+
 begin;
 
 create or replace function public.admin_dashboard_summary()
