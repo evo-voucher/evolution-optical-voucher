@@ -46,10 +46,17 @@ declare
   v_actor uuid;
   v_today date := (now() at time zone 'Asia/Kuala_Lumpur')::date;
   v_now timestamptz := now();
-  v_ids uuid[];
+  v_ids uuid[] := array[]::uuid[];
   v_count integer := 0;
   v_expired_count integer := 0;
   v_revoked_count integer := 0;
+  v_alloc_ids uuid[] := array[]::uuid[];
+  v_alloc_counts integer[] := array[]::integer[];
+  v_allocations_adjusted integer := 0;
+  v_allocation_units_removed integer := 0;
+  v_stale_alloc_ids uuid[] := array[]::uuid[];
+  v_allocations_deleted integer := 0;
+  v_i integer;
 begin
   if public.is_voucher_admin() then
     v_actor := auth.uid();
@@ -93,43 +100,106 @@ begin
     );
 
   v_count := coalesce(array_length(v_ids,1),0);
-  if v_count=0 then
-    return jsonb_build_object(
-      'success',true,
-      'purged',0,
-      'expired_purged',0,
-      'revoked_purged',0,
-      'retention_days',30,
-      'redeemed_history_protected',true
-    );
+
+  if v_count>0 then
+    select
+      coalesce(array_agg(x.allocation_id order by x.allocation_id),array[]::uuid[]),
+      coalesce(array_agg(x.deleted_count::integer order by x.allocation_id),array[]::integer[])
+    into v_alloc_ids,v_alloc_counts
+    from (
+      select v.allocation_id,count(*) as deleted_count
+      from public.vouchers v
+      where v.id=any(v_ids)
+        and v.allocation_id is not null
+      group by v.allocation_id
+    ) x;
+
+    delete from public.vouchers
+    where id=any(v_ids)
+      and not exists(select 1 from public.redemptions r where r.voucher_id=vouchers.id);
+
+    v_allocations_adjusted := coalesce(array_length(v_alloc_ids,1),0);
+    if v_allocations_adjusted>0 then
+      perform set_config('evo.hard_reduce_allowed','on',true);
+      for v_i in 1..v_allocations_adjusted loop
+        update public.partner_voucher_allocations a
+        set quantity_allocated = greatest(
+              coalesce(a.quantity_revoked,0) + (
+                select count(*)::integer
+                from public.vouchers vx
+                where vx.allocation_id=a.id
+              ),
+              a.quantity_allocated-v_alloc_counts[v_i]
+            ),
+            updated_at = now()
+        where a.id=v_alloc_ids[v_i];
+
+        v_allocation_units_removed := v_allocation_units_removed + v_alloc_counts[v_i];
+      end loop;
+      perform set_config('evo.hard_reduce_allowed','off',true);
+
+      delete from public.voucher_allocation_events e
+      where e.allocation_id=any(v_alloc_ids);
+    end if;
   end if;
 
-  delete from public.vouchers
-  where id=any(v_ids)
-    and not exists(select 1 from public.redemptions r where r.voucher_id=vouchers.id);
+  select coalesce(array_agg(a.id),array[]::uuid[])
+  into v_stale_alloc_ids
+  from public.partner_voucher_allocations a
+  where not exists(select 1 from public.vouchers v where v.allocation_id=a.id)
+    and (
+      greatest(0,coalesce(a.quantity_allocated,0)-coalesce(a.quantity_revoked,0))=0
+      or
+      (a.valid_until is not null and a.valid_until <= v_now - interval '30 days')
+    );
 
-  insert into public.admin_audit_log(
-    actor_user_id,action_type,entity_type,entity_id,after_data,metadata
-  ) values (
-    v_actor,'stale_unredeemed_vouchers_purged','voucher_batch',null,
-    jsonb_build_object(
-      'purged_count',v_count,
-      'expired_purged',v_expired_count,
-      'revoked_purged',v_revoked_count
-    ),
-    jsonb_build_object(
-      'retention_days',30,
-      'redeemed_history_protected',true
-    )
-  );
+  if coalesce(array_length(v_stale_alloc_ids,1),0)>0 then
+    delete from public.voucher_allocation_events e
+    where e.allocation_id=any(v_stale_alloc_ids);
+
+    delete from public.partner_voucher_allocations a
+    where a.id=any(v_stale_alloc_ids)
+      and not exists(select 1 from public.vouchers v where v.allocation_id=a.id)
+      and (
+        greatest(0,coalesce(a.quantity_allocated,0)-coalesce(a.quantity_revoked,0))=0
+        or
+        (a.valid_until is not null and a.valid_until <= v_now - interval '30 days')
+      );
+    get diagnostics v_allocations_deleted = row_count;
+  end if;
+
+  if v_count>0 or v_allocations_deleted>0 then
+    insert into public.admin_audit_log(
+      actor_user_id,action_type,entity_type,entity_id,after_data,metadata
+    ) values (
+      v_actor,'stale_voucher_data_purged','voucher_cleanup',null,
+      jsonb_build_object(
+        'purged_vouchers',v_count,
+        'expired_purged',v_expired_count,
+        'revoked_purged',v_revoked_count,
+        'allocations_adjusted',v_allocations_adjusted,
+        'allocation_units_removed',v_allocation_units_removed,
+        'allocations_deleted',v_allocations_deleted
+      ),
+      jsonb_build_object(
+        'retention_days',30,
+        'redeemed_history_protected',true,
+        'remaining_stock_preserved',true
+      )
+    );
+  end if;
 
   return jsonb_build_object(
     'success',true,
     'purged',v_count,
     'expired_purged',v_expired_count,
     'revoked_purged',v_revoked_count,
+    'allocations_adjusted',v_allocations_adjusted,
+    'allocation_units_removed',v_allocation_units_removed,
+    'allocations_deleted',v_allocations_deleted,
     'retention_days',30,
-    'redeemed_history_protected',true
+    'redeemed_history_protected',true,
+    'remaining_stock_preserved',true
   );
 end;
 $$;
