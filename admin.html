@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
-const ADMIN_ASSET_VERSION=new URLSearchParams(window.location.search).get('v')||'20260818-33';
+const ADMIN_ASSET_VERSION=new URLSearchParams(window.location.search).get('v')||'20260820-1151';
 document.write('<script src="assets/js/backend-config.js?v='+encodeURIComponent(ADMIN_ASSET_VERSION)+'"><\/script>');
 </script>
 <style>
@@ -27,7 +27,7 @@ document.write('<script src="assets/js/backend-config.js?v='+encodeURIComponent(
 </section></main>
 <script>
 (()=>{
-const cfg=window.EVOLUTION_VOUCHER_BACKEND||{},$=id=>document.getElementById(id);const configured=cfg.enabled===true&&/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(cfg.supabaseUrl||'')&&typeof cfg.publishableKey==='string'&&cfg.publishableKey.length>20&&typeof cfg.projectId==='string'&&cfg.projectId.length>5;if(!configured)return;$('closedState').classList.add('hidden');$('authState').classList.remove('hidden');const db=window.supabase.createClient(cfg.supabaseUrl,cfg.publishableKey);let partners=[],branches=[],voucherRows=[],redemptionRows=[];const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const msg=(n,t,o=false,w=false)=>n.innerHTML=t?`<div class="msg ${o?'ok':w?'warn':'err'}">${esc(t)}</div>`:'';async function rpc(name,args={}){const{data,error}=await db.rpc(name,args);if(error)throw error;return data}
+const cfg=window.EVOLUTION_VOUCHER_BACKEND||{},$=id=>document.getElementById(id);const configured=cfg.enabled===true&&/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(cfg.supabaseUrl||'')&&typeof cfg.publishableKey==='string'&&cfg.publishableKey.length>20&&typeof cfg.projectId==='string'&&cfg.projectId.length>5;if(!configured)return;$('closedState').classList.add('hidden');$('authState').classList.remove('hidden');const db=window.supabase.createClient(cfg.supabaseUrl,cfg.publishableKey);let partners=[],branches=[],voucherRows=[],redemptionRows=[];const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));const msg=(n,t,o=false,w=false)=>n.innerHTML=t?`<div class="msg ${o?'ok':w?'warn':'err'}">${esc(t)}</div>`:'';async function rpc(name,args={}){const{data,error}=await db.rpc(name,args);if(error)throw error;return data}
 function showSignIn(){$('signInState').classList.remove('hidden');$('signUpState').classList.add('hidden');$('signInTab').classList.add('active');$('signUpTab').classList.remove('active')}function showSignUp(){$('signInState').classList.add('hidden');$('signUpState').classList.remove('hidden');$('signInTab').classList.remove('active');$('signUpTab').classList.add('active')}async function loadBootstrapStatus(){try{const s=await rpc('admin_bootstrap_status');if(s?.bootstrap_available){$('authTabs').classList.remove('hidden')}else{$('authTabs').classList.add('hidden');showSignIn()}}catch(_){$('authTabs').classList.add('hidden');showSignIn()}}$('signInTab').onclick=showSignIn;$('signUpTab').onclick=showSignUp;
 function renderStats(s){const f=[['Partners',s.partners_total],['Active Partners',s.partners_active],['Vouchers',s.vouchers_total],['Active Vouchers',s.vouchers_active],['Redeemed Vouchers',s.vouchers_redeemed],['Expired Vouchers',s.vouchers_expired],['Completed Redemptions',s.redemptions_completed],['Reversed',s.redemptions_reversed],['Redeemed Today',s.redemptions_today]];$('stats').innerHTML=f.map(([k,v])=>`<div class="stat"><span>${esc(k)}</span><b>${Number(v||0).toLocaleString()}</b></div>`).join('')}
 function currentVoucherRows(){const q=$('voucherSearch').value.trim().toLowerCase(),st=$('voucherStatus').value,pid=$('voucherPartner').value;return voucherRows.filter(r=>(!st||r.voucher_status===st)&&(!pid||r.partner_id===pid)&&(!q||[r.voucher_code,r.partner_name,r.customer_name,r.customer_phone,r.voucher_type].some(v=>String(v||'').toLowerCase().includes(q))))}
@@ -50,6 +50,6 @@ loadBootstrapStatus();db.auth.getSession().then(async({data})=>{if(data?.session
 </script>
 <script src="assets/js/admin-partner-performance.js"></script>
 <script src="assets/js/admin-branch-management.js"></script>
-<script src="assets/js/admin-settings.js?v=20260818-33"></script>
+<script src="assets/js/admin-settings.js?v=20260820-1151"></script>
 </body>
 </html>
