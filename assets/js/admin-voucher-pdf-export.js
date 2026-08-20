@@ -62,23 +62,23 @@
     page.setAttribute('aria-hidden','true');
     Object.assign(page.style,{
       position:'fixed',left:'-12000px',top:'0',width:'1500px',padding:'42px 46px 32px',
-      background:'#ffffff',color:'#111827',fontFamily:'Arial, Helvetica, sans-serif',zIndex:'-1'
+      background:'#ffffff',color:'#000000',fontFamily:'Arial, Helvetica, sans-serif',zIndex:'-1'
     });
 
     const title=document.createElement('div');
-    title.innerHTML=`<div style="font-size:38px;font-weight:800;letter-spacing:.2px;color:#111827">Evolution Optical - Voucher Report</div>
-      <div style="margin-top:10px;font-size:19px;font-weight:600;color:#374151">${escapeHtml(filterSummary())}</div>
-      <div style="margin-top:7px;font-size:16px;color:#4b5563">Generated: ${escapeHtml(new Date().toLocaleString())} &nbsp; | &nbsp; Page ${pageNo} of ${totalPages}</div>`;
+    title.innerHTML=`<div style="font-size:38px;font-weight:900;letter-spacing:.2px;color:#000000">Evolution Optical - Voucher Report</div>
+      <div style="margin-top:10px;font-size:20px;font-weight:800;color:#000000">${escapeHtml(filterSummary())}</div>
+      <div style="margin-top:7px;font-size:17px;font-weight:800;color:#000000">Generated: ${escapeHtml(new Date().toLocaleString())} &nbsp; | &nbsp; Page ${pageNo} of ${totalPages}</div>`;
     page.appendChild(title);
 
     const table=document.createElement('table');
-    table.style.cssText='width:100%;border-collapse:collapse;table-layout:fixed;margin-top:26px;font-size:18px;color:#111827;background:#fff;';
+    table.style.cssText='width:100%;border-collapse:collapse;table-layout:fixed;margin-top:26px;font-size:19px;color:#000000;background:#fff;';
     const thead=document.createElement('thead');
     const hr=document.createElement('tr');
     headers.forEach(text=>{
       const th=document.createElement('th');
       th.textContent=text;
-      th.style.cssText='padding:16px 12px;border:2px solid #94a3b8;background:#0f1b3f;color:#ffffff;text-align:left;font-size:17px;font-weight:800;line-height:1.25;word-break:break-word;';
+      th.style.cssText='padding:16px 12px;border:3px solid #334155;background:#0f1b3f;color:#ffffff;text-align:left;font-size:18px;font-weight:900;line-height:1.25;word-break:break-word;';
       hr.appendChild(th);
     });
     thead.appendChild(hr);table.appendChild(thead);
@@ -86,11 +86,11 @@
     const tbody=document.createElement('tbody');
     rows.forEach((row,index)=>{
       const tr=document.createElement('tr');
-      tr.style.minHeight='74px';
+      tr.style.minHeight='78px';
       row.forEach(text=>{
         const td=document.createElement('td');
         td.textContent=text||'—';
-        td.style.cssText=`padding:18px 12px;border:2px solid #cbd5e1;vertical-align:middle;line-height:1.35;word-break:break-word;color:#111827;font-size:18px;font-weight:600;background:${index%2?'#f1f5f9':'#ffffff'};min-height:74px;`;
+        td.style.cssText=`padding:20px 12px;border:3px solid #64748b;vertical-align:middle;line-height:1.35;word-break:break-word;color:#000000;font-size:19px;font-weight:900;background:${index%2?'#dbe1e8':'#eef2f6'};min-height:78px;text-shadow:0 0 0 #000000;`;
         tr.appendChild(td);
       });
       tbody.appendChild(tr);
@@ -99,7 +99,7 @@
 
     const footer=document.createElement('div');
     footer.textContent='Evolution Optical - Confidential Admin Report';
-    footer.style.cssText='margin-top:18px;font-size:14px;font-weight:600;color:#4b5563;text-align:right;';
+    footer.style.cssText='margin-top:18px;font-size:15px;font-weight:800;color:#000000;text-align:right;';
     page.appendChild(footer);
     return page;
   }
@@ -132,7 +132,7 @@
         if(i>0)pdf.addPage('a4','landscape');
         const renderPage=buildRenderPage(data.headers,chunks[i],i+1,chunks.length);
         document.body.appendChild(renderPage);
-        const canvas=await window.html2canvas(renderPage,{backgroundColor:'#ffffff',scale:1.5,logging:false,useCORS:true});
+        const canvas=await window.html2canvas(renderPage,{backgroundColor:'#ffffff',scale:1.75,logging:false,useCORS:true});
         renderPage.remove();
 
         const widthScale=maxW/canvas.width;
