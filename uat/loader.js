@@ -28,7 +28,7 @@
       if (page === 'partner.html') {
         html = html.replace(
           '</body>',
-          '<script src="voucher-pdf-uat-v1.js?v=1"><\\/script></body>'
+          '<script src="voucher-pdf-uat-v1.js?v=1"></script></body>'
         );
       }
       document.open();
