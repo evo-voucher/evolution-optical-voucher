@@ -41,6 +41,12 @@
     shareScript.src='assets/js/portal-access-share.js?v=20260818-26';
     document.head.appendChild(shareScript);
   }
+  if(!document.querySelector('script[data-admin-summary-business-metrics]')){
+    const summaryScript=document.createElement('script');
+    summaryScript.dataset.adminSummaryBusinessMetrics='1';
+    summaryScript.src='assets/js/admin-summary-business-metrics.js?v=20260821-1';
+    document.head.appendChild(summaryScript);
+  }
   const db=window.supabase.createClient(cfg.supabaseUrl,cfg.publishableKey,{auth:{persistSession:true}});
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const num=v=>Number(v||0);
