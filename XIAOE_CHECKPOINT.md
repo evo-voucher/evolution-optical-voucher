@@ -1,7 +1,7 @@
 # XiaoE Checkpoint
 
-Version: 2.0 Structured Checkpoint
-Timestamp: 2026-08-19 22:21 +08:00
+Version: 2.1 Structured Checkpoint
+Timestamp: 2026-08-21 02:51 +08:00
 Mode: Work mode ended
 Repository: evo-voucher/evolution-optical-voucher
 Branch: main
@@ -19,29 +19,26 @@ Checkpoint content is continuation context, not live truth. Any state that may h
 ## Active Goal
 - No active Voucher defect or feature is open at session close.
 - Preserve the current verified Production Voucher baseline.
-- Dev/UAT/Production environment governance is now established and verified.
+- Archived Partner discoverability/restore flow has been repaired at source level and merged to main.
 
 ## Current Protocol State
 - General reasoning authority: `evo-voucher/xiaoe-core-v2/core/behavior/XIAOE_BEHAVIOR_LOGIC_V1.md`.
-- First-layer Behavior Logic was not modified during the environment-governance work.
 - Voucher execution protocol: `XIAOE_CORE.md` version 2.3.
 - Current startup order: `Behavior Logic -> Voucher Core -> Checkpoint`.
-- Voucher Core v2.3 includes Automatic Voucher Task Routing, evidence/confidence gates, blast-radius classification, and L1-L4 test escalation.
 - Environment execution companion: `docs/XIAOE-ENVIRONMENT-ROUTING.md`.
 - Project environment boundary contract: `docs/ENVIRONMENT-CONTRACT.md`.
+- XiaoE Core now includes the durable principle `Capability First -> Gap Type -> Smallest Correct Change` in `evo-voucher/xiaoe-core-v2/core/principles/CAPABILITY_BEFORE_CHANGE_V1.md`.
 
 ## Verified Facts
 - Current Production frontend target is `xfivcfwexcxsyiylgryn`.
-- Historical commit `cebae630fb41e7222c8ba1deed8761a044fa7f76` intentionally changed the Production frontend target from `hukihbcyyqhanaqrizvm` to `xfivcfwexcxsyiylgryn`.
 - Production `assets/js/backend-config.js`, current Readiness target, and Production Public Smoke expectations are aligned to `xfivcfwexcxsyiylgryn`.
-- Environment Contract defines durable DEV/UAT/PRODUCTION responsibilities without permanently locking provider, project ID, hosting, branch strategy, or CI/CD implementation.
-- UAT preview has explicit non-Production deployment identity markers and remains non-authoritative for Production data.
-- Existing L1-L4 task routing is connected to environment promotion: L1/L2 favor DEV-focused proof, L3 requires targeted UAT where relevant, and L4 requires DEV + UAT + full required regression + Production gate.
-- Environment Contract Gate passed after target/history convergence and credential-marker false-positive correction.
-- Production Public Smoke #59 and #60 both passed on commit `e5fe0056349abbc28277fbdb5fbf4dc276f993ff`.
-- Production Public Smoke verified public GitHub Pages surfaces, Production backend identity, Partner/Staff navigation constraints, and absence of actual privileged credential material in the deployed public config.
-- The prior Smoke failure on #58 was a verified false positive caused by a broad `service_role` text match against a harmless safety comment; the checker was narrowed to detect actual privileged credential material instead of harmless mentions.
-- No Voucher business logic, Supabase schema/data, Production backend target, or first-layer Behavior Logic was changed by the Smoke checker fix.
+- Dev/UAT/Production environment governance is established and verified.
+- Partner V2 (`experience/partner-v2.html`) already supports rendering `archived` status and status controls.
+- The root cause of missing Archived Partners was the Admin read model `admin_partner_directory()` filtering out archived rows.
+- A new migration `supabase/migrations/20260821024700_admin_partner_directory_include_archived.sql` was added to return archived Partners to Admin while still excluding the internal `ADMIN` pseudo-partner.
+- Archived Partner restore UX label was improved in `assets/js/partner-management-ui.js`: archived state now presents `Restore Partner` while still using the existing safe `active` status transition.
+- Main now includes the archived-directory fix at commit `7ec7b2bbd082b88a9af4f9ceb3fdf872530b8570`.
+- GitHub merge state for the archived-directory fix was verified identical between `main` and `fix/admin-directory-include-archived`.
 
 ## Protected Paths / Invariants
 Unless current evidence proves otherwise, preserve:
@@ -52,66 +49,63 @@ Unless current evidence proves otherwise, preserve:
 - Redemption correctness and non-duplication according to the authoritative business rule.
 - Historical branch-scope snapshot behavior for issued vouchers.
 - Reporting and business totals reconciling to authoritative source records.
+- Existing Partner status mutation RPC and its audit/security behavior.
+- Existing voucher/redemption history when Partner status changes.
 - Production asset delivery paths already verified as working.
-- Environment identity boundaries and release gates now established by the Environment Contract.
+- Environment identity boundaries and release gates.
 
 ## Last Verified Point
-PASS: Environment Contract Gate.
-PASS: Production source identity aligned to `xfivcfwexcxsyiylgryn`.
-PASS: Production Public Smoke #59.
-PASS: Production Public Smoke #60.
-PASS: Dev/UAT/Production environment governance is COMPLETE / VERIFIED for the current implementation.
-PASS: First-layer Behavior Logic remained unchanged.
+PASS: Archived Partner root cause identified as Admin read-model filtering, not Partner V2 rendering.
+PASS: Minimal source-level migration created and merged to main.
+PASS: Main and fix branch verified identical after merge.
+PASS: Restore label UX improvement merged without changing status RPC, RLS, or historical business data.
+PASS: XiaoE Core principle `Capability First -> Gap Type -> Smallest Correct Change` fused into xiaoe-core-v2 main.
 
 ## Re-verify Needed Before Next Mutation
 Re-verify only what is relevant to the next opened issue or feature, including as applicable:
 - current GitHub source / branch state,
+- whether `20260821024700_admin_partner_directory_include_archived.sql` has actually been deployed to the live Supabase project,
 - deployed frontend/runtime version,
 - current Production/Public Smoke status if release-sensitive,
 - Supabase schema / RPC / RLS state,
 - active business owner/source of truth,
 - affected stable paths and invariants.
 
-If an environment-changing task is reopened, verify the environment tuple:
-`role + source ref + deployed URL + backend project + data semantics + release candidate/version`.
-Do not assume a remembered project ID is still authoritative if current runtime evidence disagrees.
+Important: GitHub merge does not prove Supabase migration deployment. Runtime Archived visibility must be verified against the live database before claiming Production completion.
 
 ## Deferred / Not Deployed
+- Runtime verification of Archived Partner visibility remains dependent on confirming the new Supabase migration has executed in the live environment.
 - Future multi-merchant voucher network support remains deferred unless explicitly reopened.
-- Previously discussed directions include Evolution ↔ Partner, Partner ↔ Partner, and Partner self-redeem.
-- Previous preferred direction was an additive Network Layer with Issuer / Voucher Owner / Redeemer / Permission rather than rewriting existing Production voucher semantics.
-- Optional security hardening remains deferred and should begin with targeted evidence before changing permissions, RLS, Auth, or function security behavior.
 - Future environment upgrades such as Supabase branching, Staging, canary deploys, automated rollback, alternate hosting, or CI/CD replacement remain allowed by the current Environment Contract.
 
 ## Open Issues / Blockers
-- No active Voucher defect or feature is recorded at session close.
-- No known environment-governance blocker remains.
-- Production Public Smoke is currently green on the latest environment-governance fix.
+- No active source-code blocker remains for Archived Partner restore/discoverability.
+- Deployment state of migration `20260821024700_admin_partner_directory_include_archived.sql` is not yet verified in this checkpoint.
 
 ## Last Change
-- Completed Dev/UAT/Production environment audit and governance convergence.
-- Added Environment Contract and XiaoE environment routing companion.
-- Added/strengthened automated Environment Contract Gate.
-- Traced and verified the current Production target history.
-- Corrected a Production Public Smoke false positive without weakening the intended secret check.
-- Merged environment-governance work to `main`.
-- Verified Production Public Smoke #59 and #60 as successful on `e5fe0056349abbc28277fbdb5fbf4dc276f993ff`.
-- Work session closed cleanly at 2026-08-19 22:21 +08:00.
+- Investigated missing Archived Partner in Partner V2.
+- Proved Partner V2 already supports archived rendering.
+- Traced the real blocker to `admin_partner_directory()` excluding archived rows.
+- Added and merged the minimal read-model migration to include archived Partners while excluding the internal ADMIN pseudo-partner.
+- Preserved existing status mutation, RLS, voucher history, redemption history, and audit paths.
+- Improved archived-state UX label to `Restore Partner` without changing the underlying status contract.
+- Fused the durable lesson into XiaoE Core as `Capability First -> Gap Type -> Smallest Correct Change`.
+- Work session closed cleanly at 2026-08-21 02:51 +08:00.
 
 ## Next Action
-On the next 「小E上线」:
+On the next `小E上线`:
 1. Load Behavior Logic.
 2. Load Voucher Core v2.3.
 3. Restore this checkpoint.
 4. Re-verify only the state that could affect the newly opened task.
-5. Lock the active objective, owner, scope, protected invariants, environment route, and verification target.
+5. If Archived Partner visibility is revisited, first verify live Supabase deployment of `20260821024700_admin_partner_directory_include_archived.sql` before changing any code.
 6. Continue from the smallest justified next action.
 
 For release-sensitive work, use the established path:
 `DEV proof -> UAT when required -> Production Gate -> deploy -> Production Smoke -> PASS or rollback/recovery`.
 
 ## Checkpoint Update Rule
-At 「小E收工」, update only:
+At `小E收工`, update only:
 - Active Goal,
 - Verified Facts that materially changed,
 - Protected Paths / Invariants if their verified status changed,
