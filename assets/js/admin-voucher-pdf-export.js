@@ -4,8 +4,11 @@
   if(!path.endsWith('/admin.html'))return;
 
   const JSPDF_SRC='https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';
-  const HTML2CANVAS_SRC='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
-  const PAGE_ROW_LIMIT=12;
+  const PAGE_ROW_LIMIT=8;
+  const CANVAS_W=2800;
+  const CANVAS_H=1980;
+  const MARGIN_X=80;
+  const COL_WIDTHS=[420,330,300,260,220,250,430,430];
 
   function loadScript(id,src,test){
     if(test())return Promise.resolve();
@@ -26,11 +29,6 @@
     });
   }
 
-  async function ensurePdfLibraries(){
-    await loadScript('evoJsPdfLibrary',JSPDF_SRC,()=>!!window.jspdf?.jsPDF);
-    await loadScript('evoHtml2CanvasLibrary',HTML2CANVAS_SRC,()=>typeof window.html2canvas==='function');
-  }
-
   function voucherCard(){
     const dashboard=document.getElementById('dashboardState');
     if(!dashboard)return null;
@@ -38,8 +36,7 @@
   }
 
   function readVisibleVoucherTable(){
-    const card=voucherCard();
-    const table=card?.querySelector('#voucherReport table.list');
+    const table=voucherCard()?.querySelector('#voucherReport table.list');
     if(!table)return null;
     const headers=[...table.querySelectorAll('thead th')].map(th=>(th.textContent||'').trim());
     const rows=[...table.querySelectorAll('tbody tr')].map(tr=>[...tr.querySelectorAll('td')].map(td=>(td.textContent||'').trim()));
@@ -57,69 +54,71 @@
     return parts.length?parts.join(' | '):'All current Voucher Report records';
   }
 
-  function buildRenderPage(headers,rows,pageNo,totalPages){
-    const page=document.createElement('section');
-    page.className='evo-pdf-render-page';
-    page.setAttribute('aria-hidden','true');
-    Object.assign(page.style,{
-      position:'fixed',left:'-12000px',top:'0',width:'1500px',padding:'42px 46px 32px',
-      background:'#ffffff',color:'#000000',fontFamily:'Arial, Helvetica, sans-serif',zIndex:'-1'
-    });
-
-    const isolation=document.createElement('style');
-    isolation.textContent=`
-      .evo-pdf-render-page{background:#fff!important;color:#000!important;color-scheme:light!important}
-      .evo-pdf-render-page table{background:#fff!important;color:#000!important}
-      .evo-pdf-render-page thead,.evo-pdf-render-page tbody,.evo-pdf-render-page tr{background:transparent!important;color:#000!important}
-      .evo-pdf-render-page th{background:#0f1b3f!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#334155!important}
-      .evo-pdf-render-page td{color:#000!important;-webkit-text-fill-color:#000!important;border-color:#64748b!important;font-weight:900!important;text-shadow:none!important}
-      .evo-pdf-render-page tbody tr:nth-child(odd) td{background:#eef2f6!important}
-      .evo-pdf-render-page tbody tr:nth-child(even) td{background:#dbe1e8!important}
-      .evo-pdf-render-page div{color:#000!important;-webkit-text-fill-color:#000!important}
-    `;
-    page.appendChild(isolation);
-
-    const title=document.createElement('div');
-    title.innerHTML=`<div style="font-size:38px;font-weight:900;letter-spacing:.2px;color:#000000">Evolution Optical - Voucher Report</div>
-      <div style="margin-top:10px;font-size:20px;font-weight:800;color:#000000">${escapeHtml(filterSummary())}</div>
-      <div style="margin-top:7px;font-size:17px;font-weight:800;color:#000000">Generated: ${escapeHtml(new Date().toLocaleString())} &nbsp; | &nbsp; Page ${pageNo} of ${totalPages}</div>`;
-    page.appendChild(title);
-
-    const table=document.createElement('table');
-    table.style.cssText='width:100%;border-collapse:collapse;table-layout:fixed;margin-top:26px;font-size:19px;color:#000000;background:#fff;';
-    const thead=document.createElement('thead');
-    const hr=document.createElement('tr');
-    headers.forEach(text=>{
-      const th=document.createElement('th');
-      th.textContent=text;
-      th.style.cssText='padding:16px 12px;border:3px solid #334155;background:#0f1b3f;color:#ffffff;text-align:left;font-size:18px;font-weight:900;line-height:1.25;word-break:break-word;';
-      hr.appendChild(th);
-    });
-    thead.appendChild(hr);table.appendChild(thead);
-
-    const tbody=document.createElement('tbody');
-    rows.forEach((row,index)=>{
-      const tr=document.createElement('tr');
-      tr.style.minHeight='78px';
-      row.forEach(text=>{
-        const td=document.createElement('td');
-        td.textContent=text||'—';
-        td.style.cssText=`padding:20px 12px;border:3px solid #64748b;vertical-align:middle;line-height:1.35;word-break:break-word;color:#000000;font-size:19px;font-weight:900;background:${index%2?'#dbe1e8':'#eef2f6'};min-height:78px;`;
-        tr.appendChild(td);
-      });
-      tbody.appendChild(tr);
-    });
-    table.appendChild(tbody);page.appendChild(table);
-
-    const footer=document.createElement('div');
-    footer.textContent='Evolution Optical - Confidential Admin Report';
-    footer.style.cssText='margin-top:18px;font-size:15px;font-weight:800;color:#000000;text-align:right;';
-    page.appendChild(footer);
-    return page;
+  function wrapText(ctx,value,maxWidth){
+    const text=String(value||'—');
+    const lines=[];
+    let current='';
+    for(const ch of text){
+      const candidate=current+ch;
+      if(current&&ctx.measureText(candidate).width>maxWidth){lines.push(current);current=ch;}
+      else current=candidate;
+    }
+    if(current)lines.push(current);
+    return lines.length?lines:['—'];
   }
 
-  function escapeHtml(value){
-    return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function rowHeight(ctx,row){
+    ctx.font='700 28px Arial, Helvetica, sans-serif';
+    let maxLines=1;
+    row.forEach((value,i)=>{maxLines=Math.max(maxLines,wrapText(ctx,value,COL_WIDTHS[i]-30).length)});
+    return Math.max(120,maxLines*38+42);
+  }
+
+  function drawPage(headers,rows,pageNo,totalPages){
+    const canvas=document.createElement('canvas');
+    canvas.width=CANVAS_W;canvas.height=CANVAS_H;
+    const ctx=canvas.getContext('2d');
+    ctx.fillStyle='#ffffff';ctx.fillRect(0,0,CANVAS_W,CANVAS_H);
+    ctx.textBaseline='top';
+
+    ctx.fillStyle='#000000';ctx.font='900 58px Arial, Helvetica, sans-serif';
+    ctx.fillText('Evolution Optical - Voucher Report',MARGIN_X,70);
+    ctx.font='800 32px Arial, Helvetica, sans-serif';
+    ctx.fillText(filterSummary(),MARGIN_X,150);
+    ctx.font='700 27px Arial, Helvetica, sans-serif';
+    ctx.fillText(`Generated: ${new Date().toLocaleString()}  |  Page ${pageNo} of ${totalPages}`,MARGIN_X,202);
+
+    let y=290,x=MARGIN_X;
+    const headerH=92;
+    headers.forEach((label,i)=>{
+      const w=COL_WIDTHS[i];
+      ctx.fillStyle='#0f1b3f';ctx.fillRect(x,y,w,headerH);
+      ctx.strokeStyle='#334155';ctx.lineWidth=4;ctx.strokeRect(x,y,w,headerH);
+      ctx.fillStyle='#ffffff';ctx.font='900 30px Arial, Helvetica, sans-serif';
+      const lines=wrapText(ctx,label,w-28).slice(0,2);
+      lines.forEach((line,j)=>ctx.fillText(line,x+14,y+22+j*34));
+      x+=w;
+    });
+    y+=headerH;
+
+    rows.forEach((row,rowIndex)=>{
+      const h=rowHeight(ctx,row);x=MARGIN_X;
+      row.forEach((value,i)=>{
+        const w=COL_WIDTHS[i];
+        ctx.fillStyle=rowIndex%2===0?'#f3f4f6':'#dfe4ea';ctx.fillRect(x,y,w,h);
+        ctx.strokeStyle='#475569';ctx.lineWidth=4;ctx.strokeRect(x,y,w,h);
+        ctx.fillStyle='#000000';ctx.font='700 28px Arial, Helvetica, sans-serif';
+        const lines=wrapText(ctx,value,w-30);
+        lines.forEach((line,j)=>ctx.fillText(line,x+15,y+22+j*38));
+        x+=w;
+      });
+      y+=h;
+    });
+
+    ctx.fillStyle='#000000';ctx.font='700 22px Arial, Helvetica, sans-serif';ctx.textAlign='right';
+    ctx.fillText('Evolution Optical - Confidential Admin Report',CANVAS_W-MARGIN_X,CANVAS_H-55);
+    ctx.textAlign='left';
+    return canvas;
   }
 
   async function exportVoucherPdf(){
@@ -129,36 +128,19 @@
       const data=readVisibleVoucherTable();
       if(!data){alert('No Voucher Report records to export.');return;}
       if(button){button.disabled=true;button.textContent='Generating PDF...';}
-      await ensurePdfLibraries();
+      await loadScript('evoJsPdfLibrary',JSPDF_SRC,()=>!!window.jspdf?.jsPDF);
 
       const chunks=[];
       for(let i=0;i<data.rows.length;i+=PAGE_ROW_LIMIT)chunks.push(data.rows.slice(i,i+PAGE_ROW_LIMIT));
       const {jsPDF}=window.jspdf;
       const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4',compress:true});
-      const pageWidth=pdf.internal.pageSize.getWidth();
-      const pageHeight=pdf.internal.pageSize.getHeight();
-      const marginX=8;
-      const marginTop=8;
-      const maxW=pageWidth-marginX*2;
-      const maxH=pageHeight-marginTop-8;
+      const pageW=pdf.internal.pageSize.getWidth(),pageH=pdf.internal.pageSize.getHeight();
 
-      for(let i=0;i<chunks.length;i++){
+      chunks.forEach((rows,i)=>{
         if(i>0)pdf.addPage('a4','landscape');
-        const renderPage=buildRenderPage(data.headers,chunks[i],i+1,chunks.length);
-        document.body.appendChild(renderPage);
-        const canvas=await window.html2canvas(renderPage,{backgroundColor:'#ffffff',scale:1.75,logging:false,useCORS:true});
-        renderPage.remove();
-
-        const widthScale=maxW/canvas.width;
-        const heightScale=maxH/canvas.height;
-        const scale=Math.min(widthScale,heightScale);
-        const w=canvas.width*scale;
-        const h=canvas.height*scale;
-        const x=(pageWidth-w)/2;
-        const y=marginTop;
-        pdf.addImage(canvas.toDataURL('image/png'),'PNG',x,y,w,h,undefined,'FAST');
-        await new Promise(resolve=>setTimeout(resolve,0));
-      }
+        const canvas=drawPage(data.headers,rows,i+1,chunks.length);
+        pdf.addImage(canvas.toDataURL('image/png'),'PNG',5,5,pageW-10,pageH-10,undefined,'FAST');
+      });
 
       const stamp=new Date().toISOString().slice(0,10);
       pdf.save(`evolution-voucher-report-${stamp}.pdf`);
@@ -176,20 +158,14 @@
     if(!xlsx)return false;
     let actions=xlsx.parentElement;
     if(!actions?.classList.contains('evo-voucher-export-actions')){
-      actions=document.createElement('div');
-      actions.className='evo-voucher-export-actions';
+      actions=document.createElement('div');actions.className='evo-voucher-export-actions';
       actions.style.cssText='display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;';
-      xlsx.parentNode.insertBefore(actions,xlsx);
-      actions.appendChild(xlsx);
+      xlsx.parentNode.insertBefore(actions,xlsx);actions.appendChild(xlsx);
     }
-    const pdf=document.createElement('button');
-    pdf.id='exportVouchersPdf';pdf.type='button';pdf.textContent='Export PDF';
-    pdf.onclick=exportVoucherPdf;
-    actions.appendChild(pdf);
+    const pdf=document.createElement('button');pdf.id='exportVouchersPdf';pdf.type='button';pdf.textContent='Export PDF';pdf.onclick=exportVoucherPdf;actions.appendChild(pdf);
     return true;
   }
 
   if(install())return;
-  let tries=0;
-  const timer=setInterval(()=>{tries++;if(install()||tries>240)clearInterval(timer)},250);
+  let tries=0;const timer=setInterval(()=>{tries++;if(install()||tries>240)clearInterval(timer)},250);
 })();
