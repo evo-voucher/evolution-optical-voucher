@@ -25,7 +25,14 @@
 
   let allocationRows=null,stockDb=null;
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const partnerCodeOf=card=>{const t=(card.querySelector('.partnerhead')?.textContent||'').trim();const m=t.match(/\b([A-Z0-9_-]{2,})\b/i);return m?m[1].toUpperCase():'';};
+  const partnerCodeOf=card=>{
+    const meta=(card.querySelector('.partnerhead .small')?.textContent||'').trim();
+    const code=meta.split('•')[0]?.trim();
+    if(code)return code.toUpperCase();
+    const text=(card.querySelector('.partnerhead')?.textContent||'').trim();
+    const m=text.match(/\b([A-Z]{1,5}\d{1,6}(?:[-_][A-Z0-9]+)?)\b/i);
+    return m?m[1].toUpperCase():'';
+  };
   async function loadAllocations(){
     if(allocationRows)return allocationRows;
     const cfg=window.EVOLUTION_VOUCHER_BACKEND||{};
@@ -70,6 +77,8 @@
 
     root.querySelectorAll('.partner').forEach(card=>{
       if(card.dataset.bAccordion==='1')return;card.dataset.bAccordion='1';
+      const claimBtn=card.querySelector('.claimbox button');
+      if(claimBtn&&/load claim access/i.test(claimBtn.textContent||''))claimBtn.textContent='Claim Branch';
       const metrics=card.querySelector('.miniStats');
       if(metrics){const labels=metrics.querySelectorAll('.miniStat span');if(labels[0])labels[0].textContent='Limit';if(labels[1])labels[1].textContent='Issued';if(labels[2])labels[2].textContent='Available';let n=metrics.nextElementSibling;while(n&&!n.classList.contains('controls')&&!n.classList.contains('claimbox')){n.classList.add('b-detail');n=n.nextElementSibling;}}
       const manage=document.createElement('button');manage.type='button';manage.className='b-manage';manage.textContent='Manage';
