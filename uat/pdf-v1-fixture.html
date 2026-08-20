@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Voucher PDF V1 Fixture</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{--ink:#f7f8ff;--muted:#bcc7e3;--line:rgba(115,135,210,.34);--ok:#65e6b5}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;padding:18px;background:#07152f;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.shell{width:min(720px,100%);margin:auto}.card{padding:24px;border-radius:24px;background:linear-gradient(155deg,#171746,#0b1b42 58%,#06132f);border:1px solid rgba(122,119,255,.55);margin-bottom:16px}h1{margin:0 0 8px;font:500 30px Georgia,serif}.small{font-size:12px;color:var(--muted)}.msg{margin-top:14px;padding:12px 14px;border-radius:14px;background:#101b44;border:1px solid var(--line)}.msg.ok{color:var(--ok)}.resultLink{display:inline-block;margin-top:8px;color:#bcd0ff}.shareLink{display:inline-flex;align-items:center;justify-content:center;margin-top:10px;min-height:42px;padding:9px 13px;border-radius:13px;background:#0d3a35;color:#dfffee;text-decoration:none;font-weight:800}.issuedQrWrap{margin-top:14px;padding:14px;border-radius:16px;background:#fff;text-align:center}.issuedQrTitle{margin-bottom:10px;color:#13275d;font-size:12px;font-weight:900}.issuedQr{width:220px;height:220px;margin:auto}.issuedQr img,.issuedQr canvas{width:100%!important;height:100%!important}.status{margin-top:16px;padding:12px 14px;border-radius:14px;background:#101b44;border:1px solid var(--line);color:var(--ok);font-weight:800}.meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}.item{padding:12px;border-radius:14px;background:#0e1a42;border:1px solid var(--line)}.item span{display:block;color:#91a2c4;font-size:10px;text-transform:uppercase}.item b{display:block;margin-top:5px;font-size:14px}.hidden{display:none!important}@media(max-width:580px){.meta{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="shell">
+<section class="card">
+<h1>EVOLUTION OPTICAL</h1>
+<p class="small">Database-free UAT fixture • no Supabase calls • no real voucher issuance</p>
+</section>
+<section id="fixtureIssue" class="card">
+<h2>PDF V1 Test Result</h2>
+<div id="issueResult"></div>
+</section>
+<section id="voucherCard" class="card hidden">
+<h1>EVOLUTION OPTICAL</h1>
+<p>Customer Voucher</p>
+<section id="voucherState">
+<div class="status valid">Valid Voucher</div>
+<div class="meta">
+<div class="item"><span>Voucher Code</span><b>BGI-UAT-001</b></div>
+<div class="item"><span>Voucher Type</span><b>Birthday Gift</b></div>
+<div class="item"><span>Customer</span><b>UAT Customer</b></div>
+<div class="item"><span>Issued By</span><b>Demo Partner</b></div>
+<div class="item"><span>Expiry Date</span><b>31 Dec 2026</b></div>
+<div class="item"><span>Issued Date</span><b>20 Aug 2026</b></div>
+</div>
+<p class="small">Fixture only. Scan QR to return to this test voucher view.</p>
+</section>
+<div id="errorState" class="hidden"></div>
+</section>
+</main>
+<script>
+(function(){
+  const params=new URLSearchParams(location.search);
+  const isVoucher=params.get('mode')==='voucher';
+  const issue=document.getElementById('fixtureIssue');
+  const voucher=document.getElementById('voucherCard');
+  if(isVoucher){issue.classList.add('hidden');voucher.classList.remove('hidden');return;}
+  const voucherUrl=new URL(location.href);voucherUrl.search='?mode=voucher';
+  document.getElementById('issueResult').innerHTML=`<div class="msg ok"><b>Birthday Gift</b><div>Code: BGI-UAT-001</div><div>Expiry: 31 Dec 2026</div><a class="resultLink" href="${voucherUrl.href}" target="_blank" rel="noopener">Open customer voucher</a><div class="issuedQrWrap"><div class="issuedQrTitle">SCAN CUSTOMER VOUCHER</div><div id="issuedQr" class="issuedQr"></div></div><a class="shareLink" href="#">Share via WhatsApp (fixture)</a></div>`;
+  if(window.QRCode)new QRCode(document.getElementById('issuedQr'),{text:voucherUrl.href,width:220,height:220,correctLevel:QRCode.CorrectLevel.M});
+})();
+</script>
+<script src="voucher-pdf-uat-v1.js?v=1"></script>
+</body>
+</html>
