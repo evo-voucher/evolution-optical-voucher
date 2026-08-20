@@ -5,25 +5,21 @@
   .shell{max-width:760px}.card{border-radius:15px;padding:16px;box-shadow:none}.toprow{align-items:flex-start}.toprow h1{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:24px;letter-spacing:0}.toprow p{margin:4px 0 0;font-size:11px}
   #dashboardState>.card:nth-of-type(1),#dashboardState>.card:nth-of-type(2),#dashboardState>.card:nth-last-of-type(2),#dashboardState>.card:nth-last-of-type(1){display:none!important}
   .partner{position:relative;padding:14px}.partner .miniStats{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.partner .miniStats .miniStat:nth-child(n+4){display:none!important}.partner .miniStat{padding:9px}.partner .miniStat b{font-size:18px}
-  .partner .controls,.partner .claimbox,.partner .b-detail,.partner .b-stock,.partner .b-controls-toggle{display:none!important}
-  .partner.b-open .b-stock,.partner.b-open .b-controls-toggle{display:block!important}
-  .partner.b-open.b-controls-open .controls{display:grid!important}
-  .partner.b-open.b-controls-open .claimbox,.partner.b-open.b-controls-open .b-detail{display:block!important}
-  .b-manage,.b-controls-toggle{width:100%;margin-top:10px;min-height:44px;border-radius:12px}
-  .partner.b-open .b-manage{border-color:rgba(101,230,181,.75);background:linear-gradient(180deg,#176158,#0d3a35)}
-  .b-controls-toggle{border-color:rgba(111,147,255,.7)!important;background:linear-gradient(180deg,#3149a8,#172c72)!important}
-  .partner.b-controls-open .b-controls-toggle{border-color:rgba(85,231,237,.8)!important;background:linear-gradient(180deg,#244b78,#123350)!important}
-  .partner.b-controls-open .controls{margin-top:12px;padding-top:12px;border-top:1px solid rgba(115,135,210,.22)}
-  #partnerControls{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}#partnerControls .partner{margin-top:0}.partner.b-open{grid-column:1/-1}.partner.b-controls-open .controls{grid-template-columns:repeat(2,minmax(0,1fr))}.partner.b-controls-open .claimbox{margin-top:10px}.partnerhead .badge{white-space:nowrap}
+  .partner .controls,.partner .claimbox,.partner .b-detail,.partner .b-stock{display:none!important}
+  .partner.b-open .controls{display:grid!important}.partner.b-open .claimbox,.partner.b-open .b-detail,.partner.b-open .b-stock{display:block!important}
+  .b-manage{width:100%;margin-top:10px;min-height:44px;border-radius:12px}.partner.b-open .b-manage{border-color:rgba(101,230,181,.75);background:linear-gradient(180deg,#176158,#0d3a35)}
+  .partner.b-open .controls{margin-top:12px;padding-top:12px;border-top:1px solid rgba(115,135,210,.22)}
+  #partnerControls{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}#partnerControls .partner{margin-top:0}.partner.b-open{grid-column:1/-1}.partner.b-open .controls{grid-template-columns:repeat(2,minmax(0,1fr))}.partner.b-open .claimbox{margin-top:10px}.partnerhead .badge{white-space:nowrap}
+  .b-partner-list-body{display:none}.b-partner-section.b-list-open .b-partner-list-body{display:block}.b-partner-list-toggle{width:100%;min-height:52px;border-radius:14px;font-size:16px;font-weight:900}.b-partner-section.b-list-open .b-partner-list-toggle{border-color:rgba(101,230,181,.75);background:linear-gradient(180deg,#176158,#0d3a35)}
   .b-stock{margin-top:12px;padding:12px;border:1px solid rgba(115,135,210,.28);border-radius:13px;background:#0a1635}.b-stock-title{font-weight:900;font-size:13px}.b-stock-sub{color:#91a2c4;font-size:10px;margin:4px 0 10px}.b-allocation{padding:10px 0;border-top:1px solid rgba(115,135,210,.2)}.b-allocation-grid{display:grid;grid-template-columns:1.4fr repeat(3,.7fr);gap:6px}.b-cell{padding:7px;border:1px solid rgba(115,135,210,.22);border-radius:9px}.b-cell span{display:block;color:#91a2c4;font-size:8px}.b-cell b{display:block;margin-top:2px;font-size:12px}.b-revoke-row{display:grid;grid-template-columns:90px 1fr auto;gap:7px;margin-top:8px}.b-revoke-row input{min-height:38px}.b-revoke{border-color:#a43b55!important;background:#451320!important;color:#ffdce3!important}.b-empty{color:#91a2c4;font-size:10px;padding:8px 0}
   input:not([type=checkbox]):not([type=radio]),select,textarea{background:#fff7a3!important;color:#24211b!important;border-color:#b9a85b!important}input::placeholder,textarea::placeholder{color:#746d53!important}
-  @media(max-width:620px){body{padding:12px}.formgrid{grid-template-columns:1fr}.card{padding:14px}#partnerControls{grid-template-columns:1fr}.partner.b-open{grid-column:auto}.partner.b-controls-open .controls{grid-template-columns:1fr 1fr}.partner .miniStats{grid-template-columns:repeat(3,minmax(0,1fr))}}
-  @media(max-width:420px){.partner.b-controls-open .controls{grid-template-columns:1fr}.partner .miniStat{padding:8px 6px}.partner .miniStat span{font-size:9px}.partner .miniStat b{font-size:17px}.b-allocation-grid{grid-template-columns:1fr 1fr}.b-revoke-row{grid-template-columns:1fr}.b-revoke-row button{width:100%}}
+  @media(max-width:620px){body{padding:12px}.formgrid{grid-template-columns:1fr}.card{padding:14px}#partnerControls{grid-template-columns:1fr}.partner.b-open{grid-column:auto}.partner.b-open .controls{grid-template-columns:1fr 1fr}.partner .miniStats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+  @media(max-width:420px){.partner.b-open .controls{grid-template-columns:1fr}.partner .miniStat{padding:8px 6px}.partner .miniStat span{font-size:9px}.partner .miniStat b{font-size:17px}.b-allocation-grid{grid-template-columns:1fr 1fr}.b-revoke-row{grid-template-columns:1fr}.b-revoke-row button{width:100%}}
   `;
   document.head.appendChild(style);
 
   let allocationRows=null,stockDb=null;
-  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const partnerCodeOf=card=>{const t=(card.querySelector('.partnerhead')?.textContent||'').trim();const m=t.match(/\b([A-Z0-9_-]{2,})\b/i);return m?m[1].toUpperCase():'';};
   async function loadAllocations(){
     if(allocationRows)return allocationRows;
@@ -52,18 +48,31 @@
 
   const enhance=()=>{
     const root=document.getElementById('partnerControls');if(!root)return;
+
+    const section=root.closest('.card');
+    if(section&&!section.dataset.bListToggle){
+      section.dataset.bListToggle='1';section.classList.add('b-partner-section');
+      const body=document.createElement('div');body.className='b-partner-list-body';
+      const children=[...section.childNodes];
+      children.forEach(node=>body.appendChild(node));
+      const toggle=document.createElement('button');toggle.type='button';toggle.className='b-partner-list-toggle';toggle.textContent='Partner Controls';
+      section.appendChild(toggle);section.appendChild(body);
+      toggle.addEventListener('click',()=>{
+        const open=!section.classList.contains('b-list-open');section.classList.toggle('b-list-open',open);toggle.textContent=open?'Close Partner Controls':'Partner Controls';
+        if(!open){root.querySelectorAll('.partner.b-open').forEach(card=>{card.classList.remove('b-open');const mb=card.querySelector('.b-manage');if(mb)mb.textContent='Manage';});}
+      });
+    }
+
     root.querySelectorAll('.partner').forEach(card=>{
       if(card.dataset.bAccordion==='1')return;card.dataset.bAccordion='1';
       const metrics=card.querySelector('.miniStats');
       if(metrics){const labels=metrics.querySelectorAll('.miniStat span');if(labels[0])labels[0].textContent='Limit';if(labels[1])labels[1].textContent='Issued';if(labels[2])labels[2].textContent='Available';let n=metrics.nextElementSibling;while(n&&!n.classList.contains('controls')&&!n.classList.contains('claimbox')){n.classList.add('b-detail');n=n.nextElementSibling;}}
       const manage=document.createElement('button');manage.type='button';manage.className='b-manage';manage.textContent='Manage';
       (metrics||card.querySelector('.partnerhead')||card).insertAdjacentElement('afterend',manage);
-      const control=document.createElement('button');control.type='button';control.className='b-controls-toggle';control.textContent='Partner Controls';manage.insertAdjacentElement('afterend',control);
-      control.addEventListener('click',()=>{const open=!card.classList.contains('b-controls-open');card.classList.toggle('b-controls-open',open);control.textContent=open?'Close Partner Controls':'Partner Controls';});
       manage.addEventListener('click',async()=>{
         const opening=!card.classList.contains('b-open');
-        root.querySelectorAll('.partner.b-open').forEach(other=>{other.classList.remove('b-open','b-controls-open');const mb=other.querySelector('.b-manage'),cb=other.querySelector('.b-controls-toggle');if(mb)mb.textContent='Manage';if(cb)cb.textContent='Partner Controls';});
-        if(opening){card.classList.add('b-open');manage.textContent='Close';await renderStock(card);card.scrollIntoView({behavior:'smooth',block:'start'});}else{card.classList.remove('b-open','b-controls-open');manage.textContent='Manage';control.textContent='Partner Controls';}
+        root.querySelectorAll('.partner.b-open').forEach(other=>{other.classList.remove('b-open');const mb=other.querySelector('.b-manage');if(mb)mb.textContent='Manage';});
+        if(opening){card.classList.add('b-open');manage.textContent='Close';await renderStock(card);card.scrollIntoView({behavior:'smooth',block:'start'});}else{card.classList.remove('b-open');manage.textContent='Manage';}
       });
     });
   };
