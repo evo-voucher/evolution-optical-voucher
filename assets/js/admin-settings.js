@@ -69,6 +69,12 @@
     dash.appendChild(card);document.getElementById('settingsRefreshAll').onclick=()=>location.reload();return card;
   }
 
+  function removeDuplicateCompletedRedemptions(){
+    document.querySelectorAll('#stats .stat').forEach(card=>{
+      if((card.querySelector('span')?.textContent||'').trim()==='Completed Redemptions')card.remove();
+    });
+  }
+
   function ensureHub(){
     const dash=document.getElementById('dashboardState');if(!dash)return;
     let head=document.getElementById('adminPageHead');
@@ -79,7 +85,7 @@
   }
 
   function classify(card){if(card.id==='adminHubCard')return'home';if(card.id==='branchAdminCard')return'operations';if(card.id==='partnerPerformanceCard')return'reports';if(card.id==='adminSettingsCard')return'settings';const h=(card.querySelector('h2')?.textContent||'').trim();if(h==='Authoritative Summary')return'home';if(['Create Partner','Partner Controls'].includes(h))return'partners';if(h==='Admin Tools')return'settings';if(h==='Voucher Report')return'vouchers';if(h==='Redemption Report')return'reports';return null;}
-  function applySections(){const dash=document.getElementById('dashboardState');if(!dash)return;[...dash.children].forEach(card=>{if(!card.classList?.contains('card'))return;const section=classify(card);if(section)card.dataset.adminSection=section;});retireVoucherLimitUI();navigate(currentSection,false);}
+  function applySections(){const dash=document.getElementById('dashboardState');if(!dash)return;[...dash.children].forEach(card=>{if(!card.classList?.contains('card'))return;const section=classify(card);if(section)card.dataset.adminSection=section;});retireVoucherLimitUI();removeDuplicateCompletedRedemptions();navigate(currentSection,false);}
   function navigate(section,scroll=true){if(!SECTIONS[section])section='home';currentSection=section;document.body.dataset.adminSection=section;document.querySelectorAll('#dashboardState > .card[data-admin-section]').forEach(card=>card.classList.toggle('admin-section-hidden',card.dataset.adminSection!==section));const m=SECTIONS[section],t=document.getElementById('adminPageTitle'),s=document.getElementById('adminPageSub'),back=document.getElementById('adminBackBtn');if(t)t.textContent=m.title;if(s)s.textContent=m.sub;if(back)back.classList.toggle('hidden',section==='home');try{sessionStorage.setItem('evo-admin-section',section)}catch(_){}if(scroll){if(section==='partners')window.scrollTo({top:0,left:0,behavior:'auto'});else document.getElementById('adminPageHead')?.scrollIntoView({behavior:'smooth',block:'start'});}}window.evoAdminNavigate=navigate;
 
   function installClaimSaveFeedback(){if(typeof window.saveClaim!=='function'||window.saveClaim.__evolutionFeedbackWrapped)return;const original=window.saveClaim;const wrapped=async id=>{const box=document.getElementById('claim-'+id),button=box?.querySelector('button[onclick^="saveClaim"]'),previous=button?.textContent||'Save Claim Access';if(button){button.disabled=true;button.textContent='Saving...';}await original(id);const ok=!!document.querySelector('#partnerMsg .msg.ok');if(button){button.textContent=ok?'Saved ✓':previous;if(ok)setTimeout(()=>{if(button.isConnected){button.textContent='Save Claim Access';button.disabled=false;}},1800);else button.disabled=false;}if(ok){const target=document.getElementById('partnerMsg');if(target)target.innerHTML='<div class="msg ok">Claim access updated successfully.</div>';}};wrapped.__evolutionFeedbackWrapped=true;window.saveClaim=wrapped;}
@@ -89,11 +95,12 @@
       const {data,error}=await db.rpc('current_operational_realm');if(error)return;
       if(data?.authenticated===true&&data?.realm==='admin'){
         await purgeExpiredUnredeemed();
-        ensureSettingsCard();ensureHub();installClaimSaveFeedback();retireVoucherLimitUI();
+        ensureSettingsCard();ensureHub();installClaimSaveFeedback();retireVoucherLimitUI();removeDuplicateCompletedRedemptions();
         await ensureInitialSetupUI();
         try{currentSection=sessionStorage.getItem('evo-admin-section')||'home'}catch(_){currentSection='home'}
         applySections();
         const dash=document.getElementById('dashboardState');if(dash&&!dash.__adminHubObserved){const o=new MutationObserver(()=>applySections());o.observe(dash,{childList:true,subtree:false});dash.__adminHubObserved=true;}
+        const stats=document.getElementById('stats');if(stats&&!stats.__summaryCleanupObserved){const os=new MutationObserver(()=>removeDuplicateCompletedRedemptions());os.observe(stats,{childList:true});stats.__summaryCleanupObserved=true;}
         const pc=document.getElementById('partnerControls');if(pc&&!pc.__voucherLimitObserved){const o2=new MutationObserver(()=>retireVoucherLimitUI());o2.observe(pc,{childList:true,subtree:true});pc.__voucherLimitObserved=true;}
         setTimeout(applySections,450);
       }
