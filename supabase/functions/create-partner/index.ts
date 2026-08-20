@@ -49,7 +49,9 @@ serve(async (req) => {
     if (!adminRow) return json({ success: false, error: "Admin access required" }, 403);
 
     const body = await req.json();
-    let partner_code = typeof body.partner_code === "string" ? body.partner_code.trim().toUpperCase() : "";
+    let partner_code = typeof body.partner_code === "string" && body.partner_code.trim()
+      ? body.partner_code.trim().toUpperCase()
+      : "AUTO";
     const partner_name = typeof body.partner_name === "string" ? body.partner_name.trim() : "";
     const contact_person = typeof body.contact_person === "string" ? body.contact_person.trim() : null;
     const contact_phone = typeof body.contact_phone === "string" ? body.contact_phone.trim() : null;
@@ -63,7 +65,7 @@ serve(async (req) => {
       quantity: Number(item?.quantity ?? 0),
     }));
 
-    if (!partner_code || !partner_name || !email) return json({ success: false, error: "Missing required fields" }, 400);
+    if (!partner_name || !email) return json({ success: false, error: "Missing required fields" }, 400);
     if (partner_code !== "AUTO" && !/^[A-Z0-9_-]+$/.test(partner_code)) return json({ success: false, error: "Invalid partner code" }, 400);
     if (!email.includes("@")) return json({ success: false, error: "Invalid email" }, 400);
     if (!Number.isInteger(staff_limit) || staff_limit < 0 || staff_limit > 1000) return json({ success: false, error: "Invalid Staff Limit" }, 400);
@@ -129,7 +131,15 @@ serve(async (req) => {
       return json({ success: false, error: "Failed to provision Partner", details: message }, status);
     }
 
-    return json({ success: true, partner: provisioned.partner, user_id: newUser.id, temporary_password: temporaryPassword, initial_allocations: provisioned.initial_allocations, claim_all_branches: provisioned.claim_all_branches, claim_branch_codes: provisioned.claim_branch_codes }, 201);
+    return json({
+      success: true,
+      partner: provisioned.partner,
+      user_id: newUser.id,
+      temporary_password: temporaryPassword,
+      initial_allocations: provisioned.initial_allocations,
+      claim_all_branches: provisioned.claim_all_branches,
+      claim_branch_codes: provisioned.claim_branch_codes,
+    }, 201);
   } catch (e) {
     return json({ success: false, error: "Unexpected error", details: e instanceof Error ? e.message : String(e) }, 500);
   }
