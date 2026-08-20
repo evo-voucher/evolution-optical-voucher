@@ -25,6 +25,12 @@
       return response.text();
     })
     .then((html) => {
+      if (page === 'admin.html') {
+        html = html.replace(
+          '</body>',
+          '<script src="../assets/js/customer-district-ui.js?v=uat-customer-pdf-v1"></script><script src="../assets/js/customer-pdf-export.js?v=uat-customer-pdf-v1"></script></body>'
+        );
+      }
       document.open();
       document.write(html);
       document.close();
