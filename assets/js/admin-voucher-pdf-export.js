@@ -59,11 +59,25 @@
 
   function buildRenderPage(headers,rows,pageNo,totalPages){
     const page=document.createElement('section');
+    page.className='evo-pdf-render-page';
     page.setAttribute('aria-hidden','true');
     Object.assign(page.style,{
       position:'fixed',left:'-12000px',top:'0',width:'1500px',padding:'42px 46px 32px',
       background:'#ffffff',color:'#000000',fontFamily:'Arial, Helvetica, sans-serif',zIndex:'-1'
     });
+
+    const isolation=document.createElement('style');
+    isolation.textContent=`
+      .evo-pdf-render-page{background:#fff!important;color:#000!important;color-scheme:light!important}
+      .evo-pdf-render-page table{background:#fff!important;color:#000!important}
+      .evo-pdf-render-page thead,.evo-pdf-render-page tbody,.evo-pdf-render-page tr{background:transparent!important;color:#000!important}
+      .evo-pdf-render-page th{background:#0f1b3f!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#334155!important}
+      .evo-pdf-render-page td{color:#000!important;-webkit-text-fill-color:#000!important;border-color:#64748b!important;font-weight:900!important;text-shadow:none!important}
+      .evo-pdf-render-page tbody tr:nth-child(odd) td{background:#eef2f6!important}
+      .evo-pdf-render-page tbody tr:nth-child(even) td{background:#dbe1e8!important}
+      .evo-pdf-render-page div{color:#000!important;-webkit-text-fill-color:#000!important}
+    `;
+    page.appendChild(isolation);
 
     const title=document.createElement('div');
     title.innerHTML=`<div style="font-size:38px;font-weight:900;letter-spacing:.2px;color:#000000">Evolution Optical - Voucher Report</div>
@@ -90,7 +104,7 @@
       row.forEach(text=>{
         const td=document.createElement('td');
         td.textContent=text||'—';
-        td.style.cssText=`padding:20px 12px;border:3px solid #64748b;vertical-align:middle;line-height:1.35;word-break:break-word;color:#000000;font-size:19px;font-weight:900;background:${index%2?'#dbe1e8':'#eef2f6'};min-height:78px;text-shadow:0 0 0 #000000;`;
+        td.style.cssText=`padding:20px 12px;border:3px solid #64748b;vertical-align:middle;line-height:1.35;word-break:break-word;color:#000000;font-size:19px;font-weight:900;background:${index%2?'#dbe1e8':'#eef2f6'};min-height:78px;`;
         tr.appendChild(td);
       });
       tbody.appendChild(tr);
