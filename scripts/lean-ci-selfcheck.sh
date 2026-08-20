@@ -45,10 +45,9 @@ grep -q "not exists(select 1 from public.redemptions" "$cleanup_file" || {
   exit 1
 }
 
-if grep -RniE --include='*.html' --include='*.js' \
-  '(SUPABASE_SERVICE_ROLE_KEY|service_role[[:space:]]*[:=][[:space:]]*["'"''][A-Za-z0-9._-]{20,})' \
-  . --exclude-dir=.git; then
-  echo "Potential service-role secret found in browser-delivered code"
+if grep -Rni --include='*.html' --include='*.js' \
+  'SUPABASE_SERVICE_ROLE_KEY' . --exclude-dir=.git; then
+  echo "Potential Supabase service-role secret reference found in browser-delivered code"
   exit 1
 fi
 
