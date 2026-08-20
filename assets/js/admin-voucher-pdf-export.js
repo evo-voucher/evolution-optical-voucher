@@ -5,7 +5,7 @@
 
   const JSPDF_SRC='https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';
   const HTML2CANVAS_SRC='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
-  const PAGE_ROW_LIMIT=18;
+  const PAGE_ROW_LIMIT=12;
 
   function loadScript(id,src,test){
     if(test())return Promise.resolve();
@@ -61,24 +61,24 @@
     const page=document.createElement('section');
     page.setAttribute('aria-hidden','true');
     Object.assign(page.style,{
-      position:'fixed',left:'-10000px',top:'0',width:'1200px',padding:'30px 34px',
+      position:'fixed',left:'-12000px',top:'0',width:'1500px',padding:'42px 46px 32px',
       background:'#ffffff',color:'#111827',fontFamily:'Arial, Helvetica, sans-serif',zIndex:'-1'
     });
 
     const title=document.createElement('div');
-    title.innerHTML=`<div style="font-size:26px;font-weight:800;letter-spacing:.4px">Evolution Optical - Voucher Report</div>
-      <div style="margin-top:6px;font-size:13px;color:#4b5563">${escapeHtml(filterSummary())}</div>
-      <div style="margin-top:4px;font-size:12px;color:#6b7280">Generated: ${escapeHtml(new Date().toLocaleString())} | Page ${pageNo} of ${totalPages}</div>`;
+    title.innerHTML=`<div style="font-size:38px;font-weight:800;letter-spacing:.2px;color:#111827">Evolution Optical - Voucher Report</div>
+      <div style="margin-top:10px;font-size:19px;font-weight:600;color:#374151">${escapeHtml(filterSummary())}</div>
+      <div style="margin-top:7px;font-size:16px;color:#4b5563">Generated: ${escapeHtml(new Date().toLocaleString())} &nbsp; | &nbsp; Page ${pageNo} of ${totalPages}</div>`;
     page.appendChild(title);
 
     const table=document.createElement('table');
-    table.style.cssText='width:100%;border-collapse:collapse;table-layout:fixed;margin-top:18px;font-size:12px;';
+    table.style.cssText='width:100%;border-collapse:collapse;table-layout:fixed;margin-top:26px;font-size:18px;color:#111827;background:#fff;';
     const thead=document.createElement('thead');
     const hr=document.createElement('tr');
     headers.forEach(text=>{
       const th=document.createElement('th');
       th.textContent=text;
-      th.style.cssText='padding:9px 7px;border:1px solid #cbd5e1;background:#e5e7eb;color:#111827;text-align:left;font-size:11px;word-break:break-word;';
+      th.style.cssText='padding:16px 12px;border:2px solid #94a3b8;background:#0f1b3f;color:#ffffff;text-align:left;font-size:17px;font-weight:800;line-height:1.25;word-break:break-word;';
       hr.appendChild(th);
     });
     thead.appendChild(hr);table.appendChild(thead);
@@ -86,10 +86,11 @@
     const tbody=document.createElement('tbody');
     rows.forEach((row,index)=>{
       const tr=document.createElement('tr');
+      tr.style.minHeight='74px';
       row.forEach(text=>{
         const td=document.createElement('td');
-        td.textContent=text;
-        td.style.cssText=`padding:8px 7px;border:1px solid #d1d5db;vertical-align:top;line-height:1.28;word-break:break-word;background:${index%2?'#f8fafc':'#ffffff'};`;
+        td.textContent=text||'—';
+        td.style.cssText=`padding:18px 12px;border:2px solid #cbd5e1;vertical-align:middle;line-height:1.35;word-break:break-word;color:#111827;font-size:18px;font-weight:600;background:${index%2?'#f1f5f9':'#ffffff'};min-height:74px;`;
         tr.appendChild(td);
       });
       tbody.appendChild(tr);
@@ -98,7 +99,7 @@
 
     const footer=document.createElement('div');
     footer.textContent='Evolution Optical - Confidential Admin Report';
-    footer.style.cssText='margin-top:12px;font-size:10px;color:#6b7280;text-align:right;';
+    footer.style.cssText='margin-top:18px;font-size:14px;font-weight:600;color:#4b5563;text-align:right;';
     page.appendChild(footer);
     return page;
   }
@@ -122,19 +123,26 @@
       const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4',compress:true});
       const pageWidth=pdf.internal.pageSize.getWidth();
       const pageHeight=pdf.internal.pageSize.getHeight();
-      const margin=6;
+      const marginX=8;
+      const marginTop=8;
+      const maxW=pageWidth-marginX*2;
+      const maxH=pageHeight-marginTop-8;
 
       for(let i=0;i<chunks.length;i++){
         if(i>0)pdf.addPage('a4','landscape');
         const renderPage=buildRenderPage(data.headers,chunks[i],i+1,chunks.length);
         document.body.appendChild(renderPage);
-        const canvas=await window.html2canvas(renderPage,{backgroundColor:'#ffffff',scale:1.25,logging:false,useCORS:true});
+        const canvas=await window.html2canvas(renderPage,{backgroundColor:'#ffffff',scale:1.5,logging:false,useCORS:true});
         renderPage.remove();
-        const maxW=pageWidth-margin*2,maxH=pageHeight-margin*2;
-        const scale=Math.min(maxW/canvas.width,maxH/canvas.height);
-        const w=canvas.width*scale,h=canvas.height*scale;
-        const x=(pageWidth-w)/2,y=(pageHeight-h)/2;
-        pdf.addImage(canvas.toDataURL('image/jpeg',0.88),'JPEG',x,y,w,h,undefined,'FAST');
+
+        const widthScale=maxW/canvas.width;
+        const heightScale=maxH/canvas.height;
+        const scale=Math.min(widthScale,heightScale);
+        const w=canvas.width*scale;
+        const h=canvas.height*scale;
+        const x=(pageWidth-w)/2;
+        const y=marginTop;
+        pdf.addImage(canvas.toDataURL('image/png'),'PNG',x,y,w,h,undefined,'FAST');
         await new Promise(resolve=>setTimeout(resolve,0));
       }
 
