@@ -30,7 +30,17 @@
     return !!(document.getElementById('openCustomerDatabaseBtn')&&document.getElementById('openDistrictManagerBtn'));
   }
 
+  function loadVoucherPdfExport(){
+    if(document.getElementById('adminVoucherPdfExportScript'))return;
+    const script=document.createElement('script');
+    script.id='adminVoucherPdfExportScript';
+    const version=encodeURIComponent(window.EVOLUTION_ASSET_VERSION||'20260820-01');
+    script.src=`assets/js/admin-voucher-pdf-export.js?v=${version}`;
+    document.head.appendChild(script);
+  }
+
   installAvailable();
+  loadVoucherPdfExport();
   let tries=0;
   const timer=setInterval(()=>{
     tries++;
