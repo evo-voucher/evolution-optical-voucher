@@ -65,15 +65,31 @@ begin
 
   select
     coalesce(array_agg(v.id),array[]::uuid[]),
-    count(*) filter (where v.expiry_date <= v_today - 30),
-    count(*) filter (where lower(coalesce(v.status,''))='revoked' and v.revoked_at is not null and v.revoked_at <= v_now - interval '30 days')
+    count(*) filter (
+      where lower(coalesce(v.status,''))<>'revoked'
+        and v.expiry_date is not null
+        and v.expiry_date <= v_today - 30
+    ),
+    count(*) filter (
+      where lower(coalesce(v.status,''))='revoked'
+        and v.revoked_at is not null
+        and v.revoked_at <= v_now - interval '30 days'
+    )
   into v_ids,v_expired_count,v_revoked_count
   from public.vouchers v
   where not exists(select 1 from public.redemptions r where r.voucher_id=v.id)
     and (
-      (v.expiry_date is not null and v.expiry_date <= v_today - 30)
+      (
+        lower(coalesce(v.status,''))='revoked'
+        and v.revoked_at is not null
+        and v.revoked_at <= v_now - interval '30 days'
+      )
       or
-      (lower(coalesce(v.status,''))='revoked' and v.revoked_at is not null and v.revoked_at <= v_now - interval '30 days')
+      (
+        lower(coalesce(v.status,''))<>'revoked'
+        and v.expiry_date is not null
+        and v.expiry_date <= v_today - 30
+      )
     );
 
   v_count := coalesce(array_length(v_ids,1),0);
