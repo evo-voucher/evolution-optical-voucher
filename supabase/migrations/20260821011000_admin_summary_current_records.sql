@@ -36,4 +36,86 @@ begin
 end;
 $$;
 
+create or replace function public.admin_purge_expired_unredeemed_vouchers(p_actor_user_id uuid default null)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_actor uuid;
+  v_today date := (now() at time zone 'Asia/Kuala_Lumpur')::date;
+  v_now timestamptz := now();
+  v_ids uuid[];
+  v_count integer := 0;
+  v_expired_count integer := 0;
+  v_revoked_count integer := 0;
+begin
+  if public.is_voucher_admin() then
+    v_actor := auth.uid();
+  elsif public.is_trusted_service_role() then
+    v_actor := p_actor_user_id;
+  else
+    raise exception 'Admin access required';
+  end if;
+
+  if not exists(select 1 from public.admin_users a where a.user_id=v_actor and a.status='active') then
+    raise exception 'Active Admin actor required';
+  end if;
+
+  select
+    coalesce(array_agg(v.id),array[]::uuid[]),
+    count(*) filter (where v.expiry_date <= v_today - 30),
+    count(*) filter (where lower(coalesce(v.status,''))='revoked' and v.revoked_at is not null and v.revoked_at <= v_now - interval '30 days')
+  into v_ids,v_expired_count,v_revoked_count
+  from public.vouchers v
+  where not exists(select 1 from public.redemptions r where r.voucher_id=v.id)
+    and (
+      (v.expiry_date is not null and v.expiry_date <= v_today - 30)
+      or
+      (lower(coalesce(v.status,''))='revoked' and v.revoked_at is not null and v.revoked_at <= v_now - interval '30 days')
+    );
+
+  v_count := coalesce(array_length(v_ids,1),0);
+  if v_count=0 then
+    return jsonb_build_object(
+      'success',true,
+      'purged',0,
+      'expired_purged',0,
+      'revoked_purged',0,
+      'retention_days',30,
+      'redeemed_history_protected',true
+    );
+  end if;
+
+  delete from public.vouchers
+  where id=any(v_ids)
+    and not exists(select 1 from public.redemptions r where r.voucher_id=vouchers.id);
+
+  insert into public.admin_audit_log(
+    actor_user_id,action_type,entity_type,entity_id,after_data,metadata
+  ) values (
+    v_actor,'stale_unredeemed_vouchers_purged','voucher_batch',null,
+    jsonb_build_object(
+      'purged_count',v_count,
+      'expired_purged',v_expired_count,
+      'revoked_purged',v_revoked_count
+    ),
+    jsonb_build_object(
+      'retention_days',30,
+      'redeemed_history_protected',true
+    )
+  );
+
+  return jsonb_build_object(
+    'success',true,
+    'purged',v_count,
+    'expired_purged',v_expired_count,
+    'revoked_purged',v_revoked_count,
+    'retention_days',30,
+    'redeemed_history_protected',true
+  );
+end;
+$$;
+
 commit;
