@@ -1,0 +1,54 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Evolution Optical · Admin B</title><style>html,body{margin:0;min-height:100%;background:#060a18;color:#fff;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{display:grid;place-items:center;padding:20px}.loading{color:#8d9aba;font-weight:700}</style></head><body><div class="loading">Loading Admin…</div><script>(async()=>{try{const res=await fetch('admin-b.html?source=20260820-revoke-preview',{cache:'no-store'});if(!res.ok)throw new Error('Admin B source unavailable ('+res.status+')');let html=await res.text();html=html.replace('</style>',`.revokeBtn{border-color:#8f354b!important;background:#35101c!important;color:#ffd6dc!important;white-space:nowrap}.revokeBtn:disabled{opacity:.45}.revokeHint{margin-top:8px;padding:8px 10px;border:1px dashed #5f3548;border-radius:9px;color:#cba7b2;font-size:9px}\n</style>`);html=html.replace('<div id="voucherMini" class="mini"></div>','<div id="voucherMini" class="mini"></div><div class="revokeHint">Revoke is available only for Active vouchers. A reason and confirmation are required.</div>');html=html.replace('</body>',`<script>
+(()=>{
+  const enhance=()=>{
+    const wrap=document.getElementById('voucherTable');
+    const table=wrap&&wrap.querySelector('table');
+    if(!table)return;
+    const head=table.querySelector('thead tr');
+    if(head&&!head.querySelector('[data-revoke-head]')){
+      const th=document.createElement('th');th.dataset.revokeHead='1';th.textContent='Action';head.appendChild(th);
+    }
+    table.querySelectorAll('tbody tr').forEach(tr=>{
+      if(tr.querySelector('[data-revoke-cell]'))return;
+      const cells=tr.querySelectorAll('td');
+      const code=(cells[0]?.textContent||'').trim();
+      const status=(cells[4]?.textContent||'').trim().toLowerCase();
+      const td=document.createElement('td');td.dataset.revokeCell='1';
+      if(status==='active'&&code){
+        const b=document.createElement('button');b.type='button';b.className='revokeBtn';b.textContent='Revoke';
+        b.addEventListener('click',async()=>{
+          const reason=window.prompt('Reason for revoking '+code+':');
+          if(reason===null)return;
+          const clean=reason.trim();
+          if(!clean){window.alert('Revoke reason is required.');return;}
+          if(!window.confirm('Revoke '+code+'?\n\nThe voucher will no longer be usable.'))return;
+          const cfg=window.EVOLUTION_VOUCHER_BACKEND||{};
+          if(!(cfg.enabled&&cfg.supabaseUrl&&cfg.publishableKey&&window.supabase)){window.alert('Backend unavailable.');return;}
+          b.disabled=true;b.textContent='Revoking…';
+          try{
+            const client=window.__B_REVOKE_DB||(window.__B_REVOKE_DB=window.supabase.createClient(cfg.supabaseUrl,cfg.publishableKey));
+            const{error}=await client.rpc('admin_revoke_issued_voucher',{p_voucher_code:code,p_reason:clean});
+            if(error)throw error;
+            window.alert(code+' revoked.');
+            location.reload();
+          }catch(e){
+            const m=String(e?.message||e||'Revoke failed');
+            if(/admin_revoke_issued_voucher|schema cache|could not find the function/i.test(m)) window.alert('Revoke UI is ready in B version, but the new revoke backend is not live yet. Production has not been changed.');
+            else window.alert(m);
+            b.disabled=false;b.textContent='Revoke';
+          }
+        });
+        td.appendChild(b);
+      }else td.textContent='—';
+      tr.appendChild(td);
+    });
+  };
+  const boot=()=>{
+    enhance();
+    const wrap=document.getElementById('voucherTable');
+    if(wrap)new MutationObserver(enhance).observe(wrap,{childList:true,subtree:true});
+    else setTimeout(boot,120);
+  };
+  boot();
+})();
+<\/script></body>`);document.open();document.write(html);document.close()}catch(e){document.body.innerHTML='<div style="max-width:620px;padding:18px;border:1px solid #263967;border-radius:14px;background:#0b1430">Unable to load Admin B.<br><small>'+String(e?.message||e)+'</small></div>'}})();</script></body></html>
