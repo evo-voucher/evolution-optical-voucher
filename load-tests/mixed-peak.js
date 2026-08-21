@@ -7,7 +7,11 @@ const businessErrors = new Rate('business_errors');
 const baseUrl = __ENV.SUPABASE_URL;
 const anonKey = __ENV.SUPABASE_ANON_KEY;
 const publicToken = __ENV.PUBLIC_TOKEN;
+const targetEnv = (__ENV.TARGET_ENV || '').toLowerCase();
 
+if (!['test', 'development'].includes(targetEnv)) {
+  throw new Error('Mixed peak load test blocked. TARGET_ENV must be test or development.');
+}
 if (!baseUrl || !anonKey || !publicToken) {
   throw new Error('SUPABASE_URL, SUPABASE_ANON_KEY and PUBLIC_TOKEN are required');
 }
