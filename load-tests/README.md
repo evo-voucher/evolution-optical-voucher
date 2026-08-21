@@ -8,13 +8,15 @@ This suite is intentionally **not auto-targeted at Production**. Every test requ
 2. Public/read-only smoke load may be run against Production only at low concurrency.
 3. Voucher issuance and redemption tests must use disposable test data.
 4. Same-voucher concurrency tests are intended for an isolated environment because they mutate voucher/redemption state.
-5. Do not commit service-role keys, JWTs, passwords, or customer data.
+5. Login load tests must use a dedicated test account and may run only when `TARGET_ENV=test` or `TARGET_ENV=development`.
+6. Do not commit service-role keys, JWTs, passwords, or customer data.
 
 ## Acceptance targets
 
 - Normal-load HTTP error rate: < 1%
 - Spike-load HTTP error rate: < 2%
 - Public voucher view P95: < 2s
+- Login P95: < 3s
 - Partner/Staff operational RPC P95: < 2s
 - Redemption P95: < 3s
 - Large admin reports P95: < 5s
@@ -26,6 +28,7 @@ This suite is intentionally **not auto-targeted at Production**. Every test requ
 ## Included scenarios
 
 - `public-voucher-read.js` - low-risk read-only load against `get_public_voucher`
+- `login-concurrency.js` - guarded 10 / 25 / 50 concurrent password-login test for a dedicated test account
 - `same-voucher-concurrency.js` - isolated-environment double-spend test
 - `mixed-peak.js` - template for mixed Partner/Staff/Customer peak traffic in a test environment
 
@@ -36,6 +39,25 @@ This suite is intentionally **not auto-targeted at Production**. Every test requ
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 - `PUBLIC_TOKEN`
+
+### Login concurrency
+
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `TEST_LOGIN_EMAIL`
+- `TEST_LOGIN_PASSWORD`
+- `TARGET_ENV=test` or `TARGET_ENV=development`
+- optional `LOGIN_STAGE=10|25|50` (default: 10)
+
+The login script aborts if the target environment is not explicitly `test` or `development`.
+
+Examples:
+
+```bash
+TARGET_ENV=test LOGIN_STAGE=10 k6 run load-tests/login-concurrency.js
+TARGET_ENV=test LOGIN_STAGE=25 k6 run load-tests/login-concurrency.js
+TARGET_ENV=test LOGIN_STAGE=50 k6 run load-tests/login-concurrency.js
+```
 
 ### Same-voucher concurrency
 
