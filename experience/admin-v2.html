@@ -63,5 +63,6 @@ document.addEventListener('click',e=>{const btn=e.target.closest('.reportCardBtn
 if(!cfg.enabled){document.body.innerHTML='<div class="login"><h1>Backend not configured</h1></div>';return}db=window.supabase.createClient(cfg.supabaseUrl,cfg.publishableKey);db.auth.onAuthStateChange(()=>{});enter().catch(e=>{$('login').classList.remove('hidden');$('loginMsg').textContent=e.message||'Unable to load Admin'});
 })();
 </script>
+<script src="../assets/js/admin-notifications.js?v=20260821-notify1"></script>
 </body>
 </html>
