@@ -28,6 +28,7 @@
     s.id='adminNotificationStyle';
     s.textContent=`
       .stat.totalAllocated{text-align:center}
+      .activityDot.adminNotifyReadDot{background:#ff4d67}
       #adminNotifyBtn{position:relative;white-space:nowrap}
       #adminNotifyBadge{display:none;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#ff4d67;color:#fff;font-size:10px;line-height:18px;text-align:center;margin-left:4px}
       #adminNotifyBadge.show{display:inline-block}
@@ -62,6 +63,25 @@
     return true;
   }
 
+  function activityKeyFromRow(r){
+    return `${String(r.title||'Activity').trim()}\n${[timeText(r.event_time),r.detail].filter(Boolean).join(' · ').trim()}`;
+  }
+
+  function activityKeyFromNode(item){
+    const title=String(item.querySelector('.activityTitle')?.textContent||'').trim();
+    const meta=String(item.querySelector('.activityMeta')?.textContent||'').trim();
+    return `${title}\n${meta}`;
+  }
+
+  function syncActivityReadDots(){
+    const readKeys=new Set(rows.filter(r=>r.is_read).map(activityKeyFromRow));
+    document.querySelectorAll('.activityItem').forEach(item=>{
+      const dot=item.querySelector('.activityDot');
+      if(!dot)return;
+      dot.classList.toggle('adminNotifyReadDot',readKeys.has(activityKeyFromNode(item)));
+    });
+  }
+
   function render(){
     const badge=document.getElementById('adminNotifyBadge');
     const list=document.getElementById('adminNotifyList');
@@ -69,8 +89,9 @@
     const unread=rows.filter(r=>!r.is_read).length;
     badge.textContent=unread>99?'99+':String(unread);
     badge.classList.toggle('show',unread>0);
-    if(!rows.length){list.innerHTML='<div class="adminNotifyEmpty">No notifications in the last 24 hours.</div>';return;}
+    if(!rows.length){list.innerHTML='<div class="adminNotifyEmpty">No notifications in the last 24 hours.</div>';syncActivityReadDots();return;}
     list.innerHTML=rows.map(r=>`<div class="adminNotifyItem ${r.is_read?'':'adminNotifyUnread'}"><div class="adminNotifyTop"><span class="adminNotifyTag">${esc(labelFor(r.event_type,r.title))}</span><span class="adminNotifyTitle">${esc(r.title||'Activity')}</span></div><div class="adminNotifyMeta">${esc(timeText(r.event_time))}${r.detail?` · ${esc(r.detail)}`:''}</div></div>`).join('');
+    syncActivityReadDots();
   }
 
   async function refresh(){
@@ -95,6 +116,8 @@
     if(!installUi())return;
     const{data}=await db.auth.getSession();
     if(!data?.session)return;
+    const activityObserver=new MutationObserver(syncActivityReadDots);
+    ['activityPreview','activityAll'].forEach(id=>{const node=document.getElementById(id);if(node)activityObserver.observe(node,{childList:true,subtree:true});});
     await refresh();
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refresh()});
     setInterval(()=>{if(document.visibilityState==='visible')refresh()},60000);
