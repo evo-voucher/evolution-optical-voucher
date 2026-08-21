@@ -3,7 +3,7 @@
   if(!(cfg.enabled===true&&cfg.supabaseUrl&&cfg.publishableKey&&window.supabase))return;
   const path=String(location.pathname||'').toLowerCase();
   const db=window.supabase.createClient(cfg.supabaseUrl,cfg.publishableKey,{auth:{persistSession:true}});
-  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
   const siteBase=String(cfg.siteBase||'').replace(/\/?$/,'/');
 
   function installStyle(){
@@ -79,6 +79,38 @@
   function mountEngine(){
     installStyle();
 
+    const titleCaseTheme=value=>String(value||'classic').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+    let decoratingVersionLabels=false;
+
+    async function decorateAllocationVersionLabels(){
+      if(decoratingVersionLabels)return;
+      const select=document.getElementById('allocationVersion');
+      if(!select)return;
+      const options=[...select.options].filter(option=>option.value);
+      const versionIds=options.map(option=>option.value);
+      if(!versionIds.length)return;
+      decoratingVersionLabels=true;
+      try{
+        const {data:versionRows,error:versionError}=await db.from('voucher_versions').select('id,template_id,theme_override_code,status').in('id',versionIds).eq('status','active');
+        if(versionError||!Array.isArray(versionRows))return;
+        const templateIds=[...new Set(versionRows.map(row=>row.template_id).filter(Boolean))];
+        let templateThemes=new Map();
+        if(templateIds.length){
+          const {data:templateRows,error:templateError}=await db.from('voucher_templates').select('id,theme_code').in('id',templateIds);
+          if(!templateError&&Array.isArray(templateRows))templateThemes=new Map(templateRows.map(row=>[row.id,row.theme_code]));
+        }
+        const versionsById=new Map(versionRows.map(row=>[row.id,row]));
+        options.forEach(option=>{
+          const row=versionsById.get(option.value);if(!row)return;
+          const baseLabel=option.dataset.baseLabel||option.textContent;
+          option.dataset.baseLabel=baseLabel;
+          const theme=titleCaseTheme(row.theme_override_code||templateThemes.get(row.template_id)||'classic');
+          const desired=`${baseLabel} · ${theme}`;
+          if(option.textContent!==desired)option.textContent=desired;
+        });
+      }finally{decoratingVersionLabels=false;}
+    }
+
     async function syncValidityFromSelectedVersion(force=false){
       const wrap=document.getElementById('engineValidityControls');
       const versionId=document.getElementById('allocationVersion')?.value||'';
@@ -110,7 +142,7 @@
         <div class="validity-note">Defaults from the selected Voucher Version. Change them only when this allocation lot needs an intentional override.</div>`;
       grid.insertAdjacentElement('afterend',wrap);
       ['allocationValidityAnchor','allocationValidityValue','allocationValidityUnit'].forEach(id=>{const el=document.getElementById(id);if(!el)return;const markDirty=()=>{wrap.dataset.validityDirty='1';wrap.dataset.validitySource='override';};el.addEventListener('change',markDirty);if(id==='allocationValidityValue')el.addEventListener('input',markDirty);});
-      const versionSelect=document.getElementById('allocationVersion');if(versionSelect){versionSelect.addEventListener('change',()=>{wrap.dataset.validityDirty='0';syncValidityFromSelectedVersion(true);});if(versionSelect.value)syncValidityFromSelectedVersion(true);}
+      const versionSelect=document.getElementById('allocationVersion');if(versionSelect){versionSelect.addEventListener('change',()=>{wrap.dataset.validityDirty='0';syncValidityFromSelectedVersion(true);});decorateAllocationVersionLabels();const labelObserver=new MutationObserver(()=>decorateAllocationVersionLabels());labelObserver.observe(versionSelect,{childList:true});if(versionSelect.value)syncValidityFromSelectedVersion(true);}
       return true;
     };
     if(!tryMount()){const mo=new MutationObserver(()=>{if(tryMount())mo.disconnect()});mo.observe(document.documentElement,{childList:true,subtree:true});}
