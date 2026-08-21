@@ -27,6 +27,7 @@
     const s=document.createElement('style');
     s.id='adminNotificationStyle';
     s.textContent=`
+      .stat.totalAllocated{text-align:center}
       #adminNotifyBtn{position:relative;white-space:nowrap}
       #adminNotifyBadge{display:none;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#ff4d67;color:#fff;font-size:10px;line-height:18px;text-align:center;margin-left:4px}
       #adminNotifyBadge.show{display:inline-block}
