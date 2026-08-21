@@ -29,6 +29,9 @@
     s.textContent=`
       .stat.totalAllocated{text-align:center}
       .activityDot.adminNotifyReadDot{background:#ff4d67}
+      :where(button,.btn,.card,.activityItem,.reportCardBtn){touch-action:manipulation!important;-webkit-tap-highlight-color:transparent!important;transition:transform 70ms ease,filter 70ms ease,box-shadow 70ms ease!important}
+      :where(button,.btn,.card,.activityItem,.reportCardBtn):active:not(:disabled){transform:translateY(1px) scale(.985)!important;filter:brightness(1.12)!important}
+      :where(button,.btn){min-height:46px}
       #adminNotifyBtn{position:relative;white-space:nowrap}
       #adminNotifyBadge{display:none;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#ff4d67;color:#fff;font-size:10px;line-height:18px;text-align:center;margin-left:4px}
       #adminNotifyBadge.show{display:inline-block}
