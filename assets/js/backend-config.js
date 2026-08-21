@@ -107,6 +107,7 @@ window.EVOLUTION_VOUCHER_BACKEND = Object.freeze({
 })();
 
 function evoLoadScript(id,path,test){if(test&&!test())return;if(document.getElementById(id))return;const s=document.createElement('script');s.id=id;s.src=evolutionAsset(path);document.head.appendChild(s);}
+evoLoadScript('pressedFeedbackScript','assets/js/pressed-feedback.js',()=>true);
 (function(){
   const path=String(window.location?.pathname||'').toLowerCase();
   const isAdmin=path.endsWith('/admin.html');
