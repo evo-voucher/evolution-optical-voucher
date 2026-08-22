@@ -33,12 +33,13 @@ jobs:
           Architecture: Scheme A
           Evolution: Business/Application Architecture
           XiaoE AI Core: Cognitive/Memory/Behavior Core
-          Voucher Supabase project ref: hukihbcyyqhanaqrizvm
-          Intended display name: Evolution Voucher Project
-          XiaoE AI Core project ref: uuqiwyqxllqsuboogbxh
+          Voucher Supabase project ref: xfivcfwexcxsyiylgryn
+          Intended display name: evo-voucher's Project
+          XiaoE AI Core project ref: iovazhaxsllwgihblsfy
           Live business data included: NO
           Secrets included: NO
-          Hosted cutover verified: NO
+          Restore drill verified: NO
+          Note: This artifact is a source/schema recovery package, not a live database backup.
           EOF
           (cd /tmp && zip -qr Evolution-Voucher-XiaoE-Offline-Backup.zip evolution-backup)
 
