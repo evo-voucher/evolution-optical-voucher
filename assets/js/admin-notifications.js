@@ -2,6 +2,14 @@
   const path=String(window.location?.pathname||'').toLowerCase();
   if(!path.endsWith('/experience/admin-v2.html'))return;
 
+  if(!document.getElementById('adminDirectPdfScript')){
+    const pdfScript=document.createElement('script');
+    pdfScript.id='adminDirectPdfScript';
+    pdfScript.src='../assets/js/admin-direct-pdf.js?v=20260822-directpdf1';
+    pdfScript.async=true;
+    document.head.appendChild(pdfScript);
+  }
+
   const cfg=window.EVOLUTION_VOUCHER_BACKEND||{};
   if(!(cfg.enabled&&cfg.supabaseUrl&&cfg.publishableKey&&window.supabase))return;
 
