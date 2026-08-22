@@ -4,7 +4,8 @@
   if(!String(location.pathname||'').toLowerCase().includes('voucher-engine'))return;
 
   const db=window.supabase.createClient(cfg.supabaseUrl,cfg.publishableKey,{auth:{persistSession:true}});
-  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let loaded=false;
 
   function installStyle(){
     if(document.getElementById('classificationArchiveStyle'))return;
@@ -16,6 +17,9 @@
       .classificationArchiveMeta{font-size:11px;color:#91a2c4;margin-top:4px}
       .classificationArchiveRow button{min-width:110px}
       .classificationArchiveRow button:disabled{opacity:.5}
+      .classificationManagementToggle{width:100%;font-size:17px}
+      .classificationManagementBody{margin-top:14px}
+      .classificationManagementBody.hidden{display:none!important}
       @media(max-width:760px){.classificationArchiveRow{grid-template-columns:1fr}.classificationArchiveRow button{width:100%}}
     `;
     document.head.appendChild(style);
@@ -28,19 +32,19 @@
     if(msg)msg.innerHTML='';
     list.innerHTML='<div class="small">Loading classifications…</div>';
     const {data,error}=await db.from('voucher_templates')
-      .select('id,template_code,template_name,status,current_version_id,created_at')
-      .order('created_at',{ascending:false});
+      .select('id,template_code,template_name,status,current_version_id,created_at');
     if(error){list.innerHTML='';if(msg)msg.innerHTML=`<div class="msg err">${esc(error.message||'Unable to load classifications.')}</div>`;return;}
     const rows=(Array.isArray(data)?data:[]).slice().sort((a,b)=>{
       const aArchived=a.status==='archived'?1:0;
       const bArchived=b.status==='archived'?1:0;
       if(aArchived!==bArchived)return aArchived-bArchived;
-      return String(b.created_at||'').localeCompare(String(a.created_at||''));
+      return String(a.template_code||'').localeCompare(String(b.template_code||''),undefined,{numeric:true,sensitivity:'base'});
     });
     list.innerHTML=rows.length?rows.map(r=>`<div class="classificationArchiveRow" data-template-id="${esc(r.id)}" data-template-code="${esc(r.template_code)}">
       <div><b>${esc(r.template_code)} — ${esc(r.template_name)}</b><div class="classificationArchiveMeta">Status: ${esc(r.status)}</div></div>
       <button type="button" class="classificationArchiveBtn" ${r.status==='archived'?'disabled':''}>${r.status==='archived'?'Archived':'Archive'}</button>
     </div>`).join(''):'<div class="small">No classifications found.</div>';
+    loaded=true;
   }
 
   async function archive(row){
@@ -60,7 +64,6 @@
       if(!data?.success)throw new Error(data?.error||'Archive failed.');
       if(msg)msg.innerHTML=`<div class="msg ok">${esc(code)} archived. Active Versions retired: ${Number(data.versions_retired||0)} • Allocations closed: ${Number(data.allocations_closed||0)}. Issued vouchers were not changed.</div>`;
       await refresh();
-      setTimeout(()=>location.reload(),700);
     }catch(e){if(msg)msg.innerHTML=`<div class="msg err">${esc(e?.message||'Archive failed.')}</div>`;btn.disabled=false;btn.textContent='Archive';}
   }
 
@@ -73,11 +76,23 @@
     installStyle();
     const card=document.createElement('section');
     card.id='classificationArchiveCard';card.className='card';
-    card.innerHTML=`<div class="top"><div><h2>Manage Classifications</h2><p class="small">Archive classifications you no longer want to use. Historical and already-issued vouchers are preserved.</p></div><button id="classificationArchiveRefresh" type="button">Refresh</button></div><div id="classificationArchiveList" class="classificationArchiveList"></div><div id="classificationArchiveMsg"></div>`;
+    card.innerHTML=`
+      <button id="classificationManagementToggle" type="button" class="classificationManagementToggle">Voucher Management</button>
+      <div id="classificationManagementBody" class="classificationManagementBody hidden">
+        <div class="top"><div><h2>Manage Classifications</h2><p class="small">Archive classifications you no longer want to use. Active codes are shown A–Z; archived codes stay at the bottom.</p></div><button id="classificationArchiveRefresh" type="button">Refresh</button></div>
+        <div id="classificationArchiveList" class="classificationArchiveList"></div><div id="classificationArchiveMsg"></div>
+      </div>`;
     createCard.insertAdjacentElement('afterend',card);
     card.addEventListener('click',e=>{const btn=e.target?.closest?.('.classificationArchiveBtn');if(btn)archive(btn.closest('.classificationArchiveRow'));});
     document.getElementById('classificationArchiveRefresh')?.addEventListener('click',refresh);
-    refresh();
+    document.getElementById('classificationManagementToggle')?.addEventListener('click',async()=>{
+      const body=document.getElementById('classificationManagementBody');
+      const toggle=document.getElementById('classificationManagementToggle');
+      const opening=body?.classList.contains('hidden');
+      body?.classList.toggle('hidden',!opening);
+      if(toggle)toggle.textContent=opening?'Close Voucher Management':'Voucher Management';
+      if(opening&&!loaded)await refresh();
+    });
     return true;
   }
 
