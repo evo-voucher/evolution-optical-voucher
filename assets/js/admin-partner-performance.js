@@ -47,6 +47,40 @@
   const pct=(a,b)=>b>0?`${((a/b)*100).toFixed(1)}%`:'0.0%';
   const within=(value,days)=>{if(!days)return true;if(!value)return false;const d=new Date(value);return Number.isFinite(d.getTime())&&d>=new Date(Date.now()-days*86400000)};
   let mounted=false;
+  let dashboardSummaryCache=null;
+  let statsObserver=null;
+  let statsRendering=false;
+
+  function renderAuthoritativeStats(s){
+    const node=document.getElementById('stats');
+    if(!node||!s)return;
+    const fields=[
+      ['Partners',s.partners_total],
+      ['Active Partners',s.partners_active],
+      ['Allocated Vouchers',s.vouchers_allocated],
+      ['Issued Vouchers',s.vouchers_issued],
+      ['Active Vouchers',s.vouchers_active],
+      ['Redeemed Vouchers',s.vouchers_redeemed],
+      ['Expired Vouchers',s.vouchers_expired],
+      ['Completed Redemptions',s.redemptions_completed],
+      ['Reversed',s.redemptions_reversed],
+      ['Redeemed Today',s.redemptions_today]
+    ];
+    statsRendering=true;
+    node.innerHTML=fields.map(([k,v])=>`<div class="stat"><span>${esc(k)}</span><b>${num(v).toLocaleString()}</b></div>`).join('');
+    statsRendering=false;
+  }
+
+  function installStatsGuard(){
+    const node=document.getElementById('stats');
+    if(!node||statsObserver)return;
+    statsObserver=new MutationObserver(()=>{
+      if(statsRendering||!dashboardSummaryCache)return;
+      const labels=[...node.querySelectorAll('.stat span')].map(x=>x.textContent||'');
+      if(!labels.includes('Allocated Vouchers')||!labels.includes('Issued Vouchers'))renderAuthoritativeStats(dashboardSummaryCache);
+    });
+    statsObserver.observe(node,{childList:true,subtree:true,characterData:true});
+  }
 
   function ensureCard(){
     if(document.getElementById('partnerPerformanceCard'))return document.getElementById('partnerPerformanceCard');
@@ -70,11 +104,15 @@
       const realm=await rpc('current_operational_realm');
       if(!realm||realm.authenticated!==true||realm.realm!=='admin'){card.classList.add('hidden');return;}
       card.classList.remove('hidden');
-      const [partners,vouchers,reds]=await Promise.all([
+      const [partners,vouchers,reds,dashboardSummary]=await Promise.all([
         rpc('admin_partner_directory'),
         rpc('admin_voucher_report',{p_partner_id:null,p_limit:500}),
-        rpc('admin_redemption_report',{p_partner_id:null,p_limit:500})
+        rpc('admin_redemption_report',{p_partner_id:null,p_limit:500}),
+        rpc('admin_dashboard_summary')
       ]);
+      dashboardSummaryCache=dashboardSummary||{};
+      installStatsGuard();
+      renderAuthoritativeStats(dashboardSummaryCache);
       const days=num(document.getElementById('performanceRange').value);
       const vv=(vouchers||[]).filter(v=>within(v.issued_at,days));
       const rr=(reds||[]).filter(r=>within(r.redeemed_at,days));
