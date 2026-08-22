@@ -209,3 +209,14 @@
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
+
+/* Classification archive controls. */
+(()=>{
+  const path=String(location.pathname||'').toLowerCase();
+  if(!path.includes('voucher-engine')||document.getElementById('classificationArchiveUiScript'))return;
+  const script=document.createElement('script');
+  script.id='classificationArchiveUiScript';
+  const version=window.EVOLUTION_ASSET_VERSION||Date.now();
+  script.src=`assets/js/classification-archive-ui.js?v=${encodeURIComponent(version)}`;
+  document.head.appendChild(script);
+})();
