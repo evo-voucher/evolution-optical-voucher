@@ -10,7 +10,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#060a18}ifr
 </style>
 </head>
 <body>
-<iframe id="partnerFrame" src="partner-v2.html?v=20260822-share1" title="Partner Management"></iframe>
+<iframe id="partnerFrame" src="partner-v2.html?v=20260822-metric-yellow1" title="Partner Management"></iframe>
 <script>
 (()=>{
 const frame=document.getElementById('partnerFrame');
@@ -18,6 +18,18 @@ let pending={email:'',name:''};
 function inject(){
   const w=frame.contentWindow,d=frame.contentDocument;
   if(!w||!d)return;
+
+  if(!d.getElementById('partnerMetricYellowStyle')){
+    const style=d.createElement('style');
+    style.id='partnerMetricYellowStyle';
+    style.textContent=`
+      .metric{background:#fff3bf!important;border-color:#e5d58f!important;color:#10162a!important}
+      .metric span{color:#6d6543!important}
+      .metric b{color:#10162a!important}
+    `;
+    d.head.appendChild(style);
+  }
+
   const create=d.getElementById('createPartner'),msg=d.getElementById('createMsg');
   if(!create||!msg)return;
   create.addEventListener('click',()=>{
