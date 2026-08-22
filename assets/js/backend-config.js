@@ -6,7 +6,7 @@ const EVOLUTION_ASSET_VERSION=(()=>{
   try{scriptVersion=new URL(document.currentScript?.src||'',window.location.href).searchParams.get('v')||'';}catch(_){}
   const pagePath=String(window.location?.pathname||'').toLowerCase();
   const legacyAdminBootstrap=pagePath.endsWith('/admin.html')&&scriptVersion==='20260818-07';
-  return pageVersion||(legacyAdminBootstrap?'20260818-31':scriptVersion)||'20260818-31';
+  return pageVersion||(legacyAdminBootstrap?'20260822-1616':scriptVersion)||'20260822-1616';
 })();
 window.EVOLUTION_ASSET_VERSION=EVOLUTION_ASSET_VERSION;
 const evolutionAsset=path=>`${path}?v=${encodeURIComponent(EVOLUTION_ASSET_VERSION)}`;
@@ -114,6 +114,7 @@ evoLoadScript('pressedFeedbackScript','assets/js/pressed-feedback.js',()=>true);
   evoLoadScript('adminMobileFocusScript','assets/js/admin-mobile-focus.js',()=>isAdmin);
   evoLoadScript('allocationValidityUiScript','assets/js/allocation-validity-ui.js',()=>isAdmin||path.includes('voucher-engine'));
   evoLoadScript('allocationManagementUiScript','assets/js/allocation-management-ui.js',()=>path.includes('voucher-engine'));
+  evoLoadScript('classificationArchiveUiScript','assets/js/classification-archive-ui.js',()=>path.includes('voucher-engine'));
   evoLoadScript('partnerManagementUiScript','assets/js/partner-management-ui.js',()=>isAdmin);
   if(!isAdmin)evoLoadScript('portalAccessShareScript','assets/js/portal-access-share.js',()=>path.endsWith('/partner.html')||path.endsWith('/admin-staff.html'));
   const loadAdminPartnerCreator=()=>{if(!isAdmin)return;evoLoadScript('portalAccessShareScript','assets/js/portal-access-share.js',()=>true);evoLoadScript('adminPartnerCreateOwnerScript','assets/js/admin-partner-create-owner.js',()=>true);};
