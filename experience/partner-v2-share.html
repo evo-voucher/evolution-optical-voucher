@@ -10,33 +10,38 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#060a18}ifr
 </style>
 </head>
 <body>
-<iframe id="partnerFrame" src="partner-v2.html?v=20260822-metric-yellow1" title="Partner Management"></iframe>
+<iframe id="partnerFrame" src="partner-v2.html?v=20260822-metric-yellow2" title="Partner Management"></iframe>
 <script>
 (()=>{
 const frame=document.getElementById('partnerFrame');
 let pending={email:'',name:''};
+function paintMetrics(d){
+  d.querySelectorAll('.metric').forEach(el=>{
+    el.style.setProperty('background','#fff3bf','important');
+    el.style.setProperty('border-color','#e5d58f','important');
+    el.style.setProperty('color','#10162a','important');
+    el.querySelectorAll('span').forEach(x=>x.style.setProperty('color','#6d6543','important'));
+    el.querySelectorAll('b').forEach(x=>x.style.setProperty('color','#10162a','important'));
+  });
+}
 function inject(){
   const w=frame.contentWindow,d=frame.contentDocument;
   if(!w||!d)return;
-
   if(!d.getElementById('partnerMetricYellowStyle')){
     const style=d.createElement('style');
     style.id='partnerMetricYellowStyle';
-    style.textContent=`
-      .metric{background:#fff3bf!important;border-color:#e5d58f!important;color:#10162a!important}
-      .metric span{color:#6d6543!important}
-      .metric b{color:#10162a!important}
-    `;
+    style.textContent='.metric{background:#fff3bf!important;border-color:#e5d58f!important;color:#10162a!important}.metric span{color:#6d6543!important}.metric b{color:#10162a!important}';
     d.head.appendChild(style);
   }
+  paintMetrics(d);
+  const bodyObs=new MutationObserver(()=>paintMetrics(d));
+  bodyObs.observe(d.body,{childList:true,subtree:true});
+  let runs=0;const timer=setInterval(()=>{paintMetrics(d);if(++runs>20)clearInterval(timer)},300);
 
   const create=d.getElementById('createPartner'),msg=d.getElementById('createMsg');
   if(!create||!msg)return;
   create.addEventListener('click',()=>{
-    pending={
-      email:(d.getElementById('pEmail')?.value||'').trim(),
-      name:(d.getElementById('pName')?.value||'').trim()
-    };
+    pending={email:(d.getElementById('pEmail')?.value||'').trim(),name:(d.getElementById('pName')?.value||'').trim()};
   },true);
   const obs=new MutationObserver(()=>{
     const text=(msg.textContent||'').trim();
@@ -47,35 +52,10 @@ function inject(){
     const code=codeMatch?.[1]||'';
     const password=passMatch?.[1]||'';
     const loginUrl=new URL('../partner-launch.html',w.location.href).href;
-    const shareText=[
-      'Evolution Optical Partner Login',
-      pending.name?`Partner: ${pending.name}`:'',
-      code?`Partner Code: ${code}`:'',
-      pending.email?`Login Email: ${pending.email}`:'',
-      password?`Initial Password: ${password}`:'',
-      `Login: ${loginUrl}`
-    ].filter(Boolean).join('\n');
+    const shareText=['Evolution Optical Partner Login',pending.name?`Partner: ${pending.name}`:'',code?`Partner Code: ${code}`:'',pending.email?`Login Email: ${pending.email}`:'',password?`Initial Password: ${password}`:'',`Login: ${loginUrl}`].filter(Boolean).join('\n');
     const btn=d.createElement('button');
-    btn.type='button';
-    btn.dataset.partnerShare='1';
-    btn.className='wide';
-    btn.textContent='Share Partner Login';
-    btn.style.marginTop='10px';
-    btn.onclick=async()=>{
-      try{
-        if(w.navigator.share){
-          await w.navigator.share({title:'Evolution Optical Partner Login',text:shareText});
-          return;
-        }
-        if(w.navigator.clipboard?.writeText){
-          await w.navigator.clipboard.writeText(shareText);
-          const old=btn.textContent;btn.textContent='Copied';setTimeout(()=>btn.textContent=old,1500);return;
-        }
-        w.location.href='https://wa.me/?text='+encodeURIComponent(shareText);
-      }catch(e){
-        if(e?.name!=='AbortError')w.location.href='https://wa.me/?text='+encodeURIComponent(shareText);
-      }
-    };
+    btn.type='button';btn.dataset.partnerShare='1';btn.className='wide';btn.textContent='Share Partner Login';btn.style.marginTop='10px';
+    btn.onclick=async()=>{try{if(w.navigator.share){await w.navigator.share({title:'Evolution Optical Partner Login',text:shareText});return}if(w.navigator.clipboard?.writeText){await w.navigator.clipboard.writeText(shareText);const old=btn.textContent;btn.textContent='Copied';setTimeout(()=>btn.textContent=old,1500);return}w.location.href='https://wa.me/?text='+encodeURIComponent(shareText)}catch(e){if(e?.name!=='AbortError')w.location.href='https://wa.me/?text='+encodeURIComponent(shareText)}};
     msg.appendChild(btn);
   });
   obs.observe(msg,{childList:true,subtree:true,characterData:true});
