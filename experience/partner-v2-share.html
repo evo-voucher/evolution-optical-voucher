@@ -10,7 +10,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#060a18}ifr
 </style>
 </head>
 <body>
-<iframe id="partnerFrame" src="partner-v2.html?v=20260822-metric-yellow2" title="Partner Management"></iframe>
+<iframe id="partnerFrame" src="partner-v2.html?v=20260822-createwide1" title="Partner Management"></iframe>
 <script>
 (()=>{
 const frame=document.getElementById('partnerFrame');
@@ -27,10 +27,10 @@ function paintMetrics(d){
 function inject(){
   const w=frame.contentWindow,d=frame.contentDocument;
   if(!w||!d)return;
-  if(!d.getElementById('partnerMetricYellowStyle')){
+  if(!d.getElementById('partnerUiPatchStyle')){
     const style=d.createElement('style');
-    style.id='partnerMetricYellowStyle';
-    style.textContent='.metric{background:#fff3bf!important;border-color:#e5d58f!important;color:#10162a!important}.metric span{color:#6d6543!important}.metric b{color:#10162a!important}';
+    style.id='partnerUiPatchStyle';
+    style.textContent='.metric{background:#fff3bf!important;border-color:#e5d58f!important;color:#10162a!important}.metric span{color:#6d6543!important}.metric b{color:#10162a!important}#createSection{margin-left:-4px!important;margin-right:-4px!important;padding-left:10px!important;padding-right:10px!important}';
     d.head.appendChild(style);
   }
   paintMetrics(d);
