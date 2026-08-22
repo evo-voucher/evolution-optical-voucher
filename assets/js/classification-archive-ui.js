@@ -4,7 +4,7 @@
   if(!String(location.pathname||'').toLowerCase().includes('voucher-engine'))return;
 
   const db=window.supabase.createClient(cfg.supabaseUrl,cfg.publishableKey,{auth:{persistSession:true}});
-  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
 
   function installStyle(){
     if(document.getElementById('classificationArchiveStyle'))return;
@@ -31,7 +31,12 @@
       .select('id,template_code,template_name,status,current_version_id,created_at')
       .order('created_at',{ascending:false});
     if(error){list.innerHTML='';if(msg)msg.innerHTML=`<div class="msg err">${esc(error.message||'Unable to load classifications.')}</div>`;return;}
-    const rows=Array.isArray(data)?data:[];
+    const rows=(Array.isArray(data)?data:[]).slice().sort((a,b)=>{
+      const aArchived=a.status==='archived'?1:0;
+      const bArchived=b.status==='archived'?1:0;
+      if(aArchived!==bArchived)return aArchived-bArchived;
+      return String(b.created_at||'').localeCompare(String(a.created_at||''));
+    });
     list.innerHTML=rows.length?rows.map(r=>`<div class="classificationArchiveRow" data-template-id="${esc(r.id)}" data-template-code="${esc(r.template_code)}">
       <div><b>${esc(r.template_code)} — ${esc(r.template_name)}</b><div class="classificationArchiveMeta">Status: ${esc(r.status)}</div></div>
       <button type="button" class="classificationArchiveBtn" ${r.status==='archived'?'disabled':''}>${r.status==='archived'?'Archived':'Archive'}</button>
