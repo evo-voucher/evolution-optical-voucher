@@ -37,7 +37,7 @@
 <script>
 (()=>{
 const cfg=window.EVOLUTION_VOUCHER_BACKEND||{},$=id=>document.getElementById(id);let db,vouchers=[],redemptions=[],activities=[];
-const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=v=>Number(v||0).toLocaleString();
 const timeText=v=>{if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?'—':d.toLocaleString()};
 async function rpc(name,args={}){const{data,error}=await db.rpc(name,args);if(error)throw error;return data}
