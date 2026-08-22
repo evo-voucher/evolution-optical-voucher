@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#07152f">
+<meta name="referrer" content="no-referrer">
 <title>Evolution Optical • Voucher</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="assets/js/backend-config.js"></script>
@@ -55,7 +56,9 @@
   $('loadingState').classList.remove('hidden');
   const db=window.supabase.createClient(cfg.supabaseUrl,cfg.publishableKey,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const token=(new URLSearchParams(location.search).get('v')||'').trim();
+  const pageUrl=new URL(location.href);
+  const token=(pageUrl.searchParams.get('v')||'').trim();
+  if(token){pageUrl.searchParams.delete('v');history.replaceState(null,'',pageUrl.pathname+pageUrl.search+pageUrl.hash);}
   const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   const themeLabels={birthday:'Birthday Gift',raya:'Raya Gift',merdeka:'Merdeka Gift',christmas:'Christmas Gift',classic:'Special Gift',default:'Special Gift'};
   const safeHex=/^#[0-9a-f]{6}$/i;
