@@ -31,7 +31,7 @@
     if(!panel)throw new Error('Redemption report is not available');
     const clone=panel.cloneNode(true);
     clone.querySelectorAll('.filters,.reportactions,.paneltop button,.mobileCards').forEach(x=>x.remove());
-    clone.querySelectorAll('.desktopTable').forEach(x=>x.style.display='block');
+    clone.querySelectorAll('.desktopTable').forEach(x=>x.style.setProperty('display','block','important'));
     clone.querySelectorAll('.tablewrap').forEach(x=>{x.style.overflow='visible';x.style.border='0';});
     clone.style.background='#fff';
     clone.style.color='#000';
