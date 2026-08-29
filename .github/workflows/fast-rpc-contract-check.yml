@@ -12,13 +12,16 @@ on:
       - '.github/workflows/fast-rpc-contract-check.yml'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   rpc-contract-check:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Run fast RPC contract check
         run: node scripts/check-rpc-contracts.mjs
