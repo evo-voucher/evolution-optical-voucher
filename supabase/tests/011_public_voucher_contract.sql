@@ -39,4 +39,5 @@ where position(forbidden_field in f.def)>0;
 -- B) missing/random token returns success=false without row existence detail leakage;
 -- C) expiry/status is server-derived and cannot be overridden from the browser;
 -- D) branch list contains only active branches allowed for that Voucher;
--- E) public lookup never mutates Voucher or Redemption state.\n-- F) customer_name is masked (for example, \"Current Customer\" becomes \"C***\").
+-- E) public lookup never mutates Voucher or Redemption state.
+-- F) customer_name is masked (for example, "Current Customer" becomes "C***").
