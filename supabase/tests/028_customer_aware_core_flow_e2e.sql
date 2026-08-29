@@ -129,7 +129,10 @@ do $$
 declare r jsonb;
 begin
   r:=public.get_public_voucher(current_setting('current_e2e.public_token')::uuid);
-  if r is null then raise exception 'Current E2E: public lookup returned null'; end if;\n  if r->>'customer_name'<>'C***' then\n    raise exception 'Current E2E: public customer name was not masked: %',r->>'customer_name';\n  end if;
+  if r is null then raise exception 'Current E2E: public lookup returned null'; end if;
+  if r->>'customer_name'<>'C***' then
+    raise exception 'Current E2E: public customer name was not masked: %',r->>'customer_name';
+  end if;
   if r ? 'customer_phone' or r ? 'issued_by_user_id' or r ? 'allocation_id' or r ? 'metadata' or r ? 'customer_id' then
     raise exception 'Current E2E: public response leaked private fields: %',r;
   end if;
