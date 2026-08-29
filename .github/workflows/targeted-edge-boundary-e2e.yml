@@ -11,15 +11,18 @@ on:
       - '.github/workflows/targeted-edge-boundary-e2e.yml'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   edge-boundary-e2e:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: supabase/setup-cli@v1
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520 # v3
         with:
-          version: latest
+          version: 2.116.0
       - name: Install PostgreSQL client
         run: |
           sudo apt-get update
