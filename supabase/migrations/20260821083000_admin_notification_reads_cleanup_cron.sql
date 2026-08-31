@@ -1,3 +1,5 @@
+create extension if not exists pg_cron;
+
 do $$
 begin
   if exists (select 1 from cron.job where jobname = 'admin_notification_reads_cleanup') then
