@@ -1,0 +1,28 @@
+-- Converge current_operational_realm() with the current production baseline.
+-- Production remains read-only reference; this migration is for fresh rebuild / Stage parity.
+
+create or replace function public.current_operational_realm()
+returns jsonb
+language plpgsql
+stable security definer
+set search_path to 'public'
+as $function$
+declare
+  v_uid uuid := (select auth.uid());
+  v_admin boolean := false;
+  v_partner public.partner_users%rowtype;
+  v_staff public.staff_users%rowtype;
+begin
+  if v_uid is null then return jsonb_build_object('authenticated',false,'realm',null); end if;
+  select exists(select 1 from public.admin_users au where au.user_id=v_uid and au.status='active') into v_admin;
+  if v_admin then return jsonb_build_object('authenticated',true,'realm','admin','user_id',v_uid); end if;
+  select * into v_partner from public.partner_users pu where pu.user_id=v_uid and pu.status='active' and pu.removed_at is null limit 1;
+  if found then return jsonb_build_object('authenticated',true,'realm','partner','user_id',v_uid,'partner_id',v_partner.partner_id,'role',v_partner.role); end if;
+  select * into v_staff from public.staff_users su where su.user_id=v_uid and su.status='active' limit 1;
+  if found then return jsonb_build_object('authenticated',true,'realm','staff','user_id',v_uid,'branch_id',v_staff.branch_id,'role',v_staff.role); end if;
+  return jsonb_build_object('authenticated',true,'realm',null,'user_id',v_uid);
+end;
+$function$;
+
+revoke all on function public.current_operational_realm() from public, anon, authenticated, service_role;
+grant execute on function public.current_operational_realm() to authenticated;
