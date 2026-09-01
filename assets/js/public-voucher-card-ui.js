@@ -87,7 +87,12 @@
       let shell=document.getElementById('publicVoucherCardShell');
       if(!shell){shell=document.createElement('section');shell.id='publicVoucherCardShell';shell.className='publicVoucherCardShell';voucherState.insertBefore(shell,voucherState.firstChild);}
       shell.innerHTML='';
-      const img=document.createElement('img');img.className='publicVoucherCardImage';img.alt=`Voucher ${data.voucher_code||''}`;img.src=rendered.url;shell.appendChild(img);
+      const img=document.createElement('img');
+      img.className='publicVoucherCardImage';
+      img.alt=`Voucher ${data.voucher_code||''}`;
+      img.src=rendered.canvas.toDataURL('image/png');
+      shell.appendChild(img);
+      if(rendered.url)URL.revokeObjectURL(rendered.url);
       const note=document.createElement('div');note.className='publicVoucherCardNote';note.textContent='Scan the QR on this Voucher at the counter for verification.';shell.appendChild(note);
 
       const duplicateTheme=document.getElementById('voucherThemeExperience');
