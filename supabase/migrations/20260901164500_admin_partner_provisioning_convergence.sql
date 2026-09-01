@@ -53,7 +53,7 @@ begin
 
   return v_result || jsonb_build_object('generated_partner_code', v_code);
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.admin_provision_partner_with_initial_setup(p_partner_code text, p_partner_name text, p_contact_person text, p_contact_phone text, p_staff_limit integer, p_new_user_id uuid, p_login_email text, p_actor_user_id uuid, p_version_id uuid, p_quantity integer, p_all_branches boolean DEFAULT false, p_branch_codes text[] DEFAULT '{}'::text[])
  RETURNS jsonb
@@ -145,7 +145,7 @@ begin
     'claim_branch_codes',coalesce(p_branch_codes,'{}'::text[])
   );
 end;
-$function$
+$function$;
 
 revoke all on function public.admin_provision_partner_with_auto_code(text,text,text,integer,uuid,text,uuid,jsonb,boolean,text[]) from public, anon, authenticated;
 grant execute on function public.admin_provision_partner_with_auto_code(text,text,text,integer,uuid,text,uuid,jsonb,boolean,text[]) to service_role;
