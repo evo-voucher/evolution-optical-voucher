@@ -25,6 +25,27 @@
 
 (()=>{
   const path=String(window.location?.pathname||'').toLowerCase();
+  if(!path.endsWith('/voucher.html'))return;
+  const key='evolution-public-voucher-token';
+  let token='';
+  try{token=String(new URL(location.href).searchParams.get('v')||'').trim();}catch(_){}
+  if(token){
+    try{sessionStorage.setItem(key,token);}catch(_){}
+    window.__EVOLUTION_PUBLIC_VOUCHER_TOKEN=token;
+    return;
+  }
+  try{token=String(sessionStorage.getItem(key)||'').trim();}catch(_){}
+  if(!token)return;
+  window.__EVOLUTION_PUBLIC_VOUCHER_TOKEN=token;
+  try{
+    const url=new URL(location.href);
+    url.searchParams.set('v',token);
+    history.replaceState(null,'',url.pathname+url.search+url.hash);
+  }catch(_){}
+})();
+
+(()=>{
+  const path=String(window.location?.pathname||'').toLowerCase();
   if(!path.endsWith('/voucher-engine.html')&&!path.endsWith('/voucher.html'))return;
   if(document.getElementById('voucherThemeIntegrationScript'))return;
   const script=document.createElement('script');
