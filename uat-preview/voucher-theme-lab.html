@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Voucher Theme UAT Lab</title>
+<script src="../voucher-theme-system-v1.js"></script>
+<style>
+:root{--voucher-ink:#0c2c67;--voucher-brand:#082b68;--voucher-accent:#4f5bbf;--voucher-line:#8fb9ef;--voucher-panel-line:#bdd4ef;--voucher-offer-bg:linear-gradient(100deg,#071c4c,#263995);--voucher-scan-bg:linear-gradient(90deg,#2456b8,#555ac9);--voucher-gift-bg:linear-gradient(180deg,#eef5ff,#fbfdff)}
+*{box-sizing:border-box}body{margin:0;padding:20px;background:#f3f6fb;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172033}.shell{width:min(760px,100%);margin:auto}.controls,.voucher{background:#fff;border:1px solid #d8e0ec;border-radius:20px;padding:18px;box-shadow:0 12px 34px rgba(21,38,65,.08)}.controls{margin-bottom:16px}label{display:block;font-size:12px;font-weight:800;margin-bottom:6px}select{width:100%;min-height:44px;border-radius:12px;border:1px solid #cbd5e1;padding:9px 12px;font-size:16px}.voucher{color:var(--voucher-ink);border-color:var(--voucher-panel-line)}.brand{font-weight:900;color:var(--voucher-brand);letter-spacing:1.5px}.offer{margin-top:14px;padding:22px;border-radius:18px;background:var(--voucher-offer-bg);color:#fff}.av-gift-text{font:700 28px/1.18 Georgia,serif}.av-theme-decoration{margin-top:12px;max-width:280px}.av-theme-decoration svg{width:100%;height:auto}.scan{margin-top:14px;padding:12px 14px;border-radius:14px;background:var(--voucher-scan-bg);color:#fff;font-weight:800}.gift{margin-top:14px;padding:16px;border-radius:14px;background:var(--voucher-gift-bg);border:1px solid var(--voucher-line)}.meta{margin-top:14px;font-size:12px;color:#64748b}.ok{color:#166534;font-weight:800}.err{color:#b91c1c;font-weight:800}
+</style>
+</head>
+<body><main class="shell">
+<section class="controls"><h1>Voucher Theme UAT Lab</h1><p>This page exercises the shared theme library only. It does not write to Supabase or Production.</p><label for="themeSelect">Theme</label><select id="themeSelect"></select><p id="status"></p></section>
+<section id="voucher" class="voucher">
+  <div class="brand">EVOLUTION OPTICAL</div>
+  <div class="offer"><div class="av-gift-text">A little gift just for you</div><div class="av-theme-decoration"></div></div>
+  <div class="gift"><b>RM100 Voucher</b><div>Customer: Theme Test</div></div>
+  <div class="scan">Present this voucher for verification</div>
+  <div class="meta">UAT-only renderer preview · no database mutation</div>
+</section>
+</main>
+<script>
+(()=>{
+  const status=document.getElementById('status');
+  const select=document.getElementById('themeSelect');
+  const voucher=document.getElementById('voucher');
+  const api=window.EOVoucherThemes;
+  if(!api||typeof api.options!=='function'||typeof api.applyToVoucher!=='function'){
+    status.className='err';status.textContent='Theme library failed to load.';return;
+  }
+  const opts=api.options();
+  select.innerHTML=opts.map(o=>`<option value="${o.code}">${o.label}</option>`).join('');
+  function render(){api.applyToVoucher(voucher,select.value);status.className='ok';status.textContent=`Loaded ${opts.length} shared themes · current: ${api.get(select.value).label}`;}
+  select.addEventListener('change',render);render();
+})();
+</script>
+</body></html>
