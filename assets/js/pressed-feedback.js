@@ -22,3 +22,14 @@
   document.addEventListener('pointerleave',e=>{if(active&&e.target===active)release();},{passive:true,capture:true});
   window.addEventListener('blur',release,{passive:true});
 })();
+
+(()=>{
+  const path=String(window.location?.pathname||'').toLowerCase();
+  if(!path.endsWith('/voucher-engine.html')&&!path.endsWith('/voucher.html'))return;
+  if(document.getElementById('voucherThemeIntegrationScript'))return;
+  const script=document.createElement('script');
+  script.id='voucherThemeIntegrationScript';
+  const version=window.EVOLUTION_ASSET_VERSION||'';
+  script.src=`assets/js/voucher-theme-integration.js${version?`?v=${encodeURIComponent(version)}`:''}`;
+  document.head.appendChild(script);
+})();
