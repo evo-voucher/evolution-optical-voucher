@@ -49,10 +49,16 @@
     return matches.length?`RM${matches[0]}`:'VOUCHER';
   }
 
+  function normalizedVoucherType(value){
+    const parts=String(value||'').trim().split(/\s+/).filter(Boolean);
+    if(parts.length===2&&parts[0].toLowerCase()===parts[1].toLowerCase())return parts[0];
+    return String(value||'').trim()||'—';
+  }
+
   function installStyle(){
     if(document.getElementById('publicVoucherCardStyle'))return;
     const style=document.createElement('style');style.id='publicVoucherCardStyle';
-    style.textContent='.publicVoucherCardShell{margin:0 0 18px}.publicVoucherCardImage{display:block;width:100%;height:auto;border-radius:20px;background:#fff;box-shadow:0 16px 44px rgba(0,0,0,.3)}.publicVoucherCardNote{margin-top:8px;color:#91a2c4;font-size:11px;text-align:center}.publicVoucherCardError{margin:10px 0;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,146,165,.45);color:#ffb2c0;font-size:11px}';
+    style.textContent='.publicVoucherCardShell{margin:0}.publicVoucherCardImage{display:block;width:100%;height:auto;border-radius:20px;background:#fff;box-shadow:0 16px 44px rgba(0,0,0,.3)}.publicVoucherCardError{margin:10px 0;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,146,165,.45);color:#ffb2c0;font-size:11px}#voucherState.public-card-primary>#themeKicker,#voucherState.public-card-primary>#greeting,#voucherState.public-card-primary>#voucherStatus,#voucherState.public-card-primary>.meta,#voucherState.public-card-primary>h2,#voucherState.public-card-primary>#branches,#voucherState.public-card-primary>#termsState,#voucherState.public-card-primary>p.small,#voucherState.public-card-primary>#voucherThemeExperience{display:none!important}';
     document.head.appendChild(style);
   }
 
@@ -67,6 +73,9 @@
       const db=window.supabase.createClient(cfg.supabaseUrl,cfg.publishableKey,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
       const{data,error}=await db.rpc('get_public_voucher',{p_token:token});
       if(error||!data?.success)throw error||new Error(data?.error||'Voucher unavailable');
+
+      const voucherTypeNode=document.getElementById('voucherType');
+      if(voucherTypeNode)voucherTypeNode.textContent=normalizedVoucherType(data.voucher_type);
 
       const base=String(cfg.siteBase||'').replace(/\/?$/,'/');
       const qrValue=`${base}voucher.html?v=${encodeURIComponent(token)}`;
@@ -93,13 +102,11 @@
       img.src=rendered.canvas.toDataURL('image/png');
       shell.appendChild(img);
       if(rendered.url)URL.revokeObjectURL(rendered.url);
-      const note=document.createElement('div');note.className='publicVoucherCardNote';note.textContent='Scan the QR on this Voucher at the counter for verification.';shell.appendChild(note);
-
-      const duplicateTheme=document.getElementById('voucherThemeExperience');
-      if(duplicateTheme)duplicateTheme.classList.add('hidden');
+      voucherState.classList.add('public-card-primary');
     }catch(error){
       const voucherState=document.getElementById('voucherState');if(!voucherState)return;
       installStyle();
+      voucherState.classList.remove('public-card-primary');
       let box=document.getElementById('publicVoucherCardError');
       if(!box){box=document.createElement('div');box.id='publicVoucherCardError';box.className='publicVoucherCardError';voucherState.insertBefore(box,voucherState.firstChild);}
       box.textContent='Voucher card preview is unavailable. Voucher details below remain valid.';
