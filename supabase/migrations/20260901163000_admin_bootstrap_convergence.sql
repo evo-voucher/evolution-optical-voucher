@@ -28,6 +28,11 @@ begin
 end;
 $function$;
 
+-- PostgreSQL cannot rename existing input parameters through CREATE OR REPLACE.
+-- Drop this exact overload first, then recreate it with Production's canonical
+-- p_display_name contract and restore the explicit ACL below.
+drop function if exists public.service_bootstrap_first_admin(uuid,text,text);
+
 create or replace function public.service_bootstrap_first_admin(
   p_user_id uuid,
   p_display_name text,
