@@ -33,3 +33,14 @@
   script.src=`assets/js/voucher-theme-integration.js${version?`?v=${encodeURIComponent(version)}`:''}`;
   document.head.appendChild(script);
 })();
+
+(()=>{
+  const path=String(window.location?.pathname||'').toLowerCase();
+  if(!path.endsWith('/voucher.html'))return;
+  if(document.getElementById('publicVoucherCardUiScript'))return;
+  const script=document.createElement('script');
+  script.id='publicVoucherCardUiScript';
+  const version=window.EVOLUTION_ASSET_VERSION||'';
+  script.src=`assets/js/public-voucher-card-ui.js${version?`?v=${encodeURIComponent(version)}`:''}`;
+  document.head.appendChild(script);
+})();
