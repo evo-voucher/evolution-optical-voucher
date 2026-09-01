@@ -6,7 +6,22 @@
   const path=String(window.location?.pathname||'').toLowerCase();
   if(!path.endsWith('/voucher.html'))return;
 
-  const token=String(window.__EVOLUTION_PUBLIC_VOUCHER_TOKEN||'').trim();
+  function recoverToken(){
+    const direct=String(window.__EVOLUTION_PUBLIC_VOUCHER_TOKEN||'').trim();
+    if(direct)return direct;
+    try{
+      const current=new URL(location.href).searchParams.get('v');
+      if(current)return String(current).trim();
+    }catch(_){}
+    try{
+      const nav=performance.getEntriesByType?.('navigation')?.[0]?.name;
+      const original=nav?new URL(nav).searchParams.get('v'):'';
+      if(original)return String(original).trim();
+    }catch(_){}
+    return '';
+  }
+
+  const token=recoverToken();
   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token))return;
 
   const cfg=window.EVOLUTION_VOUCHER_BACKEND||{};
