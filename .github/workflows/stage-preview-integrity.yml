@@ -1,0 +1,43 @@
+name: Voucher Stage Preview Integrity
+
+on:
+  pull_request:
+    paths:
+      - 'assets/**'
+      - 'experience/**'
+      - '*.html'
+      - '*.json'
+      - '*.webmanifest'
+      - 'service-worker.js'
+      - 'sw.js'
+      - 'scripts/build-stage-preview.mjs'
+      - 'stage-preview/**'
+      - '.github/workflows/stage-preview-integrity.yml'
+  workflow_dispatch:
+
+jobs:
+  stage-preview-integrity:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Rebuild Stage preview from canonical frontend
+        run: node scripts/build-stage-preview.mjs
+      - name: Verify generated Stage preview is committed
+        run: git diff --exit-code -- stage-preview
+      - name: Hard block Production backend references inside Stage preview
+        shell: bash
+        run: |
+          if grep -R -n -E 'xfivcfwexcxsyiylgryn|sb_publishable_uu1Qyx-M3dldpZn9jq7jXw_RLTHOMh_' stage-preview --include='*.html' --include='*.js' --include='*.json' --include='*.css' --include='*.webmanifest' --include='*.txt'; then
+            echo 'Production backend reference detected in Stage preview.'
+            exit 1
+          fi
+      - name: Verify Stage backend contract
+        shell: bash
+        run: |
+          grep -q 'tagusbcluzoxueixjmwh' stage-preview/assets/js/backend-config.js
+          grep -q 'environment: .stage.' stage-preview/assets/js/backend-config.js
