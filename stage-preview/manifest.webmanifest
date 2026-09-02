@@ -1,0 +1,12 @@
+{
+  "id": "./",
+  "name": "Evolution Optical Voucher Platform",
+  "short_name": "EO Voucher",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#05091a",
+  "theme_color": "#05091a",
+  "orientation": "portrait-primary",
+  "description": "Evolution Optical voucher administration, partner issuance, verification and redemption portal."
+}
