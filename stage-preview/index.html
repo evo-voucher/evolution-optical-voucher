@@ -3,21 +3,59 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Voucher Stage Preview</title>
-  <style>body{font-family:system-ui,-apple-system,sans-serif;background:#0b0b0b;color:#fff;margin:0;padding:32px}main{max-width:760px;margin:auto}.card{background:#171717;border:1px solid #333;border-radius:16px;padding:24px}a{display:block;margin:12px 0;padding:14px 16px;border-radius:12px;background:#262626;color:#fff;text-decoration:none}.tag{display:inline-block;padding:6px 10px;border-radius:999px;background:#3a2b00;color:#ffd666;font-size:13px}</style>
+  <title>Evolution Voucher Stage</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body{font-family:system-ui,-apple-system,sans-serif;background:#0b0b0b;color:#fff;margin:0;padding:24px}main{max-width:820px;margin:auto}.card{background:#171717;border:1px solid #333;border-radius:16px;padding:20px;margin-bottom:16px}.tag{display:inline-block;padding:6px 10px;border-radius:999px;background:#3a2b00;color:#ffd666;font-size:13px}input,button{box-sizing:border-box;width:100%;padding:12px;margin:6px 0;border-radius:10px;border:1px solid #444;background:#111;color:#fff}button{cursor:pointer;background:#292929}button:hover{background:#353535}.ok{color:#7ee787}.bad{color:#ff7b72}pre{white-space:pre-wrap;word-break:break-word;background:#0f0f0f;padding:12px;border-radius:10px;min-height:48px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:640px){.grid{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
 <main>
   <div class="card">
     <span class="tag">VOUCHER STAGE</span>
-    <h1>Evolution Voucher Stage Preview</h1>
-    <p>This site is isolated from Production and points to Supabase project <code>tagusbcluzoxueixjmwh</code>.</p>
-    <a href="admin.html">Admin</a>
-    <a href="partner.html">Partner</a>
-    <a href="staff.html">Staff</a>
-    <a href="voucher-engine.html">Voucher Engine</a>
-    <a href="voucher.html">Voucher View</a>
+    <h1>Evolution Voucher Stage Test Console</h1>
+    <p>Target project: <code>tagusbcluzoxueixjmwh</code></p>
+    <p>This console is isolated from Production.</p>
+    <button id="healthBtn">Check Stage Connection</button>
+    <div id="health"></div>
+  </div>
+
+  <div class="card">
+    <h2>Stage Login</h2>
+    <input id="email" type="email" placeholder="Stage account email" autocomplete="username">
+    <input id="password" type="password" placeholder="Password" autocomplete="current-password">
+    <div class="grid"><button id="loginBtn">Sign In</button><button id="logoutBtn">Sign Out</button></div>
+    <div id="authStatus"></div>
+  </div>
+
+  <div class="card">
+    <h2>Read-only checks</h2>
+    <div class="grid">
+      <button data-table="partners">Read partners</button>
+      <button data-table="vouchers">Read vouchers</button>
+      <button data-table="redemptions">Read redemptions</button>
+      <button data-table="branches">Read branches</button>
+    </div>
+    <pre id="result">No query run yet.</pre>
   </div>
 </main>
+<script>
+const cfg={url:'https://tagusbcluzoxueixjmwh.supabase.co',key:'sb_publishable_R86zjGv4yso-krORZdj3IQ_7QZUtMMB'};
+const client=window.supabase.createClient(cfg.url,cfg.key,{auth:{storageKey:'evolution-voucher-stage-auth'}});
+const health=document.getElementById('health');
+const authStatus=document.getElementById('authStatus');
+const result=document.getElementById('result');
+
+async function showSession(){const {data}=await client.auth.getSession();const s=data?.session;authStatus.innerHTML=s?`<p class="ok">Signed in: ${s.user.email||s.user.id}</p>`:'<p>Not signed in.</p>';}
+
+document.getElementById('healthBtn').onclick=async()=>{health.textContent='Checking...';const {data,error}=await client.from('partners').select('id',{head:false,count:'exact'}).limit(1);if(error){health.innerHTML=`<p class="bad">Stage reached, but query returned: ${error.message}</p>`;}else{health.innerHTML='<p class="ok">Stage connection OK. Project target is Voucher Stage.</p>';}};
+
+document.getElementById('loginBtn').onclick=async()=>{const email=document.getElementById('email').value.trim();const password=document.getElementById('password').value;const {error}=await client.auth.signInWithPassword({email,password});if(error)authStatus.innerHTML=`<p class="bad">${error.message}</p>`;else await showSession();};
+document.getElementById('logoutBtn').onclick=async()=>{await client.auth.signOut();await showSession();};
+
+document.querySelectorAll('[data-table]').forEach(btn=>btn.onclick=async()=>{const table=btn.dataset.table;result.textContent=`Reading ${table}...`;const {data,error}=await client.from(table).select('*').limit(5);result.textContent=error?`ERROR: ${error.message}`:JSON.stringify(data,null,2);});
+
+showSession();
+</script>
 </body>
 </html>
