@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#08122f">
+  <title>Evolution Optical</title>
+  <style>
+    html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      background:radial-gradient(circle at 50% 25%,#17265e 0,#08122f 42%,#030815 100%);color:white}
+    main{height:100%;display:grid;place-items:center;padding:28px;box-sizing:border-box;text-align:center}
+    .card{width:min(420px,100%);padding:34px 26px;border-radius:26px;
+      background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.12);
+      box-shadow:0 24px 70px rgba(0,0,0,.35)}
+    .e{font-size:64px;font-weight:900;letter-spacing:-4px;
+      background:linear-gradient(135deg,#b15cff,#5f72ff,#16c8ff);
+      -webkit-background-clip:text;background-clip:text;color:transparent}
+    h1{font-size:24px;margin:12px 0 8px}
+    p{margin:0;color:#cbd5e1;line-height:1.6}
+    button{margin-top:22px;border:0;border-radius:14px;padding:13px 18px;color:white;
+      font-weight:800;background:linear-gradient(135deg,#7657ff,#1aa7ff)}
+  </style>
+</head>
+<body>
+  <main>
+    <div class="card">
+      <div class="e">E</div>
+      <h1>You're offline</h1>
+      <p>Please reconnect to the internet, then try again.</p>
+      <button onclick="location.reload()">Try Again</button>
+    </div>
+  </main>
+</body>
+</html>
