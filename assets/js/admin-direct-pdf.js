@@ -1,104 +1,16 @@
 (()=>{
-  const path=String(window.location?.pathname||'').toLowerCase();
-  if(!path.endsWith('/experience/admin-v2.html'))return;
-
-  const HTML2PDF_SRC='https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js';
-  let loaderPromise=null;
-
-  function loadHtml2Pdf(){
-    if(window.html2pdf)return Promise.resolve(window.html2pdf);
-    if(loaderPromise)return loaderPromise;
-    loaderPromise=new Promise((resolve,reject)=>{
-      const s=document.createElement('script');
-      s.src=HTML2PDF_SRC;
-      s.async=true;
-      s.onload=()=>window.html2pdf?resolve(window.html2pdf):reject(new Error('PDF engine unavailable'));
-      s.onerror=()=>reject(new Error('Unable to load PDF engine'));
-      document.head.appendChild(s);
-    });
-    return loaderPromise;
-  }
-
-  function safeFileName(){
-    const month=document.getElementById('redemptionMonth')?.value||'';
-    const range=document.getElementById('redemptionRange')?.value||'all';
-    const suffix=month?`_${month}_${range==='all'?'all':range+'m'}`:'';
-    return `Redemption_Report${suffix}.pdf`;
-  }
-
-  function buildPdfNode(){
-    const panel=document.querySelector('#redemption .panelbox');
-    if(!panel)throw new Error('Redemption report is not available');
-    const clone=panel.cloneNode(true);
-    clone.querySelectorAll('.filters,.reportactions,.paneltop button,.mobileCards').forEach(x=>x.remove());
-    clone.querySelectorAll('.desktopTable').forEach(x=>x.style.setProperty('display','block','important'));
-    clone.querySelectorAll('.tablewrap').forEach(x=>{x.style.overflow='visible';x.style.border='0';});
-    clone.style.background='#fff';
-    clone.style.color='#000';
-    clone.style.border='0';
-    clone.style.padding='14px';
-    clone.style.width='760px';
-    clone.querySelectorAll('table').forEach(x=>{x.style.color='#000';x.style.minWidth='0';});
-    clone.querySelectorAll('th').forEach(x=>{x.style.background='#eee';x.style.color='#000';});
-    clone.querySelectorAll('.monthHead,.issuerHead').forEach(x=>{x.style.background='#eee';x.style.color='#000';x.style.borderColor='#999';});
-    clone.querySelectorAll('.monthHead span,.issuerHead span,.periodMeta,.reportsub').forEach(x=>x.style.color='#333');
-    const wrap=document.createElement('div');
-    wrap.style.position='fixed';
-    wrap.style.left='-10000px';
-    wrap.style.top='0';
-    wrap.style.background='#fff';
-    wrap.appendChild(clone);
-    document.body.appendChild(wrap);
-    return wrap;
-  }
-
-  async function deliverPdf(blob,fileName){
-    const file=new File([blob],fileName,{type:'application/pdf'});
-    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-      try{
-        await navigator.share({files:[file],title:'Redemption Report'});
-        return;
-      }catch(e){
-        if(e?.name==='AbortError')return;
-      }
-    }
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;
-    a.download=fileName;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),30000);
-  }
-
-  async function exportRedemptionPdf(){
-    let wrap;
-    try{
-      const html2pdf=await loadHtml2Pdf();
-      wrap=buildPdfNode();
-      const blob=await html2pdf().set({
-        margin:[8,8,8,8],
-        filename:safeFileName(),
-        image:{type:'jpeg',quality:0.98},
-        html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},
-        jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
-        pagebreak:{mode:['css','legacy'],avoid:['.monthHead','.issuerHead','tr']}
-      }).from(wrap.firstElementChild).outputPdf('blob');
-      await deliverPdf(blob,safeFileName());
-    }catch(e){
-      console.error('Direct PDF export failed',e);
-      alert('PDF export failed. Please try again.');
-    }finally{
-      wrap?.remove();
-    }
-  }
-
-  const install=()=>{
-    const original=window.printReport;
-    if(typeof original!=='function')return;
-    window.printReport=id=>id==='redemption'?exportRedemptionPdf():original(id);
-  };
-
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
+const path=String(window.location?.pathname||'').toLowerCase();if(!path.endsWith('/experience/admin-v2.html'))return;
+const SRC='https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js';let lp=null;
+function load(){if(window.html2pdf)return Promise.resolve(window.html2pdf);if(lp)return lp;lp=new Promise((ok,no)=>{const s=document.createElement('script');s.src=SRC;s.async=true;s.onload=()=>window.html2pdf?ok(window.html2pdf):no(new Error('PDF engine unavailable'));s.onerror=()=>no(new Error('Unable to load PDF engine'));document.head.appendChild(s)});return lp}
+function redName(){const m=document.getElementById('redemptionMonth')?.value||'',r=document.getElementById('redemptionRange')?.value||'all';return `Redemption_Report${m?`_${m}_${r==='all'?'all':r+'m'}`:''}.pdf`}
+function off(node){const w=document.createElement('div');w.style.cssText='position:fixed;left:-10000px;top:0;background:#fff';w.appendChild(node);document.body.appendChild(w);return w}
+function redNode(){const p=document.querySelector('#redemption .panelbox');if(!p)throw new Error('Redemption report is not available');const c=p.cloneNode(true);c.querySelectorAll('.filters,.reportactions,.paneltop button,.mobileCards').forEach(x=>x.remove());c.querySelectorAll('.desktopTable').forEach(x=>x.style.setProperty('display','block','important'));c.querySelectorAll('.tablewrap').forEach(x=>{x.style.overflow='visible';x.style.border='0'});c.style.cssText+=';background:#fff;color:#000;border:0;padding:14px;width:760px';c.querySelectorAll('table').forEach(x=>{x.style.color='#000';x.style.minWidth='0'});c.querySelectorAll('th').forEach(x=>{x.style.background='#eee';x.style.color='#000'});c.querySelectorAll('.monthHead,.issuerHead').forEach(x=>{x.style.background='#eee';x.style.color='#000';x.style.borderColor='#999'});c.querySelectorAll('.monthHead span,.issuerHead span,.periodMeta,.reportsub').forEach(x=>x.style.color='#333');return c}
+const esc=v=>String(v??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),fmt=v=>v?new Date(v).toLocaleString():'—';
+async function voucherRows(){const cfg=window.EVOLUTION_VOUCHER_BACKEND||{};if(!cfg.enabled||!cfg.supabaseUrl||!cfg.publishableKey||!window.supabase)throw new Error('Voucher backend is not available');const db=window.supabase.createClient(cfg.supabaseUrl,cfg.publishableKey),pid=document.getElementById('voucherPartner')?.value||null,{data,error}=await db.rpc('admin_voucher_pdf_report',{p_partner_id:pid||null,p_limit:5000});if(error)throw error;const q=(document.getElementById('voucherSearch')?.value||'').trim().toLowerCase(),st=(document.getElementById('voucherStatus')?.value||'').trim();return (data||[]).filter(r=>(!st||r.voucher_status===st)&&(!q||[r.voucher_code,r.partner_name,r.district,r.customer_name,r.customer_phone,r.voucher_type,r.voucher_status].some(v=>String(v||'').toLowerCase().includes(q))))}
+function voucherNode(rows){const n=document.createElement('div'),sel=document.getElementById('voucherPartner'),pl=sel?.value?(sel.options[sel.selectedIndex]?.textContent||'Selected Partner'):'All Partners',heads=['Voucher','Partner','District','Customer','Phone','Type','Status','Expiry','Issued','Redeemed'];n.style.cssText='background:#fff;color:#000;padding:16px;width:1120px;font-family:Arial,Helvetica,sans-serif';n.innerHTML=`<h2 style="margin:0 0 4px;font-size:22px">Voucher Reports</h2><div style="font-size:11px;margin-bottom:10px">Partner: ${esc(pl)} · Order: Partner → District · Generated: ${esc(new Date().toLocaleString())}</div><table style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:9px"><thead><tr>${heads.map(h=>`<th style="border:1px solid #999;background:#eee;padding:6px;text-align:left">${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>{const a=[r.voucher_code,r.partner_name,r.district,r.customer_name,r.customer_phone,r.voucher_type,r.voucher_status,r.expiry_date,fmt(r.issued_at),fmt(r.last_redeemed_at)];return `<tr>${a.map(v=>`<td style="border:1px solid #bbb;padding:5px;word-break:break-word">${esc(v)}</td>`).join('')}</tr>`}).join('')}</tbody></table>`;return n}
+async function deliver(blob,name,title){const f=new File([blob],name,{type:'application/pdf'});if(navigator.share&&navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title});return}catch(e){if(e?.name==='AbortError')return}}const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),30000)}
+async function redPdf(){let w;try{const h=await load();w=off(redNode());const b=await h().set({margin:[8,8,8,8],filename:redName(),image:{type:'jpeg',quality:.98},html2canvas:{scale:2,useCORS:true,backgroundColor:'#fff'},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['css','legacy'],avoid:['.monthHead','.issuerHead','tr']}}).from(w.firstElementChild).outputPdf('blob');await deliver(b,redName(),'Redemption Report')}catch(e){console.error(e);alert('PDF export failed. Please try again.')}finally{w?.remove()}}
+async function voucherPdf(){let w;try{const rows=await voucherRows();if(!rows.length){alert('No Voucher Report records match the current filters.');return}const h=await load();w=off(voucherNode(rows));const b=await h().set({margin:[6,6,6,6],filename:'Voucher_Report.pdf',image:{type:'jpeg',quality:.98},html2canvas:{scale:2,useCORS:true,backgroundColor:'#fff'},jsPDF:{unit:'mm',format:'a4',orientation:'landscape'},pagebreak:{mode:['css','legacy'],avoid:['tr']}}).from(w.firstElementChild).outputPdf('blob');await deliver(b,'Voucher_Report.pdf','Voucher Report')}catch(e){console.error(e);alert(e?.message||'PDF export failed. Please try again.')}finally{w?.remove()}}
+function install(){const o=window.printReport;if(typeof o!=='function')return;window.printReport=id=>id==='redemption'?redPdf():id==='voucher'?voucherPdf():o(id)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
