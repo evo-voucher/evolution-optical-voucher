@@ -25,8 +25,44 @@
         select.replaceChildren(...options.map(({code,label})=>{const o=document.createElement('option');o.value=code;o.textContent=label;return o;}));
         select.value=options.some(o=>o.code===api.normalize(current))?api.normalize(current):'classic';
       }
+      installCustomThemeEntry();
     };
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',applyOptions,{once:true});else applyOptions();
+  }
+
+  function installCustomThemeEntry(){
+    const versionTheme=document.getElementById('versionTheme');
+    if(!versionTheme||document.getElementById('customThemeEntry'))return;
+    const field=versionTheme.closest('.field')||versionTheme.parentElement;
+    if(!field)return;
+    const wrap=document.createElement('div');
+    wrap.id='customThemeEntry';
+    wrap.style.cssText='display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px';
+    const btn=document.createElement('button');
+    btn.type='button';
+    btn.textContent='+ Custom Theme';
+    btn.style.cssText='min-height:38px;padding:7px 10px';
+    const note=document.createElement('span');
+    note.className='small';
+    note.textContent='Creates a custom promotion safely without changing the existing Team cover or QR Voucher renderer.';
+    wrap.append(btn,note);
+    field.appendChild(wrap);
+    btn.addEventListener('click',()=>{
+      const name=window.prompt('Custom promotion name (example: Buy 1 Free 1 / Purchase With Purchase / Free Eye Test)');
+      if(name===null)return;
+      const clean=String(name||'').trim();
+      versionTheme.value='custom';
+      versionTheme.dispatchEvent(new Event('change',{bubbles:true}));
+      const versionName=document.getElementById('versionName');
+      const greeting=document.getElementById('greetingText');
+      const terms=document.getElementById('termsText');
+      if(clean){
+        if(versionName&&!versionName.value.trim())versionName.value=clean;
+        if(greeting&&!greeting.value.trim())greeting.value=clean;
+        if(terms&&!terms.value.trim())terms.value='Custom promotion. Terms apply.';
+      }
+      btn.textContent=clean?`Custom: ${clean}`:'+ Custom Theme';
+    });
   }
 
   function installPublicThemeRenderer(api){

@@ -197,5 +197,7 @@ db.auth.onAuthStateChange((event,session)=>{
 db.auth.getSession().then(async({data,error})=>{if(error||!data?.session){enterSignedOutState();return}try{await verifyAdmin(data.session)}catch(e){msg($('loginMsg'),e.message||'Session verification failed.')}});
 })();
 </script>
+<script src="voucher-theme-system-v1.js"></script>
+<script src="assets/js/voucher-theme-integration.js"></script>
 </body>
 </html>
