@@ -51,7 +51,16 @@
       .adminNotifyTop{display:flex;align-items:center;gap:7px}.adminNotifyTag{font-size:8px;font-weight:900;padding:3px 6px;border:1px solid #35528c;border-radius:999px;color:#9fdfe5}
       .adminNotifyTitle{font-size:11px;font-weight:900}.adminNotifyMeta{font-size:9px;color:#8d9aba;margin-top:4px;line-height:1.45}.adminNotifyUnread{box-shadow:inset 3px 0 0 #70e4ee;padding-left:9px}
       .adminNotifyEmpty{padding:14px 2px;color:#8d9aba;font-size:10px}
-      @media(max-width:620px){#adminNotifyDrawer{top:110px;max-height:68vh}}
+      #adminV2DistrictTools{margin-top:12px;padding-top:12px;border-top:1px solid #1b294c}
+      #adminV2DistrictTools .districtToolsHead{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+      #adminV2DistrictTools .districtToolsHead b{flex:1;font-size:12px}
+      #adminV2DistrictAddPanel{margin:8px 0 10px}
+      #adminV2DistrictAddPanel.hidden{display:none!important}
+      #adminV2DistrictMsg{margin:8px 0;color:#9fb1d9;font-size:10px}
+      .adminV2DistrictRow{display:grid;grid-template-columns:30px 1fr auto;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid #1b294c}
+      .adminV2DistrictRow .districtName{font-size:11px}.adminV2DistrictRow .districtState{font-size:9px;color:#8d9aba;margin-top:2px}
+      .adminV2DistrictActions{display:flex;gap:5px;flex-wrap:wrap}.adminV2DistrictActions button{min-height:36px;padding:6px 8px}
+      @media(max-width:620px){#adminNotifyDrawer{top:110px;max-height:68vh}.adminV2DistrictRow{grid-template-columns:26px 1fr}.adminV2DistrictActions{grid-column:2}.adminV2DistrictActions button{flex:1}}
     `;
     document.head.appendChild(s);
   }
@@ -72,6 +81,42 @@
     drawer.querySelector('#adminNotifyClose').onclick=()=>drawer.classList.add('hidden');
     document.addEventListener('pointerdown',e=>{if(drawer.classList.contains('hidden'))return;if(drawer.contains(e.target)||btn.contains(e.target))return;drawer.classList.add('hidden')});
     return true;
+  }
+
+  async function loadDistrictManagement(){
+    const list=document.getElementById('adminV2DistrictList'),msg=document.getElementById('adminV2DistrictMsg');
+    if(!list||!msg)return;
+    try{
+      const{data,error}=await db.rpc('admin_customer_district_directory',{});
+      if(error)throw error;
+      const ds=Array.isArray(data)?data:[];
+      list.innerHTML=ds.length?ds.map((r,i)=>`<div class="adminV2DistrictRow"><b>${i+1}</b><div><div class="districtName">${esc(r.district_name||'District')}</div><div class="districtState">${esc(r.district_status||r.status||'active')}</div></div><div class="adminV2DistrictActions"><button type="button" data-move="up" data-id="${esc(r.district_id)}" ${i===0?'disabled':''}>↑</button><button type="button" data-move="down" data-id="${esc(r.district_id)}" ${i===ds.length-1?'disabled':''}>↓</button><button type="button" data-status="${(r.district_status||r.status)==='active'?'inactive':'active'}" data-id="${esc(r.district_id)}">${(r.district_status||r.status)==='active'?'Inactive':'Active'}</button></div></div>`).join(''):'<div class="readonly">No districts.</div>';
+      msg.textContent=`${ds.length} District(s)`;
+      const legacy=document.getElementById('districts');
+      if(legacy)legacy.innerHTML='';
+    }catch(e){msg.textContent=e?.message||'Unable to load Districts.';}
+  }
+
+  function installDistrictManagement(){
+    if(document.getElementById('adminV2DistrictTools'))return;
+    const panel=document.getElementById('settings');
+    if(!panel)return;
+    installStyle();
+    const readonly=panel.querySelector('.readonly');
+    if(readonly)readonly.textContent='Customer Required Fields remain read-only here. District Management is active.';
+    const heading=[...panel.querySelectorAll('h3')].find(x=>x.textContent.trim()==='Districts');
+    if(heading)heading.style.display='none';
+    const legacy=document.getElementById('districts');
+    if(legacy)legacy.style.display='none';
+    const tools=document.createElement('div');
+    tools.id='adminV2DistrictTools';
+    tools.innerHTML='<div class="districtToolsHead"><b>District Management</b><button id="adminV2AddDistrictToggle" type="button">＋ Add District</button></div><div id="adminV2DistrictAddPanel" class="hidden"><input id="adminV2DistrictName" placeholder="Enter District name"><button id="adminV2DistrictSave" type="button" style="width:100%;margin-top:8px">Save District</button></div><div id="adminV2DistrictMsg">Loading Districts…</div><div id="adminV2DistrictList"></div>';
+    panel.querySelector('.panelbox')?.appendChild(tools);
+    const toggle=document.getElementById('adminV2AddDistrictToggle'),addPanel=document.getElementById('adminV2DistrictAddPanel'),name=document.getElementById('adminV2DistrictName'),save=document.getElementById('adminV2DistrictSave'),list=document.getElementById('adminV2DistrictList'),msg=document.getElementById('adminV2DistrictMsg');
+    toggle.onclick=()=>{addPanel.classList.toggle('hidden');toggle.textContent=addPanel.classList.contains('hidden')?'＋ Add District':'− Close';if(!addPanel.classList.contains('hidden'))setTimeout(()=>name.focus(),40);};
+    save.onclick=async()=>{const value=name.value.trim();if(!value)return;save.disabled=true;try{const{error}=await db.rpc('admin_add_customer_district',{p_district_name:value});if(error)throw error;name.value='';addPanel.classList.add('hidden');toggle.textContent='＋ Add District';await loadDistrictManagement();msg.textContent=`${value} added ✓`;}catch(e){msg.textContent=e?.message||'Unable to add District.';}finally{save.disabled=false;}};
+    list.onclick=async e=>{const b=e.target.closest('button');if(!b)return;b.disabled=true;try{let error;if(b.dataset.move)({error}=await db.rpc('admin_move_customer_district',{p_district_id:b.dataset.id,p_direction:b.dataset.move}));else({error}=await db.rpc('admin_set_customer_district_status',{p_district_id:b.dataset.id,p_status:b.dataset.status}));if(error)throw error;await loadDistrictManagement();}catch(x){msg.textContent=x?.message||'Unable to update District.';}finally{b.disabled=false;}};
+    loadDistrictManagement();
   }
 
   function activityKeyFromRow(r){
@@ -127,6 +172,7 @@
     if(!installUi())return;
     const{data}=await db.auth.getSession();
     if(!data?.session)return;
+    installDistrictManagement();
     const activityObserver=new MutationObserver(syncActivityReadDots);
     ['activityPreview','activityAll'].forEach(id=>{const node=document.getElementById(id);if(node)activityObserver.observe(node,{childList:true,subtree:true});});
     await refresh();
