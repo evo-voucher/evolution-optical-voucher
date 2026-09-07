@@ -7,6 +7,20 @@
   const branchStaffUrl=`${siteBase}staff.html`;
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
 
+  // Partner Portal compatibility helper. partner.html calls invokeStaff() for
+  // Partner Staff lifecycle actions; expose the trusted Edge Function wrapper
+  // without changing the customer Voucher/QR renderer or any database schema.
+  if(path.endsWith('/partner.html')&&typeof window.invokeStaff!=='function'){
+    const staffDb=window.supabase?.createClient(cfg.supabaseUrl,cfg.publishableKey,{auth:{persistSession:true}});
+    window.invokeStaff=async body=>{
+      if(!staffDb)throw new Error('Partner Staff service unavailable.');
+      const {data,error}=await staffDb.functions.invoke('manage-partner-staff',{body});
+      if(error)throw error;
+      if(!data?.success)throw new Error(data?.details||data?.error||'Partner Staff action failed.');
+      return data;
+    };
+  }
+
   function ensureStyle(){
     if(document.getElementById('portalAccessShareStyle'))return;
     const style=document.createElement('style');
