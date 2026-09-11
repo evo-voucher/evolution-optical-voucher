@@ -36,6 +36,11 @@
       if(!link)return null;
       try{return new URL(link.href,location.href).searchParams.get('v')}catch(_){return null}
     }
+    function shareMessageFromResult(){
+      const link=root.querySelector('a.shareLink[href]');
+      if(!link)return '';
+      try{return String(new URL(link.href,location.href).searchParams.get('text')||'').trim()}catch(_){return ''}
+    }
     function valueLabel(voucherType){
       const m=String(voucherType||'').match(/RM\s*([0-9]+(?:\.[0-9]+)?)/i);
       return m?`RM${m[1]}`:'VOUCHER';
@@ -48,6 +53,7 @@
     async function enhance(){
       const token=tokenFromResult();
       if(!token||root.dataset.voucherCardToken===token)return;
+      const shareTextFromIssue=shareMessageFromResult();
       const serial=++renderSerial;
       root.dataset.voucherCardToken=token;
       const existing=root.querySelector('.voucherCardOutput');if(existing)existing.remove();
@@ -78,6 +84,7 @@
         });
         if(serial!==renderSerial){URL.revokeObjectURL(rendered.url);return}
         if(activeObjectUrl)URL.revokeObjectURL(activeObjectUrl);activeObjectUrl=rendered.url;
+        const shareText=shareTextFromIssue||String(data.greeting||'').trim()||'Hi 👋\nA little gift for you 🎁✨\nHere is your Evolution Optical Voucher.';
         cleanupLegacyOutput();
         shell.innerHTML='';
         const img=document.createElement('img');img.className='voucherCardPreview';img.alt=`Voucher ${data.voucher_code||''}`;img.src=rendered.url;shell.appendChild(img);
@@ -86,9 +93,9 @@
         const share=document.createElement('button');share.type='button';share.textContent='Share';
         const download=document.createElement('button');download.type='button';download.textContent='Download';
         actions.append(copy,share,download);shell.appendChild(actions);
-        const note=document.createElement('div');note.className='voucherCardStatus';note.textContent='Customer receives the greeting together with the voucher image. QR keeps the secure voucher link inside the card.';shell.appendChild(note);
+        const note=document.createElement('div');note.className='voucherCardStatus';note.textContent='Customer receives the message together with the voucher image. QR keeps the secure voucher link inside the card.';shell.appendChild(note);
         copy.addEventListener('click',async()=>{copy.disabled=true;try{await renderer.copy(rendered.blob);status(note,'Voucher image copied.',false)}catch(e){status(note,e.message||'Unable to copy image.',true)}finally{copy.disabled=false}});
-        share.addEventListener('click',async()=>{share.disabled=true;try{await renderer.share(rendered.blob,rendered.filename,data.greeting||'');status(note,'Share sheet opened with greeting and voucher image.',false)}catch(e){status(note,e.message||'Unable to share image.',true)}finally{share.disabled=false}});
+        share.addEventListener('click',async()=>{share.disabled=true;try{await renderer.share(rendered.blob,rendered.filename,shareText);status(note,'Share sheet opened with message and voucher image.',false)}catch(e){status(note,e.message||'Unable to share image.',true)}finally{share.disabled=false}});
         download.addEventListener('click',()=>{renderer.download(rendered.blob,rendered.filename);status(note,'Voucher image prepared for download.',false)});
       }catch(e){cleanupLegacyOutput();status(statusNode,e.message||'Voucher image generation failed.',true)}
     }
