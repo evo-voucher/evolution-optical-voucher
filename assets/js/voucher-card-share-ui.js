@@ -1,6 +1,6 @@
 // Evolution Voucher Card Share UI
 // Partner-portal presentation module. It consumes the issued voucher's public token,
-// fetches the canonical public voucher payload, renders an image, and exposes image actions.
+// fetches the canonical public voucher payload, renders a PNG, and exposes image actions.
 (function(){
   'use strict';
   const path=String(window.location?.pathname||'').toLowerCase();
@@ -30,7 +30,6 @@
     const db=supabase.createClient(cfg.supabaseUrl,cfg.publishableKey);
     let activeObjectUrl=null;
     let renderSerial=0;
-    const isAndroid=/Android/i.test(String(navigator.userAgent||''));
 
     function tokenFromResult(){
       const link=root.querySelector('a.resultLink[href*="voucher.html?v="]');
@@ -50,18 +49,6 @@
       root.querySelectorAll('.resultLink,.issuedQrWrap,.shareLink,.shareNote').forEach(el=>el.remove());
     }
     function status(node,message,isError=false){node.textContent=message||'';node.style.color=isError?'#ff9bad':'#b9c7e8'}
-    function canvasToJpeg(canvas){
-      return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Unable to create JPEG voucher image.')),'image/jpeg',0.94));
-    }
-    async function shareVoucher(rendered,shareText){
-      if(!isAndroid)return renderer.share(rendered.blob,rendered.filename,shareText);
-      const jpegBlob=await canvasToJpeg(rendered.canvas);
-      const jpegName=String(rendered.filename||'voucher.png').replace(/\.png$/i,'.jpg');
-      const file=new File([jpegBlob],jpegName,{type:'image/jpeg'});
-      if(!navigator.share||!navigator.canShare?.({files:[file]}))throw new Error('JPEG sharing is not supported on this Android device/browser.');
-      await navigator.share({files:[file]});
-      return{android:true,format:'jpeg'};
-    }
 
     async function enhance(){
       const token=tokenFromResult();
@@ -106,9 +93,9 @@
         const share=document.createElement('button');share.type='button';share.textContent='Share';
         const download=document.createElement('button');download.type='button';download.textContent='Download';
         actions.append(copy,share,download);shell.appendChild(actions);
-        const note=document.createElement('div');note.className='voucherCardStatus';note.textContent=isAndroid?'Android Direct Share v3 active: JPEG-only direct share.':'Customer receives the message together with the voucher image. QR keeps the secure voucher link inside the card.';shell.appendChild(note);
+        const note=document.createElement('div');note.className='voucherCardStatus';note.textContent='Customer receives the message together with the voucher image. QR keeps the secure voucher link inside the card.';shell.appendChild(note);
         copy.addEventListener('click',async()=>{copy.disabled=true;try{await renderer.copy(rendered.blob);status(note,'Voucher image copied.',false)}catch(e){status(note,e.message||'Unable to copy image.',true)}finally{copy.disabled=false}});
-        share.addEventListener('click',async()=>{share.disabled=true;try{const result=await shareVoucher(rendered,shareText);if(result?.android)status(note,'Android Direct Share v3: JPEG voucher sent to the system share sheet.',false);else status(note,'Share sheet opened with message and voucher image.',false)}catch(e){status(note,e.message||'Unable to share image.',true)}finally{share.disabled=false}});
+        share.addEventListener('click',async()=>{share.disabled=true;try{await renderer.share(rendered.blob,rendered.filename,shareText);status(note,'Share sheet opened with message and voucher image.',false)}catch(e){status(note,e.message||'Unable to share image.',true)}finally{share.disabled=false}});
         download.addEventListener('click',()=>{renderer.download(rendered.blob,rendered.filename);status(note,'Voucher image prepared for download.',false)});
       }catch(e){cleanupLegacyOutput();status(statusNode,e.message||'Voucher image generation failed.',true)}
     }
