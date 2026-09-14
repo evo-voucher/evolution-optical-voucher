@@ -111,6 +111,7 @@ evoLoadScript('pressedFeedbackScript','assets/js/pressed-feedback.js',()=>true);
 (function(){
   const path=String(window.location?.pathname||'').toLowerCase();
   const isAdmin=path.endsWith('/admin.html');
+  const isAdminV2=path.endsWith('/experience/admin-v2.html');
   evoLoadScript('adminMobileFocusScript','assets/js/admin-mobile-focus.js',()=>isAdmin);
   evoLoadScript('allocationValidityUiScript','assets/js/allocation-validity-ui.js',()=>isAdmin||path.includes('voucher-engine'));
   evoLoadScript('allocationManagementUiScript','assets/js/allocation-management-ui.js',()=>path.includes('voucher-engine'));
@@ -122,6 +123,7 @@ evoLoadScript('pressedFeedbackScript','assets/js/pressed-feedback.js',()=>true);
   evoLoadScript('customerDistrictUiScript','assets/js/customer-district-ui.js',()=>isAdmin||path.endsWith('/partner.html'));
   evoLoadScript('adminSettingsCollapseScript','assets/js/admin-settings-collapse.js',()=>isAdmin);
   evoLoadScript('portalExcelExportScript','assets/js/portal-excel-export.js',()=>path.endsWith('/partner.html')||path.endsWith('/staff.html'));
+  evoLoadScript('voucherReportHierarchyV2Script','../assets/js/voucher-report-hierarchy-v2.js',()=>isAdminV2);
 })();
 
 (function installSafeVoucherVersionGrouping(){
