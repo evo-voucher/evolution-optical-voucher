@@ -97,7 +97,7 @@ h1{margin:0 0 8px;font:500 30px Georgia,serif;letter-spacing:1.5px;overflow-wrap
   <section id="page-inventory" class="modulePage hidden">
     <section class="card">
       <div class="moduleHeader"><div><h2>Inventory & Allocation</h2><p class="small">Read-only operational view from the authenticated Admin session.</p></div><button class="returnBtn" data-engine-return>← Return to Voucher Engine</button></div>
-      <button id="refreshBtn">Refresh</button>
+      <p class="small">Hidden Classifications are hidden only in this browser. Existing Vouchers, issuance and redemption are not changed.</p><label class="checkline"><input type="checkbox" id="showHiddenCodes"> Show Hidden</label><div id="classificationVisibilityList" class="branchList" style="margin:12px 0"></div><button id="refreshBtn">Refresh</button>
       <div class="tableWrap"><table><thead><tr><th>Classification</th><th>Version</th><th>Value</th><th>Validity</th><th>Theme</th><th>Branch Scope</th><th>Status</th></tr></thead><tbody id="inventoryBody"><tr><td colspan="7">No data loaded.</td></tr></tbody></table></div>
     </section>
   </section>
@@ -139,13 +139,29 @@ function renderAllocationSelectionPreview(){const all=$('allocationAllBranches')
 function bindBranchPreviewListeners(){document.querySelectorAll('.versionBranchCheck').forEach(x=>x.addEventListener('change',renderVersionSelectionPreview));document.querySelectorAll('.allocationBranchCheck').forEach(x=>x.addEventListener('change',()=>{renderAllocationSelectionPreview();refreshEffectivePreview()}))}
 function renderVersionBranches(){$('versionBranchList').innerHTML=branchMarkup('versionBranchCheck',$('versionAllBranches').checked);renderVersionSelectionPreview();bindBranchPreviewListeners()}
 function renderAllocationBranches(){$('allocationBranchList').innerHTML=branchMarkup('allocationBranchCheck',$('allocationAllBranches').checked);renderAllocationSelectionPreview();bindBranchPreviewListeners()}
+const VISIBILITY_KEY='evo-voucher-hidden-template-ids-v1';
+function hiddenTemplateIds(){try{const data=JSON.parse(localStorage.getItem(VISIBILITY_KEY)||'[]');return new Set(Array.isArray(data)?data.filter(x=>typeof x==='string'):[])}catch(_){return new Set()}}
+function visibleTemplate(t){return !!t&&!hiddenTemplateIds().has(t.id)}
+function renderVisibilityControls(){
+ const hidden=hiddenTemplateIds(),show=$('showHiddenCodes').checked,items=templates.filter(t=>show||!hidden.has(t.id));
+ const holder=$('classificationVisibilityList');
+ holder.innerHTML=items.length?items.map(t=>`<div class="branch"><span style="flex:1"><b>${esc(t.template_code)}</b><br><span class="small">${esc(t.template_name)} · ${esc(t.status)}${hidden.has(t.id)?' · Hidden':''}</span></span><button type="button" data-visibility-id="${esc(t.id)}">${hidden.has(t.id)?'Reactivate':'Hide'}</button></div>`).join(''):'<span class="small">No visible Classifications. Turn on Show Hidden to restore.</span>';
+ holder.querySelectorAll('[data-visibility-id]').forEach(b=>b.addEventListener('click',()=>{
+  const ids=hiddenTemplateIds(),id=b.dataset.visibilityId;
+  if(ids.has(id))ids.delete(id);else ids.add(id);
+  try{localStorage.setItem(VISIBILITY_KEY,JSON.stringify([...ids]))}catch(e){alert('Unable to save visibility preference in this browser.');return}
+  renderSelectors();renderInventory();
+ }));
+}
+$('showHiddenCodes').addEventListener('change',renderInventory);
 function renderSelectors(){
-  $('versionTemplate').innerHTML='<option value="">Select classification</option>'+templates.filter(t=>t.status==='active').map(t=>`<option value="${esc(t.id)}">${esc(t.template_code)} — ${esc(t.template_name)}</option>`).join('');
-  $('allocationVersion').innerHTML='<option value="">Select active Version</option>'+versions.filter(v=>v.status==='active').map(v=>{const t=templates.find(x=>x.id===v.template_id);return `<option value="${esc(v.id)}">${esc(t?.template_code||'')} v${esc(v.version_no)} — ${esc(v.version_name||t?.template_name||'Voucher')}</option>`}).join('');
+  $('versionTemplate').innerHTML='<option value="">Select classification</option>'+templates.filter(t=>t.status==='active'&&visibleTemplate(t)).map(t=>`<option value="${esc(t.id)}">${esc(t.template_code)} — ${esc(t.template_name)}</option>`).join('');
+  $('allocationVersion').innerHTML='<option value="">Select active Version</option>'+versions.filter(v=>v.status==='active'&&visibleTemplate(templates.find(t=>t.id===v.template_id))).map(v=>{const t=templates.find(x=>x.id===v.template_id);return `<option value="${esc(v.id)}">${esc(t?.template_code||'')} v${esc(v.version_no)} — ${esc(v.version_name||t?.template_name||'Voucher')}</option>`}).join('');
   $('allocationPartner').innerHTML='<option value="">Select Partner</option>'+partners.filter(p=>p.partner_status==='active').map(p=>`<option value="${esc(p.partner_id)}">${esc(p.partner_name)} (${esc(p.partner_code)})</option>`).join('');
 }
 function renderInventory(){
-  $('inventoryBody').innerHTML=versions.length?versions.slice().sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||''))).map(v=>{const t=templates.find(x=>x.id===v.template_id);return `<tr><td><b>${esc(t?.template_code||'')}</b><br>${esc(t?.template_name||'')}</td><td>v${esc(v.version_no)}<br>${esc(v.version_name||'')}</td><td>${v.face_value==null?'—':'RM '+esc(v.face_value)}</td><td>${esc(validityText(v))}</td><td>${esc(v.theme_override_code||t?.theme_code||'classic')}</td><td>${v.all_branches?'All active branches':'Restricted'}</td><td><span class="pill">${esc(v.status)}</span></td></tr>`}).join(''):'<tr><td colspan="7">No Voucher Versions yet.</td></tr>';
+  renderVisibilityControls();
+  $('inventoryBody').innerHTML=versions.filter(v=>visibleTemplate(templates.find(t=>t.id===v.template_id))).length?versions.filter(v=>visibleTemplate(templates.find(t=>t.id===v.template_id))).slice().sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||''))).map(v=>{const t=templates.find(x=>x.id===v.template_id);return `<tr><td><b>${esc(t?.template_code||'')}</b><br>${esc(t?.template_name||'')}</td><td>v${esc(v.version_no)}<br>${esc(v.version_name||'')}</td><td>${v.face_value==null?'—':'RM '+esc(v.face_value)}</td><td>${esc(validityText(v))}</td><td>${esc(v.theme_override_code||t?.theme_code||'classic')}</td><td>${v.all_branches?'All active branches':'Restricted'}</td><td><span class="pill">${esc(v.status)}</span></td></tr>`}).join(''):'<tr><td colspan="7">No Voucher Versions yet.</td></tr>';
 }
 function showEnginePage(name){
   $('engineHome').classList.add('hidden');
