@@ -8,6 +8,7 @@
   const C={navy:'#112b6a',blue:'#3556d6',purple:'#7b45da',ink:'#172554',muted:'#6f7894',line:'#dce4f4',soft:'#f5f8ff',softPurple:'#f5f1ff',white:'#ffffff'};
   const THEMES={
     classic:{bg:'#eef4ff',a:'#2547bd',b:'#543ac7',c:'#8a43dc',accent:'#7b45da',title:['FREE','GLASSES','VOUCHER'],gift:['A little gift','just for you'],symbol:'♡'},
+    buy_1_free_1:{bg:'#fff7ed',a:'#b91c1c',b:'#ea580c',c:'#facc15',accent:'#ea580c',title:['BUY 1','FREE 1','VOUCHER'],gift:['Double the joy','just for you'],symbol:'★'},
     birthday:{bg:'#fff4fa',a:'#e94f9c',b:'#9b4dde',c:'#5b66e8',accent:'#d84f9e',title:['HAPPY','BIRTHDAY','VOUCHER'],gift:['A birthday gift','just for you'],symbol:'🎂'},
     raya:{bg:'#f1fbf5',a:'#11785d',b:'#1e9b72',c:'#d3a63a',accent:'#168766',title:['SELAMAT','HARI RAYA','VOUCHER'],gift:['A festive gift','just for you'],symbol:'☾'},
     merdeka:{bg:'#f4f8ff',a:'#163e91',b:'#d73a3a',c:'#f1b82d',accent:'#c52f3a',title:['MERDEKA','SPECIAL','VOUCHER'],gift:['A special gift','just for you'],symbol:'★'},
